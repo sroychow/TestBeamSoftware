@@ -1,0 +1,13 @@
+<use name="rootrflx"/>
+<use name="FWCore/Framework"/>
+<use name="FWCore/PluginManager"/>
+<use name="FWCore/ParameterSet"/>
+<use name="CommonTools/UtilAlgos" />
+<use name="PhysicsTools/UtilAlgos"/>
+<use name="DataFormats/SiPixelDigi"/>
+<use name="DataFormats/Common"/>
+<use name="DataFormats/Phase2TrackerDigi"/>
+<export>
+  <lib name="1"/>
+</export>
+
