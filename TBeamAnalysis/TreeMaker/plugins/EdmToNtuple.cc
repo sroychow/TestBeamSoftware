@@ -65,6 +65,8 @@ void EdmToNtupleNoMask::beginJob()
   tree_->Branch("time" , &ev.time, "time/L" );
   tree_->Branch("unixtime" , &ev.unixtime, "unixtime/L" );
   tree_->Branch("tdcPhase", &ev.tdcPhase);
+  tree_->Branch("hvSettings", &ev.HVsettings);
+  tree_->Branch("dutAngle", &ev.DUTangle);
   tree_->Branch("dut_channel", "std::map< std::string,std::vector<int> >", &ev.dut_channel);
   tree_->Branch("dut_row", "std::map< std::string,std::vector<int> >", &ev.dut_row);
   tree_->Branch("dut_adc", "std::map< std::string,std::vector<unsigned short> >", &ev.dut_adc);
