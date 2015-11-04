@@ -1,8 +1,14 @@
-SINP TestBeam Data Analysis Software
+## Synopsis
 
-Compile:
+Beam Test Data Analysis Software of SAHA-Kolkata group.   
+
+
+## Installation
+
 make cint
-make
 
-Usage:
-./reco InputFile   OutputFile  Tuple Type(0 for EDMtuple 1 for RawTuple)
+make 
+
+## Usage
+
+
