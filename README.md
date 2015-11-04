@@ -10,5 +10,5 @@ make
 
 ## Usage
 
-./reco InputFile   OutputFile  Type(0 for EDMtuple 1 for RawTuple)
+./reco <InputFile>   <OutputFile>  <TupleType(0 for EDMtuple 1 for RawTuple)>
 
