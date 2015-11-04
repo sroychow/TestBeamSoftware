@@ -1,10 +1,8 @@
-'''
-# SINP TestBeam Data Analysis Software
+SINP TestBeam Data Analysis Software
 
 Compile:
-	make cint
-	make
+make cint
+make
 
 Usage:
-	./reco InputFile   OutputFile  Tuple Type(0 for EDMtuple 1 for RawTuple)
-'''
+./reco InputFile   OutputFile  Tuple Type(0 for EDMtuple 1 for RawTuple)
