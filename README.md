@@ -1,7 +1,10 @@
-# TestBeamSoftware
+# SINP TestBeam Data Analysis Software
 
-Analysis code for making nutple from test beam data.
+Compile
 
-Data format is stored in Phase2TrackerDAQ package.
+make cint
+make
 
-This package runs in CMSSW_6_2_0_SLHC25
+Usage:
+
+./reco <InputFile>   <OutputFile>  <Tuple Type(0 for EDMtuple 1 for RawTuple)>
