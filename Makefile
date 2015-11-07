@@ -9,7 +9,7 @@ HSUF   = h
 DICTC  = Dict.$(CSUF)
 DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
 
-SRCS   = src/Utility.cc src/tBeamBase.cc src/trawTupleBase.cc src/Reconstruction.cc  src/ReconstructionFromRaw.cc src/recoMain.cc
+SRCS   = src/argvparser.cc src/Utility.cc src/tBeamBase.cc src/trawTupleBase.cc src/Reconstruction.cc  src/ReconstructionFromRaw.cc src/recoMain.cc
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
 LDFLAGS  = -g
@@ -17,7 +17,7 @@ SOFLAGS  = -shared
 CXXFLAGS = -I./interface -I./  
 
 CXX       = g++
-CXXFLAGS += -g 
+CXXFLAGS += -g -std=c++11
 #-Wall -Wno-deprecated -std=c++11
 
 
