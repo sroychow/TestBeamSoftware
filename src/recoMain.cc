@@ -1,14 +1,51 @@
 #include <iostream>
+#include <cstdlib>
+#include <string>
 #include "TROOT.h"
 #include "TStopwatch.h"
 #include "Reconstruction.h"
 #include "ReconstructionFromRaw.h"
-
+#include "argvparser.h"
 using std::cout;
 using std::cerr;
 using std::endl;
+
+using namespace CommandLineProcessing;
+
 int main( int argc,char* argv[] ){
-  if (argc < 4) {
+   
+  ArgvParser cmd;
+  cmd.setIntroductoryDescription( "Offline Analysis Application fro beam test data" );
+  cmd.addErrorCode( 0, "Success" );
+  cmd.addErrorCode( 1, "Error" );
+  cmd.defineOption( "iFile", "Input RawTuple name", ArgvParser::OptionRequiresValue);
+  cmd.defineOption( "oFile", "Output file name", ArgvParser::OptionRequiresValue);  
+  cmd.defineOption( "raw", "Tuple type is Raw. Default is EDM", ArgvParser::NoOptionAttribute);  
+  cmd.defineOption( "sw", "Stub Window. Default = 7", ArgvParser::NoOptionAttribute);
+  cmd.defineOption( "png", "Produce png files for web. Default = false", ArgvParser::NoOptionAttribute); 
+  int result = cmd.parse( argc, argv );
+  if (result != ArgvParser::NoParserError)
+  {
+    cout << cmd.parseErrorDescription(result);
+    exit(1);
+  }
+
+  std::string inFilename = ( cmd.foundOption( "iFile" ) ) ? cmd.optionValue( "iFile" ) : "";
+  
+  if ( inFilename.empty() ) {
+    std::cerr << "Error, no input file provided. Quitting" << std::endl;
+    exit( 1 );
+  }
+  std::string outFilename = ( cmd.foundOption( "oFile" ) ) ? cmd.optionValue( "oFile" ) : "";
+  if ( outFilename.empty() ) {
+    std::cerr << "Error, no output filename provided. Quitting" << std::endl;
+    exit( 1 );
+  }
+  bool isRaw = ( cmd.foundOption( "raw" ) ) ? true:false;
+  int stubWindow = ( cmd.foundOption( "sw" ) ) ? std::stoi(cmd.optionValue( "oFile" ),nullptr,10) : 7;
+  bool publishPng = ( cmd.foundOption( "png" ) ) ? true : false;
+/* 
+ if (argc < 4) {
     cerr << "Usage: " << argv[0] << " InputFile   OutputFile  Type(0 for EDMtuple 1 for RawTuple) StubWindow(default=7)" << endl;
     exit(0);
   }    
@@ -19,7 +56,7 @@ int main( int argc,char* argv[] ){
   cout << "Nargs=" << argc << std::endl;
   int stubWindow = 7;
   if( argc > 4 )   stubWindow = std::atoi(argv[4]);
-  
+*/  
   //Let's roll
   TStopwatch timer;
   timer.Start();
@@ -29,7 +66,7 @@ int main( int argc,char* argv[] ){
     r.Loop();
     r.endJob();
   } else {
-    ReconstructionFromRaw r(argv[1],argv[2],stubWindow);
+    ReconstructionFromRaw r(inFilename,outFilename,stubWindow,publishPng);
     std::cout << "Event Loop start" << std::endl;
     r.Loop();
     r.endJob();

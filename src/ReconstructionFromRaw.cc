@@ -17,11 +17,19 @@
 using std::vector;
 using std::map;
 //ReconstructionFromRaw::ReconstructionFromRaw(const TString& inFilename,const TString&  outFilename) :
-ReconstructionFromRaw::ReconstructionFromRaw(const string inFilename,const string outFilename, int stubWindow) :
+ReconstructionFromRaw::ReconstructionFromRaw(const string inFilename,const string outFilename, 
+                                             int stubWindow, bool publish) :
   trawTupleBase::trawTupleBase(TString(inFilename))
 {
   outFile = outFilename; 
   stubWindow_ = stubWindow; 
+  publishPng_ = publish;
+  std::cout << "Raw Tuple Analyzer initialized with the following options\n" 
+            << "Infile: " << inFilename
+            << "\nOutFile: " << outFile
+            << "\nStubWindow: " << stubWindow
+            << "\nPublishPng: " << publish
+            << std::endl;
   beginJob();
 }
 void ReconstructionFromRaw::bookHistogram(TFile* fout_) {
@@ -29,6 +37,8 @@ void ReconstructionFromRaw::bookHistogram(TFile* fout_) {
   fout_->mkdir("EventInfo");
   fout_->cd("EventInfo");
   new TH1I("nevents", "#Events", 10000001, -0.5, 10000000.5);
+  new TH1D("ntotalHitsRaw","Total number of hits from raw data",100,-.5,99.5);
+  new TH1D("ntotalHitsReco","Total number of hits reco",100,-.5,99.5);
 
   fout_->cd();
   fout_->mkdir("det0");
@@ -201,6 +211,10 @@ void ReconstructionFromRaw::Loop()
       else if( stubWindow_ == 7 )
         Utility::fillHist1D("nstubsdiff",std::abs(totalStubsReco_sw7 - totalStubs));
       detClustermap_.clear();
+      fout_->cd("EventInfo");
+      Utility::fillHist1D("ntotalHitsRaw", totalHits);
+      Utility::fillHist1D("ntotalHitsReco", dut0_chtempC0.size()+dut0_chtempC1.size() +
+                          dut1_chtempC0.size() + dut1_chtempC1.size());
    }
 }
 
@@ -240,11 +254,11 @@ void ReconstructionFromRaw::publishPlots(TString dirName) {
   else {
   TDirectory* dir = dynamic_cast<TDirectory*>(fout_->Get(dirName));
   std::cout << "Dir=" << dir->GetName() << std::endl; 
-  dir->GetListOfKeys()->Print();
+  //dir->GetListOfKeys()->Print();
   TIter next(dir->GetListOfKeys());
   TKey *hkey;
   while ((hkey = (TKey*)next())) {
-    std::cout << "Entered Here" << std::endl;
+    //std::cout << "Entered Here" << std::endl;
     TClass *cl = gROOT->GetClass(hkey->GetClassName());  
     if ( cl->InheritsFrom("TH1") ) {
         TH1* h = dynamic_cast<TH1*>(hkey->ReadObj());
@@ -274,10 +288,11 @@ void ReconstructionFromRaw::endJob() {
 
   fout_->cd();
   fout_->Write();
-
-  publishPlots("det0");
-  publishPlots("det1");
-  publishPlots("StubInfo");
+  if( publishPng_ ) {
+    publishPlots("det0");
+    publishPlots("det1");
+    publishPlots("StubInfo");
+  }
   fout_->Close();
   delete fout_;
 }
