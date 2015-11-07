@@ -70,8 +70,8 @@ void ReconstructionFromRaw::bookHistogram(TFile* fout_) {
   new TH1D("stubEff5C1","StubEfficiency(stub Window 5) col1;#stub found if det0 && det1 has cluster;Events",2,-0.5,1.5);
   new TH1D("stubEff3C0","StubEfficiency(stub Window 3) col0;#stub found if det0 && det1 has cluster;has cluster;Events",2,-0.5,1.5);
   new TH1D("stubEff3C1","StubEfficiency(stub Window 3) col1;#stub found if det0 && det1 has cluster;has cluster;Events",2,-0.5,1.5);
-  new TH1D("nstubsFromRaw","Total number of stubs from CBC stub word",100,-.5,99.5);
-  new TH1D("nstubsFromReco","Total number of stubs from Reconstruction",100,-.5,99.5);
+  new TH1D("nstubsFromRaw","Total number of stubs from CBC stub word",20,-.5,19.5);
+  new TH1D("nstubsFromReco","Total number of stubs from Reconstruction",20,-.5,19.5);
   new TH1D("nstubsdiff","#StubsReco - #StubsfromStubWord",20,-.5,19.5);
 
   fout_->mkdir("Correlation");
