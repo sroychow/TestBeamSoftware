@@ -13,6 +13,7 @@ class Reconstruction : public tBeamBase {
   Reconstruction(const string inFilename,const string outFilename);
   ~Reconstruction(){}
   void bookHistogram(TFile* fout);
+  void publishPlots();
   void beginJob();
   void Loop();
   void endJob();

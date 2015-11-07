@@ -12,6 +12,7 @@ class ReconstructionFromRaw : public trawTupleBase {
  public:
   ReconstructionFromRaw(const string inFilename,const string outFilename);
   ~ReconstructionFromRaw(){}
+  void publishPlots(TString dirName);
   void bookHistogram(TFile* fout);
   void beginJob();
   void Loop();
