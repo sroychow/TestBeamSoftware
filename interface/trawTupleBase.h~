@@ -134,7 +134,7 @@ void trawTupleBase::Init(TTree *tree)
    // (once per file to be processed).
 
    // Set object pointer
-   dut0Ch0data = 0;
+     dut0Ch0data = 0;
    dut0Ch1data = 0;
    dut1Ch0data = 0;
    dut1Ch1data = 0;
