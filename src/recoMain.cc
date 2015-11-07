@@ -8,7 +8,7 @@ using std::cout;
 using std::cerr;
 using std::endl;
 int main( int argc,char* argv[] ){
-  if (argc < 3) {
+  if (argc < 4) {
     cerr << "Usage: " << argv[0] << " InputFile   OutputFile  Type(0 for EDMtuple 1 for RawTuple)" << endl;
     exit(0);
   }    
