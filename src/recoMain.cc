@@ -42,21 +42,9 @@ int main( int argc,char* argv[] ){
     exit( 1 );
   }
   bool isRaw = ( cmd.foundOption( "raw" ) ) ? true:false;
-  int stubWindow = ( cmd.foundOption( "sw" ) ) ? std::stoi(cmd.optionValue( "oFile" ),nullptr,10) : 7;
+  int stubWindow = ( cmd.foundOption( "sw" ) ) ? std::stoi(cmd.optionValue( "sw" ),nullptr,10) : 7;
   bool publishPng = ( cmd.foundOption( "png" ) ) ? true : false;
-/* 
- if (argc < 4) {
-    cerr << "Usage: " << argv[0] << " InputFile   OutputFile  Type(0 for EDMtuple 1 for RawTuple) StubWindow(default=7)" << endl;
-    exit(0);
-  }    
-  cout << "InFile:" << argv[1] << endl;
-  cout << "OutFile:" << argv[2] << endl;
-  bool isRaw = std::atoi(argv[3]) > 0 ? true : false;
-  cout << "Analyse raw tuple?:" << isRaw << std::endl; 
-  cout << "Nargs=" << argc << std::endl;
-  int stubWindow = 7;
-  if( argc > 4 )   stubWindow = std::atoi(argv[4]);
-*/  
+
   //Let's roll
   TStopwatch timer;
   timer.Start();
