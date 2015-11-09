@@ -70,26 +70,22 @@ void ReconstructionFromRaw::bookHistogram(TFile* fout_) {
   new TH1D("clusterPosC0","dut1 clusterPos col0;Strip Number;#Events",1016,0.5,1016.5);
   new TH1D("clusterPosC1","dut1 clusterPos col1;Strip Number;#Events",1016,0.5,1016.5);
 
+  std::stringstream ss;
+  ss << stubWindow_;
+  TString ssW(ss.str());
   fout_->mkdir("StubInfo");
   fout_->cd("StubInfo");
   new TH1D("nclusterdiffC0","Difference in #clusters between dut0 and dut1() col0;#cluster_{det0_col0} - #cluster_  {det1_col0};Events",20,-0.5,19.5);
   new TH1D("nclusterdiffC1","Difference in #clusters between dut0 and dut1() col1;#cluster_{det0_col1} - #cluster_  {det1_col1};Events",20,-0.5,19.5);
-  new TH1D("nstub7C0","Number of stubs(stub Window 7) col0;#stubs;Events",20,-0.5,19.5);
-  new TH1D("nstub7C1","Number of stubs(stub Window 7) col1;#stubs;Events",20,-0.5,19.5);
-  new TH1D("nstub5C0","Number of stubs(stub Window 5) col0;#stubs;Events",20,-0.5,19.5);
-  new TH1D("nstub5C1","Number of stubs(stub Window 5) col1;#stubs;Events",20,-0.5,19.5);
-  new TH1D("nstub3C0","Number of stubs(stub Window 3) col0;#stubs;Events",20,-0.5,19.5);
-  new TH1D("nstub3C1","Number of stubs(stub Window 3) col1;#stubs;Events",20,-0.5,19.5);
-  new TH1D("stubEff7C0","StubEfficiency(stub Window 7) col0;#stub found if det0 && det1 has cluster;Events",2,-0.5,1.5);
-  new TH1D("stubEff7C1","StubEfficiency(stub Window 7) col1;#stub found if det0 && det1 has cluster;Events",2,-0.5,1.5);
-  new TH1D("stubEff5C0","StubEfficiency(stub Window 5) col0;#stub found if det0 && det1 has cluster;Events",2,-0.5,1.5);
-  new TH1D("stubEff5C1","StubEfficiency(stub Window 5) col1;#stub found if det0 && det1 has cluster;Events",2,-0.5,1.5);
-  new TH1D("stubEff3C0","StubEfficiency(stub Window 3) col0;#stub found if det0 && det1 has cluster;has cluster;Events",2,-0.5,1.5);
-  new TH1D("stubEff3C1","StubEfficiency(stub Window 3) col1;#stub found if det0 && det1 has cluster;has cluster;Events",2,-0.5,1.5);
+
+  new TH1I("nstubC0","Number of stubs sw=" + ssW +" col0;#stubs;Events",20,-0.5,19.5);
+  new TH1I("nstubC1","Number of stubs sw=" + ssW +" col1;#stubs;Events",20,-0.5,19.5);
+
+  new TH1I("stubEffC0","StubEfficiency sw=" + ssW + " col0;#stub found if det0 && det1 has cluster;Events",2,-0.5,1.5);
+  new TH1I("stubEffC1","StubEfficiency sw=" + ssW + " col1;#stub found if det0 && det1 has cluster;Events",2,-0.5,1.5);  
+
+  new TH1I("nstubsFromReco","Total number of stubs from Reconstruction(stub window " + ssW + ")",20,-.5,19.5);
   new TH1D("nstubsFromRaw","Total number of stubs from CBC stub word",20,-.5,19.5);
-  new TH1D("nstubsFromRecoSW3","Total number of stubs from Reconstruction(stub window3)",20,-.5,19.5);
-  new TH1D("nstubsFromRecoSW5","Total number of stubs from Reconstruction(stub window5)",20,-.5,19.5);
-  new TH1D("nstubsFromRecoSW7","Total number of stubs from Reconstruction(stub window7)",20,-.5,19.5);
   new TH1D("nstubsdiff","#StubsReco - #StubsfromStubWord",20,-.5,19.5);
 
   fout_->mkdir("Correlation");
@@ -187,29 +183,21 @@ void ReconstructionFromRaw::Loop()
       Utility::getInfofromClusterVec(detClustermap_["det1C0"],"det1",fout_,"C0");
       Utility::getInfofromClusterVec(detClustermap_["det1C1"],"det1",fout_,"C1");
 
-      int totalStubsReco_sw7=0; 
-      int totalStubsReco_sw5=0;
-      int totalStubsReco_sw3=0;
 
-      totalStubsReco_sw3 += Utility::getStubInfo(detClustermap_,3,fout_,"C0");
-      totalStubsReco_sw3 += Utility::getStubInfo(detClustermap_,3,fout_,"C1");
+      int totalStubsRecoC0=0; 
+      int totalStubsRecoC1=0; 
 
-      totalStubsReco_sw5 += Utility::getStubInfo(detClustermap_,5,fout_,"C0");
-      totalStubsReco_sw5 += Utility::getStubInfo(detClustermap_,5,fout_,"C1");
+      totalStubsRecoC0 = Utility::getStubInfoEDM(detClustermap_,stubWindow_,fout_,"C0");
+      totalStubsRecoC1 = Utility::getStubInfoEDM(detClustermap_,stubWindow_,fout_,"C1");
+      if( totalStubsRecoC0 )  Utility::fillHist1D("stubEffC0",1);
+      else                    Utility::fillHist1D("stubEffC0",0);
+      if( totalStubsRecoC1 )  Utility::fillHist1D("stubEffC1",1);
+      else                    Utility::fillHist1D("stubEffC1",0);
 
-      totalStubsReco_sw7 += Utility::getStubInfo(detClustermap_,7,fout_,"C0");
-      totalStubsReco_sw7 += Utility::getStubInfo(detClustermap_,7,fout_,"C1");
+      Utility::fillHist1D("nstubsFromReco",totalStubsRecoC0 + totalStubsRecoC1);
+      Utility::fillHist1D("nstubsFromRaw",totalStubs - 2);
+      Utility::fillHist1D("nstubsdiff",std::abs(totalStubsRecoC0 + totalStubsRecoC1 - totalStubs));
 
-      Utility::fillHist1D("nstubsFromRaw",totalStubs);
-      Utility::fillHist1D("nstubsFromRecoSW3",totalStubsReco_sw3);
-      Utility::fillHist1D("nstubsFromRecoSW5",totalStubsReco_sw5);
-      Utility::fillHist1D("nstubsFromRecoSW7",totalStubsReco_sw7);
-      if( stubWindow_ == 3 )
-        Utility::fillHist1D("nstubsdiff",std::abs(totalStubsReco_sw3 - totalStubs));
-      else if( stubWindow_ == 5 )
-        Utility::fillHist1D("nstubsdiff",std::abs(totalStubsReco_sw5 - totalStubs));
-      else if( stubWindow_ == 7 )
-        Utility::fillHist1D("nstubsdiff",std::abs(totalStubsReco_sw7 - totalStubs));
       detClustermap_.clear();
       fout_->cd("EventInfo");
       Utility::fillHist1D("ntotalHitsRaw", totalHits);
@@ -228,20 +216,41 @@ void ReconstructionFromRaw::publishPlots(TString dirName) {
   fout_->cd();
   fout_->cd("StubInfo");
   
-  Utility::getHist1D("nstub"+sw+"C0")->Draw();
-  cCanvas->SaveAs("nstub"+sw+"C0.png");
+  Utility::getHist1D("nstubC0")->Draw();
+  cCanvas->SaveAs("nstubsC0.png");
   cCanvas->Clear();
   
-  Utility::getHist1D("nstub"+sw+"C1")->Draw();
-  cCanvas->SaveAs("nstub"+sw+"C1.png");
+  Utility::getHist1D("nstubC1")->Draw();
+  cCanvas->SaveAs("nstubC1.png");
   cCanvas->Clear();
-  
+
+  std::stringstream sb1,sb2;
+  TH1* hseffc0 = Utility::getHist1D("stubEffC0");
+  sb1 << hseffc0->GetBinContent(1)/hseffc0->Integral();
+  sb2 << hseffc0->GetBinContent(2)/hseffc0->Integral();
+  hseffc0->GetXaxis()->SetBinLabel(1,sb1.str().c_str());  
+  hseffc0->GetXaxis()->SetBinLabel(2,sb2.str().c_str());  
+  hseffc0->Draw();
+  cCanvas->SaveAs("stubEffC0.png");
+  cCanvas->Clear();
+  sb1.str("");
+  sb2.str("");
+   
+  TH1* hseffc1 = Utility::getHist1D("stubEffC0");
+  sb1 << hseffc1->GetBinContent(1)/hseffc1->Integral();
+  sb2 << hseffc1->GetBinContent(2)/hseffc1->Integral();
+  hseffc1->GetXaxis()->SetBinLabel(1,sb1.str().c_str());  
+  hseffc1->GetXaxis()->SetBinLabel(2,sb2.str().c_str());  
+  hseffc1->Draw();
+  cCanvas->SaveAs("stubEffC1.png");
+  cCanvas->Clear();
+
   Utility::getHist1D("nstubsFromRaw")->Draw();
   cCanvas->SaveAs("nstubsFromRaw.png");
   cCanvas->Clear();  
 
-  Utility::getHist1D("nstubsFromRecoSW" + sw )->Draw();
-  cCanvas->SaveAs("nstubsFromRecoSW"+ sw +".png");
+  Utility::getHist1D("nstubsFromReco" )->Draw();
+  cCanvas->SaveAs("nstubsFromReco.png");
   cCanvas->Clear();  
   
 

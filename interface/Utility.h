@@ -31,6 +31,8 @@ namespace Utility {
   //void getInfofromClusterVec(const std::vector<Cluster>& cvec,const std::string det,TFile* fout,TString col);
   int getStubInfo(std::map<std::string,std::vector<Cluster> >&  detClustermap, const int stubwindow, 
                    TFile* fout,const std::string col = "");
+  int getStubInfoEDM(std::map<std::string,std::vector<Cluster> >&  detClustermap, const int stubwindow, 
+                   TFile* fout,const std::string col = "");
 
   TH1* getHist1D(const char* hname);
   TH1* getHist1D(const string& hname);

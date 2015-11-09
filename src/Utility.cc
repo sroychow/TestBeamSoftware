@@ -104,9 +104,9 @@ namespace Utility {
   int getStubInfo( std::map<std::string,std::vector<Cluster> >&  detClustermap, const int stubwindow, 
                     TFile* fout, const std::string col) {
     std::stringstream stubHname;
-    stubHname << "nstub" << stubwindow << col;
+    stubHname << "nstub" << col;
     std::stringstream stubEffname;
-    stubEffname << "stubEff" << stubwindow << col;
+    stubEffname << "stubEff" << col;
     fout->cd();
     fout->cd("StubInfo");
     //Utility::fillHist1D("stubWord",stubWord);
@@ -126,12 +126,33 @@ namespace Utility {
       Utility::fillHist1D(stubEffname.str(),1);
      else if( !detClustermap["det0" + col].empty() && !detClustermap["det1" + col].empty() && nstubs==0 )
        Utility::fillHist1D(stubEffname.str(),0);
-/*
-     if( stubWord > 0 )
-       Utility::fillHist1D( "stubEff_SW", 1);
-     else
-       Utility::fillHist1D( "stubEff_SW", 0);
-*/
+    return nstubs;
+  }
+  int getStubInfoEDM( std::map<std::string,std::vector<Cluster> >&  detClustermap, const int stubwindow, 
+                    TFile* fout, const std::string col) {
+    std::stringstream stubHname;
+    stubHname << "nstub" << col;
+    std::stringstream stubEffname;
+    stubEffname << "stubEff" << col;
+    fout->cd();
+    fout->cd("StubInfo");
+    Utility::fillHist1D( "nclusterdiff" + col, std::abs( detClustermap["det0" + col].size() - 
+                                                   detClustermap["det1" + col].size() ) );
+    int nstubs = 0;
+    for( unsigned int i = 0; i< detClustermap["det0" + col].size(); i++ ) {
+      for( unsigned int j = 0; j< detClustermap["det1" + col].size(); j++ ) {
+        if( std::fabs(detClustermap["det0" + col].at(i).position - 
+                      detClustermap["det1" + col].at(j).position ) <= stubwindow ) {
+          nstubs++;
+        }
+      }
+    }
+    Utility::fillHist1D( stubHname.str(), nstubs);
+    if( !detClustermap["det0" + col].empty()&& !detClustermap["det1" + col].empty() &&nstubs>0 )
+      Utility::fillHist1D(stubEffname.str(),1);
+     else if( !detClustermap["det0" + col].empty() && !detClustermap["det1" + col].empty() && nstubs==0 )
+       Utility::fillHist1D(stubEffname.str(),0);
+
     return nstubs;
   }
   // ------------------------------------------------------------------------
