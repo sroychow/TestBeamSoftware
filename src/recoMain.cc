@@ -49,7 +49,7 @@ int main( int argc,char* argv[] ){
   TStopwatch timer;
   timer.Start();
   if(!isRaw) {
-    Reconstruction r(argv[1],argv[2]);
+    Reconstruction r(inFilename,outFilename,stubWindow,publishPng);
     std::cout << "Event Loop start" << std::endl;
     r.Loop();
     r.endJob();

@@ -47,6 +47,11 @@ public :
    UInt_t          hvSettings;
    UInt_t          dutAngle;
    UInt_t          stubWord;
+   UInt_t          vcth;
+   UInt_t          offset;
+   UInt_t          window;
+   UInt_t          cwd;
+   UInt_t          tilt;
    Int_t           condData;
    Int_t           glibStatus;
    Int_t           cbc1Status;
@@ -64,6 +69,11 @@ public :
    TBranch        *b_hvSettings;   //!
    TBranch        *b_dutAngle;   //!
    TBranch        *b_stubWord;   //!
+   TBranch        *b_vcth;   //!
+   TBranch        *b_offset;   //!
+   TBranch        *b_window;   //!
+   TBranch        *b_cwd;   //!
+   TBranch        *b_tilt;   //!
    TBranch        *b_condData;   //!
    TBranch        *b_glibStatus;   //!
    TBranch        *b_cbc1Status;   //!
@@ -162,6 +172,7 @@ void tBeamBase::Init(TTree *tree)
    fCurrent = -1;
    fChain->SetMakeClass(1);
 
+
    fChain->SetBranchAddress("run", &run, &b_run);
    fChain->SetBranchAddress("lumiSection", &lumiSection, &b_lumiSection);
    fChain->SetBranchAddress("event", &event, &b_event);
@@ -171,6 +182,11 @@ void tBeamBase::Init(TTree *tree)
    fChain->SetBranchAddress("hvSettings", &hvSettings, &b_hvSettings);
    fChain->SetBranchAddress("dutAngle", &dutAngle, &b_dutAngle);
    fChain->SetBranchAddress("stubWord", &stubWord, &b_stubWord);
+   fChain->SetBranchAddress("vcth", &vcth, &b_vcth);
+   fChain->SetBranchAddress("offset", &offset, &b_offset);
+   fChain->SetBranchAddress("window", &window, &b_window);
+   fChain->SetBranchAddress("cwd", &cwd, &b_cwd);
+   fChain->SetBranchAddress("tilt", &tilt, &b_tilt);
    fChain->SetBranchAddress("condData", &condData, &b_condData);
    fChain->SetBranchAddress("glibStatus", &glibStatus, &b_glibStatus);
    fChain->SetBranchAddress("cbc1Status", &cbc1Status, &b_cbc1Status);

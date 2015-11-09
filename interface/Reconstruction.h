@@ -10,10 +10,11 @@ class TH1;
 using Utility::Cluster;
 class Reconstruction : public tBeamBase {
  public:
-  Reconstruction(const string inFilename,const string outFilename);
+  Reconstruction(const string inFilename,const string outFilename,int stubWindow, bool publish);
   ~Reconstruction(){}
   void bookHistogram(TFile* fout);
-  void publishPlots();
+  void publishPlots(TString dirName);
+  void setStubWindow(int stubWindow) { stubWindow_ = stubWindow; }
   void beginJob();
   void Loop();
   void endJob();
@@ -21,6 +22,8 @@ class Reconstruction : public tBeamBase {
  private:
   TString outFile;
   TFile* fout_;
+  int stubWindow_;
+  bool publishPng_;
   std::map<std::string,std::vector<Cluster> >  detClustermap_;
 };
 #endif
