@@ -44,7 +44,8 @@ int main( int argc,char* argv[] ){
   bool isRaw = ( cmd.foundOption( "raw" ) ) ? true:false;
   int stubWindow = ( cmd.foundOption( "sw" ) ) ? std::stoi(cmd.optionValue( "sw" ),nullptr,10) : 7;
   bool publishPng = ( cmd.foundOption( "png" ) ) ? true : false;
-
+  
+  std::cout << "isRaw=" << isRaw << std::endl;  
   //Let's roll
   TStopwatch timer;
   timer.Start();
