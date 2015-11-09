@@ -236,7 +236,7 @@ void ReconstructionFromRaw::publishPlots(TString dirName) {
   sb1.str("");
   sb2.str("");
    
-  TH1* hseffc1 = Utility::getHist1D("stubEffC0");
+  TH1* hseffc1 = Utility::getHist1D("stubEffC1");
   sb1 << hseffc1->GetBinContent(1)/hseffc1->Integral();
   sb2 << hseffc1->GetBinContent(2)/hseffc1->Integral();
   hseffc1->GetXaxis()->SetBinLabel(1,sb1.str().c_str());  
