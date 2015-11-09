@@ -243,7 +243,7 @@ void Reconstruction::publishPlots(TString dirName) {
   std::stringstream ss;
   ss << stubWindow_;
   TString sw(ss.str());
-  TCanvas* cCanvas = new TCanvas( "c1", "c1", 500, 500);
+  TCanvas* cCanvas = new TCanvas( "c1", "c1", 800, 800);
   fout_->cd();
   fout_->cd("StubInfo");
     Utility::getHist1D("nstubC0")->Draw();
@@ -303,7 +303,7 @@ void Reconstruction::publishPlots(TString dirName) {
 	h->SetDirectory(0);
         std::cout << h->GetName() << std::endl;
 	TString canvasName("c" + std::string(hkey->GetName()));
-	TCanvas* myCanvas = new TCanvas( canvasName, "c1", 500, 500);
+	TCanvas* myCanvas = new TCanvas( canvasName, "c1", 800, 800);
 	myCanvas->cd();
 	h->Draw();  
         myCanvas->SaveAs( dir->GetName() + canvasName + TString(".png"));
@@ -312,7 +312,7 @@ void Reconstruction::publishPlots(TString dirName) {
 	h->SetDirectory(0);
         std::cout << h->GetName() << std::endl;
 	TString canvasName("c" + std::string(hkey->GetName()));
-	TCanvas* myCanvas = new TCanvas( canvasName, "c1", 500, 500);
+	TCanvas* myCanvas = new TCanvas( canvasName, "c1", 800, 800);
 	myCanvas->cd();
 	h->Draw();  
         myCanvas->SaveAs( dir->GetName() + canvasName + TString(".png"));
