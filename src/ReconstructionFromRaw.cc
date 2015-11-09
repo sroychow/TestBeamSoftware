@@ -221,7 +221,7 @@ void ReconstructionFromRaw::publishPlots(TString dirName) {
   cCanvas->Clear();
   
   Utility::getHist1D("nstubC1")->Draw();
-  cCanvas->SaveAs("nstubC1.png");
+  cCanvas->SaveAs("nstubsC1.png");
   cCanvas->Clear();
 
   std::stringstream sb1,sb2;
