@@ -189,10 +189,10 @@ void ReconstructionFromRaw::Loop()
 
       totalStubsRecoC0 = Utility::getStubInfoEDM(detClustermap_,stubWindow_,fout_,"C0");
       totalStubsRecoC1 = Utility::getStubInfoEDM(detClustermap_,stubWindow_,fout_,"C1");
-      if( totalStubsRecoC0 )  Utility::fillHist1D("stubEffC0",1);
-      else                    Utility::fillHist1D("stubEffC0",0);
-      if( totalStubsRecoC1 )  Utility::fillHist1D("stubEffC1",1);
-      else                    Utility::fillHist1D("stubEffC1",0);
+      //if( totalStubsRecoC0 )  Utility::fillHist1D("stubEffC0",1);
+      //else                    Utility::fillHist1D("stubEffC0",0);
+      //if( totalStubsRecoC1 )  Utility::fillHist1D("stubEffC1",1);
+      //else                    Utility::fillHist1D("stubEffC1",0);
 
       Utility::fillHist1D("nstubsFromReco",totalStubsRecoC0 + totalStubsRecoC1);
       Utility::fillHist1D("nstubsFromRaw",totalStubs - 2);
@@ -212,7 +212,7 @@ void ReconstructionFromRaw::publishPlots(TString dirName) {
   std::stringstream ss;
   ss << stubWindow_;
   TString sw(ss.str());
-  TCanvas* cCanvas = new TCanvas( "c1", "c1", 800, 800);
+  TCanvas* cCanvas = new TCanvas( "c1", "c1", 800, 600);
   fout_->cd();
   fout_->cd("StubInfo");
   
@@ -274,7 +274,7 @@ void ReconstructionFromRaw::publishPlots(TString dirName) {
 	h->SetDirectory(0);
         std::cout << h->GetName() << std::endl;
 	TString canvasName("c" + std::string(hkey->GetName()));
-	TCanvas* myCanvas = new TCanvas( canvasName, "c1", 800, 800);
+	TCanvas* myCanvas = new TCanvas( canvasName, "c1", 800, 600);
 	myCanvas->cd();
 	h->Draw();  
         myCanvas->SaveAs( dir->GetName() + canvasName + TString(".png"));
@@ -283,7 +283,7 @@ void ReconstructionFromRaw::publishPlots(TString dirName) {
 	h->SetDirectory(0);
         std::cout << h->GetName() << std::endl;
 	TString canvasName("c" + std::string(hkey->GetName()));
-	TCanvas* myCanvas = new TCanvas( canvasName, "c1", 800, 800);
+	TCanvas* myCanvas = new TCanvas( canvasName, "c1", 800, 600);
 	myCanvas->cd();
 	h->Draw();  
         myCanvas->SaveAs( dir->GetName() + canvasName + TString(".png"));
