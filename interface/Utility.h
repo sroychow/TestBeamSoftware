@@ -20,7 +20,7 @@ namespace Utility {
    float position;
    int width;
   };
-
+  void tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiter);
   void correctHitorder( std::vector<int>& vec );
   void fillHistofromVec( const std::vector<int>& vec, const char* h);
   void fill2DHistofromVec( const std::vector<int>& vecC0, const std::vector<int>& vecC1,const char* h);
