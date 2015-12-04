@@ -15,7 +15,8 @@ using namespace CommandLineProcessing;
 int main( int argc,char* argv[] ){
    
   ArgvParser cmd;
-  cmd.setIntroductoryDescription( "Offline Analysis Application fro beam test data" );
+  cmd.setIntroductoryDescription( "Offline Analysis Application for beam test data" );
+  cmd.setHelpOption( "h", "help", "Print this help page" );
   cmd.addErrorCode( 0, "Success" );
   cmd.addErrorCode( 1, "Error" );
   cmd.defineOption( "iFile", "Input RawTuple name", ArgvParser::OptionRequiresValue);

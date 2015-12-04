@@ -28,5 +28,7 @@ namespace tBeamPlotMaker {
   void set_hstyle(TH1F* th, std::string xtit, std::string ytit, int col);
   void getMeanAndErr(TFile* file, std::string& ytit, float& y, float& e);
   void getMeanAndErr(TFile* file, std::string& det, std::string column, std::string& ytit, float& y, float& e);
+  template<class T>
+  void saveRootFile(std::string fname, T& obj, std::string& objName);
 }
 #endif

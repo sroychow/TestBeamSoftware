@@ -328,4 +328,13 @@ void getMeanAndErr(TFile* file, std::string& det, std::string column, std::strin
     e = t->GetRMS() / t->GetEntries(); 
   }
 }
+
+  template<class T>
+  void saveRootFile(std::string fname, T& obj, std::string& objName) {
+    TFile* fout =  TFile::Open(fname.c_str(),"recreate");
+    fout->cd();
+    obj.SetName(objName.c_str());
+    obj.Write();
+    fout->Close();
+  }
 }
