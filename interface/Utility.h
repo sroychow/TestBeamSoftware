@@ -20,7 +20,7 @@ namespace Utility {
    float position;
    int width;
   };
-
+  void tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiter);
   void correctHitorder( std::vector<int>& vec );
   void getChannelMaskedHit( std::vector<int>& vec, const unsigned int chLow, const unsigned int chHigh );
   void fillHistofromVec( const std::vector<int>& vec, const char* h);

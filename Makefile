@@ -9,8 +9,11 @@ HSUF   = h
 DICTC  = Dict.$(CSUF)
 DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
 
-SRCS   = src/argvparser.cc src/Utility.cc src/tBeamBase.cc src/trawTupleBase.cc src/Reconstruction.cc  src/ReconstructionFromRaw.cc src/recoMain.cc
+SRCS   = src/argvparser.cc src/Utility.cc src/tBeamBase.cc src/trawTupleBase.cc src/Reconstruction.cc src/ReconstructionFromRaw.cc src/recoMain.cc 
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
+
+PLOTSRCS = tools/PlotMakerBase.cc tools/plotMakermain.cc
+PLOTOBJS   = $(patsubst %.$(CSUF), %.o, $(PLOTSRCS))
 
 LDFLAGS  = -g
 SOFLAGS  = -shared 
@@ -23,7 +26,7 @@ CXXFLAGS += -g -std=c++11
 
 HDRS_DICT = interface/LinkDef.h
 
-bin: $(EXE) 
+bin: reco plotMaker
 all: 
 	gmake cint 
 	gmake bin 
@@ -37,8 +40,11 @@ $(DICTC): $(HDRS_DICT)
 	mv $(DICTC) src/
 	mv $(DICTH) interface/
 
-$(EXE): $(OBJS) src/Dict.o
+reco:   $(OBJS) src/Dict.o
 	$(CXX) $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
+
+plotMaker:  $(PLOTOBJS) src/Utility.o src/argvparser.o
+	    $(CXX) $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 # Create object files
 %.o : %.$(CSUF)
@@ -56,5 +62,5 @@ include Makefile.dep
 # Clean 
 .PHONY   : clean 
 clean : 
-	@-rm $(OBJS) $(EXE) interface/$(DICTH) src/$(DICTC) src/Dict.o
+	@-rm $(OBJS) $(EXE) interface/$(DICTH) src/$(DICTC) src/Dict.o $(PLOTOBJS)
 
