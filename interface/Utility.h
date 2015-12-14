@@ -22,6 +22,7 @@ namespace Utility {
   };
 
   void correctHitorder( std::vector<int>& vec );
+  void getChannelMaskedHit( std::vector<int>& vec, const unsigned int chLow, const unsigned int chHigh );
   void fillHistofromVec( const std::vector<int>& vec, const char* h);
   void fill2DHistofromVec( const std::vector<int>& vecC0, const std::vector<int>& vecC1,const char* h);
   void getCBCclsuterInfo( const string detName,const std::vector<int>& hmap,

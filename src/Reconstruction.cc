@@ -165,18 +165,20 @@ void Reconstruction::Loop()
        for( unsigned int j = 0; j<(dut_channel->at("det0")).size(); j++ ) {
          int ch = (dut_channel->at("det0")).at(j);
          if( ch <= 1016 )  dut0_chtempC0.push_back(ch);
-         else  dut0_chtempC1.push_back(ch);
+         else  dut0_chtempC1.push_back(ch - 1016);
        }
       }
       if( dut_channel->find("det1") != dut_channel->end() ) {
        for( unsigned int j = 0; j<(dut_channel->at("det1")).size(); j++ ) {
          int ch = (dut_channel->at("det1")).at(j);
          if( ch <= 1016 )  dut1_chtempC0.push_back(ch);
-         else  dut1_chtempC1.push_back(ch);
+         else  dut1_chtempC1.push_back(ch - 1016);
        }
       }
       //cout << "Point 2" << endl;
       fout_->cd("det0");
+      Utility::getChannelMaskedHit( dut0_chtempC1, 379, 510 );      
+      Utility::getChannelMaskedHit( dut0_chtempC1, 633, 763 );
       Utility::fillHist1D("chsizeC0", dut0_chtempC0.size());
       Utility::fillHist1D("chsizeC1", dut0_chtempC1.size());
       Utility::fillHistofromVec(dut0_chtempC0,"hitmapC0");
@@ -185,8 +187,11 @@ void Reconstruction::Loop()
       getCBCclsuterInfo("det0C0", dut0_chtempC0, detClustermap_);
       getCBCclsuterInfo("det0C1", dut0_chtempC1, detClustermap_);
       //cout << "Point 3" << endl;
+
       fout_->cd("det1");
       //Utility::correctHitorder(dut0_chtemp);
+      Utility::getChannelMaskedHit( dut1_chtempC1, 379, 510 );      
+      Utility::getChannelMaskedHit( dut1_chtempC1, 633, 763 );
       Utility::fillHist1D("chsizeC0", dut1_chtempC0.size());
       Utility::fillHist1D("chsizeC1", dut1_chtempC1.size());
       Utility::fillHistofromVec(dut1_chtempC0,"hitmapC0");

@@ -126,8 +126,13 @@ void ReconstructionFromRaw::Loop()
             << endl;
      
       fout_->cd("det0");
+      std::cout  << "Det0 C0" << std::endl;
       vector<int> dut0_chtempC0 = (*dut0Ch0data);
+      std::cout  << "Det0 C1" << std::endl;
       vector<int> dut0_chtempC1 = (*dut0Ch1data);
+      Utility::getChannelMaskedHit( dut0_chtempC1, 379, 510 );      
+      Utility::getChannelMaskedHit( dut0_chtempC1, 633, 763 );      
+   
       //Utility::correctHitorder(dut0_chtemp);
       Utility::fillHist1D("chsizeC0", dut0_chtempC0.size());
       Utility::fillHist1D("chsizeC1", dut0_chtempC1.size());
@@ -136,9 +141,15 @@ void ReconstructionFromRaw::Loop()
       Utility::fill2DHistofromVec(dut0_chtempC0,dut0_chtempC1,"hitmapfull");
       getCBCclsuterInfo("det0C0", dut0_chtempC0, detClustermap_);
       getCBCclsuterInfo("det0C1", dut0_chtempC1, detClustermap_);
+
       fout_->cd("det1");
+      std::cout  << "Det1 C0" << std::endl;
       vector<int> dut1_chtempC0 = (*dut1Ch0data);
+      std::cout  << "Det1 C0" << std::endl;
       vector<int> dut1_chtempC1 = (*dut1Ch1data);
+      Utility::getChannelMaskedHit( dut1_chtempC1, 379, 510 );      
+      Utility::getChannelMaskedHit( dut1_chtempC1, 633, 763 );      
+
       //Utility::correctHitorder(dut0_chtemp);
       Utility::fillHist1D("chsizeC0", dut1_chtempC0.size());
       Utility::fillHist1D("chsizeC1", dut1_chtempC1.size());

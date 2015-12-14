@@ -28,10 +28,21 @@ namespace Utility {
     }
   }
 
+  void getChannelMaskedHit( std::vector<int>& vec, const unsigned int chLow, const unsigned int chHigh ) {
+    std::vector<int> vtemp = vec;  
+    vec.clear();
+    for( unsigned int i = 0; i<vtemp.size(); i++ ) {
+      if( vtemp[i] >= chLow && vtemp[i] <= chHigh )     continue;
+      vec.push_back(vtemp[i]);
+    }
+  }
+
   void fillHistofromVec( const std::vector<int>& vec, const char* h) {
     for( unsigned int i = 0; i<vec.size(); i++ ) {
+      std::cout <<  vec[i] << ",";
       Utility::fillHist1D(h,vec[i]);
     }
+      std::cout << endl;
   }
 
   void fill2DHistofromVec( const std::vector<int>& vecC0, const std::vector<int>& vecC1,const char* h) {
