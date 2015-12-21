@@ -9,6 +9,8 @@ make cint
 make 
 
 ## Usage
-
-./reco InputFile   OutputFile  TupleType(0 for EDMtuple 1 for RawTuple)
+##Running on raw tuple
+./reco  --iFile=<InputFileName> --oFile==<OutputFile Name> --raw --sw=<stubWindow>
+##Running on edm tuple
+./reco  --iFile=<InputFileName> --oFile==<OutputFile Name> --sw=<stubWindow>
 
