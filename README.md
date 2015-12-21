@@ -10,7 +10,7 @@ make
 
 ## Usage
 ##Running on raw tuple
-./reco  --iFile=<InputFileName> --oFile==<OutputFile Name> --raw --sw=<stubWindow>
+./reco  --iFile=InputFileName --oFile==OutputFile Name --raw --sw=stubWindow
 ##Running on edm tuple
-./reco  --iFile=<InputFileName> --oFile==<OutputFile Name> --sw=<stubWindow>
+./reco  --iFile=InputFileName --oFile==OutputFile Name --sw=stubWindow
 
