@@ -225,10 +225,10 @@ void Reconstruction::Loop()
 
       totalStubsRecoC0 = Utility::getStubInfoEDM(detClustermap_,stubWindow_,fout_,"C0");
       totalStubsRecoC1 = Utility::getStubInfoEDM(detClustermap_,stubWindow_,fout_,"C1");
-      if( totalStubsRecoC0 )  Utility::fillHist1D("stubEffC0",1);
-      else                    Utility::fillHist1D("stubEffC0",0);
-      if( totalStubsRecoC1 )  Utility::fillHist1D("stubEffC1",1);
-      else                    Utility::fillHist1D("stubEffC1",0);
+      //if( totalStubsRecoC0 )  Utility::fillHist1D("stubEffC0",1);
+      //else                    Utility::fillHist1D("stubEffC0",0);
+      //if( totalStubsRecoC1 )  Utility::fillHist1D("stubEffC1",1);
+      //else                    Utility::fillHist1D("stubEffC1",0);
 
        
       Utility::fillHist1D("stubWord",stubWord);
