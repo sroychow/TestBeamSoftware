@@ -11,6 +11,7 @@
 #include "TDirectory.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TProfile.h"
 class TFile;
 using std::string;
 
@@ -30,9 +31,10 @@ namespace Utility {
   void getInfofromClusterVec(const std::vector<Cluster>& cvec,const std::string det,
                              TFile* fout, const TString col = "");
   //void getInfofromClusterVec(const std::vector<Cluster>& cvec,const std::string det,TFile* fout,TString col);
-  int getStubInfo(std::map<std::string,std::vector<Cluster> >&  detClustermap, const int stubwindow, 
+  int getStubInfo(std::map<std::string,std::vector<Cluster> >&  detClustermap, const float stubwindow, 
                    TFile* fout,const std::string col = "");
-  int getStubInfoEDM(std::map<std::string,std::vector<Cluster> >&  detClustermap, const int stubwindow, 
+  int getStubInfoEDM(std::map<std::string,std::vector<Cluster> >&  detClustermap, 
+		   std::vector<unsigned int> & cbcStubs, const float stubwindow, 
                    TFile* fout,const std::string col = "");
 
   TH1* getHist1D(const char* hname);
@@ -66,6 +68,23 @@ namespace Utility {
   template <class T1, class T2>
   bool fillHist2D(const std::string& hname, T1 xvalue, T2 yvalue, double w=1.0) {
     return fillHist2D(hname.c_str(), xvalue, yvalue, w);
+  }
+
+  // ---------------------------------------------
+  // Convenience routine for filling Profile histograms
+  // ---------------------------------------------
+  TProfile* getHistProfile(const char* hname);
+  TProfile* getHistProfile(const std::string& hname);
+  template <class T1, class T2>
+  bool fillHistProfile(const char* hname, T1 xvalue, T2 yvalue) {
+    TProfile* h = getHistProfile(hname);
+    if (!h) return false;
+    h->Fill(xvalue, yvalue);
+    return true;
+  }
+  template <class T1, class T2>
+  bool fillHistProfile(const std::string& hname, T1 xvalue, T2 yvalue) {
+    return fillHistProfile(hname.c_str(), xvalue, yvalue);
   }
 }
 #endif

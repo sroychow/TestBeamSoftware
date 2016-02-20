@@ -4,7 +4,7 @@
 #include "TROOT.h"
 #include "TStopwatch.h"
 #include "Reconstruction.h"
-#include "ReconstructionFromRaw.h"
+//#include "ReconstructionFromRaw.h"
 #include "argvparser.h"
 using std::cout;
 using std::cerr;
@@ -43,7 +43,7 @@ int main( int argc,char* argv[] ){
     exit( 1 );
   }
   bool isRaw = ( cmd.foundOption( "raw" ) ) ? true:false;
-  int stubWindow = ( cmd.foundOption( "sw" ) ) ? std::stoi(cmd.optionValue( "sw" ),nullptr,10) : 7;
+  float stubWindow = ( cmd.foundOption( "sw" ) ) ? std::stod(cmd.optionValue( "sw")) : 7;
   bool publishPng = ( cmd.foundOption( "png" ) ) ? true : false;
   
   std::cout << "isRaw=" << isRaw << std::endl;  
@@ -56,10 +56,11 @@ int main( int argc,char* argv[] ){
     r.Loop();
     r.endJob();
   } else {
-    ReconstructionFromRaw r(inFilename,outFilename,stubWindow,publishPng);
-    std::cout << "Event Loop start" << std::endl;
-    r.Loop();
-    r.endJob();
+    //    ReconstructionFromRaw r(inFilename,outFilename,stubWindow,publishPng);
+    //    std::cout << "Event Loop start" << std::endl;
+    //    r.Loop();
+    //    r.endJob();
+    std::cout << " Raw Option disabled for the moment !!!" << std::endl;
   }
   timer.Stop();
   cout << "Realtime/CpuTime = " << timer.RealTime() << "/" << timer.CpuTime() << endl;

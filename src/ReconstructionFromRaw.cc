@@ -18,7 +18,7 @@ using std::vector;
 using std::map;
 //ReconstructionFromRaw::ReconstructionFromRaw(const TString& inFilename,const TString&  outFilename) :
 ReconstructionFromRaw::ReconstructionFromRaw(const string inFilename,const string outFilename, 
-                                             int stubWindow, bool publish) :
+                                             float stubWindow, bool publish) :
   trawTupleBase::trawTupleBase(TString(inFilename))
 {
   outFile = outFilename; 

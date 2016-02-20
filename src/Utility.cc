@@ -58,10 +58,8 @@ namespace Utility {
 
   void fillHistofromVec( const std::vector<int>& vec, const char* h) {
     for( unsigned int i = 0; i<vec.size(); i++ ) {
-      std::cout <<  vec[i] << ",";
       Utility::fillHist1D(h,vec[i]);
     }
-      std::cout << endl;
   }
 
   void fill2DHistofromVec( const std::vector<int>& vecC0, const std::vector<int>& vecC1,const char* h) {
@@ -69,7 +67,7 @@ namespace Utility {
       Utility::fillHist2D(h,vecC0[i],0);
     }
     for( unsigned int i = 0; i<vecC1.size(); i++ ) {
-      Utility::fillHist2D(h,vecC1[i],1);
+      Utility::fillHist2D(h,1015-vecC1[i],1);
     }
   }
 
@@ -88,11 +86,11 @@ namespace Utility {
     } else {
       for( unsigned int i=0; i<hmap.size(); i++ ) {
         if( ch_last == -1 ) {
-         width  = 1;
-         ncluster++;
-         pos = hmap[i];
-      } 
-      else {
+	  width  = 1;
+	  ncluster++;
+	  pos = hmap[i];
+	} 
+	else {
         if( std::abs(hmap[i] - ch_last) == 1) {
           width++;
           pos += hmap[i];
@@ -128,10 +126,12 @@ namespace Utility {
     for( unsigned int i =0; i<cvec.size(); i++ ) {
       Utility::fillHist1D("clusterWidth" + col,cvec[i].width);
       Utility::fillHist1D("clusterPos" + col,cvec[i].position);
+      Utility::fillHistProfile("clusterWidthVsPosProf" + col,cvec[i].position,cvec[i].width);
+      Utility::fillHist2D("clusterWidthVsPos2D" + col,cvec[i].position,cvec[i].width);
     }
   }
 
-  int getStubInfo( std::map<std::string,std::vector<Cluster> >&  detClustermap, const int stubwindow, 
+  int getStubInfo( std::map<std::string,std::vector<Cluster> >&  detClustermap, const float stubwindow, 
                     TFile* fout, const std::string col) {
     std::stringstream stubHname;
     stubHname << "nstub" << col;
@@ -158,32 +158,55 @@ namespace Utility {
        Utility::fillHist1D(stubEffname.str(),0);
     return nstubs;
   }
-  int getStubInfoEDM( std::map<std::string,std::vector<Cluster> >&  detClustermap, const int stubwindow, 
-                    TFile* fout, const std::string col) {
-    std::stringstream stubHname;
-    stubHname << "nstub" << col;
-    std::stringstream stubEffname;
-    stubEffname << "stubEff" << col;
+  int getStubInfoEDM( std::map<std::string,std::vector<Cluster> >&  detClustermap, 
+		      std::vector<unsigned int> & cbcStubs, const float stubwindow, 
+		      TFile* fout, const std::string col) {
     fout->cd();
     fout->cd("StubInfo");
     Utility::fillHist1D( "nclusterdiff" + col, std::abs( detClustermap["det0" + col].size() - 
                                                    detClustermap["det1" + col].size() ) );
-    int nstubs = 0;
+    std::vector<unsigned int> recoStubs;
     for( unsigned int i = 0; i< detClustermap["det0" + col].size(); i++ ) {
       for( unsigned int j = 0; j< detClustermap["det1" + col].size(); j++ ) {
         if( std::fabs(detClustermap["det0" + col].at(i).position - 
                       detClustermap["det1" + col].at(j).position ) <= stubwindow ) {
-          nstubs++;
+          float pos0 = detClustermap["det0" + col].at(i).position;
+          float pos1 = detClustermap["det1" + col].at(j).position;
+          unsigned int CBC0 = pos0/127;  
+          unsigned int CBC1 = pos1/127;  
+          if (col.find("C0") != std::string::npos) recoStubs.push_back(CBC0);
+          else recoStubs.push_back(CBC1);
         }
       }
     }
-    Utility::fillHist1D( stubHname.str(), nstubs);
-    if( !detClustermap["det0" + col].empty()&& !detClustermap["det1" + col].empty() &&nstubs>0 )
-      Utility::fillHist1D(stubEffname.str(),1);
-     else if( !detClustermap["det0" + col].empty() && !detClustermap["det1" + col].empty() && nstubs==0 )
-       Utility::fillHist1D(stubEffname.str(),0);
+    Utility::fillHist1D( "nstubReco"+col, recoStubs.size());
+    Utility::fillHist1D( "nstubCBC"+col, cbcStubs.size());
+    
+    for (unsigned int i = 0; i != cbcStubs.size(); i++) {
+      Utility::fillHist1D( "stubProfileCBC"+col, cbcStubs[i]);
+    }
 
-    return nstubs;
+    for (unsigned int j = 0; j != recoStubs.size(); j++) {
+      Utility::fillHist1D( "stubProfileReco"+col, recoStubs[j]);
+    }
+    
+    for (unsigned int i = 0; i < 8; i++) {
+      std::vector<unsigned int>::iterator it_cbc  = find (cbcStubs.begin(),  cbcStubs.end(),  i);
+      std::vector<unsigned int>::iterator it_reco = find (recoStubs.begin(), recoStubs.end(), i);
+      if (it_cbc != cbcStubs.end() && it_reco != recoStubs.end()) Utility::fillHist2D( "stubCorrelation"+col, i, i);
+      else if (it_cbc == cbcStubs.end() && it_reco != recoStubs.end()) Utility::fillHist2D( "stubCorrelation"+col, i, 8);
+      else if (it_cbc != cbcStubs.end() && it_reco == recoStubs.end()) Utility::fillHist2D( "stubCorrelation"+col, 8, i);
+    }
+    
+    if( !detClustermap["det0" + col].empty()&& !detClustermap["det1" + col].empty() ) {
+      if (recoStubs.size() > 0 ) Utility::fillHist1D("stubEffReco"+col,1);
+      else Utility::fillHist1D("stubEffReco"+col,0);   
+      
+      if (cbcStubs.size() > 0 ) Utility::fillHist1D("stubEffCBC"+col,1);
+      else Utility::fillHist1D("stubEffCBC"+col,0);   
+    }
+    
+    return recoStubs.size();
   }
   // ------------------------------------------------------------------------
   // Convenience routine for filling 1D histograms. We rely on root to keep 
@@ -193,7 +216,7 @@ namespace Utility {
   // Root object pool whenever necessary. This is the closest one can go to 
   // hbook and ID based histogramming
   // -------------------------------------------------------------------------
-
+  
   TH1* getHist1D(const char* hname) {
     TObject *obj = gDirectory->GetList()->FindObject(hname); 
     if (!obj) {
@@ -213,14 +236,14 @@ namespace Utility {
       h = dynamic_cast<TH1I*>(obj);
     else
       h = dynamic_cast<TH1F*>(obj);
-
+    
     if (!h) {
       std::cerr << "**** getHist1D: <" << hname << "> may not be a 1D Histogram" << std::endl;
       return 0;
     }
     return h;
   }
-
+  
   TH1* getHist1D(const string& hname) {
     return getHist1D(hname.c_str());
   }
@@ -247,7 +270,7 @@ namespace Utility {
       h = dynamic_cast<TH2F*>(obj);
     
     if (!h) {
-      cerr << "**** fillHist2D: <<" << hname << ">> may not be a 2D Histogram" << endl;
+      cerr << "**** getHist2D: <<" << hname << ">> may not be a 2D Histogram" << endl;
       return nullptr;
     }
     return h;
@@ -255,4 +278,25 @@ namespace Utility {
   TH2* getHist2D(const string& hname) {
     return getHist2D(hname.c_str());
   }
+
+  TProfile* getHistProfile(const char* hname) {
+    TObject *obj = gDirectory->GetList()->FindObject(hname);
+    if (!obj) {
+      cerr << "**** getHistProfile: Histogram for <" << hname << "> not found!" << endl;
+      return nullptr;
+    }
+    TProfile *h = nullptr;
+    if (obj->InheritsFrom("TProfile"))
+      h = dynamic_cast<TProfile*>(obj);
+
+    if (!h) {
+      cerr << "**** getHistProfile: <<" << hname << ">> may not be a 2Profile Histogram" << endl;
+      return nullptr;
+    }
+    return h;
+  }
+  TProfile* getHistProfile(const string& hname) {
+    return getHistProfile(hname.c_str());
+  }
+
 }

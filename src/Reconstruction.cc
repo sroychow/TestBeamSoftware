@@ -15,7 +15,7 @@
 using std::vector;
 using std::map;
 //Reconstruction::Reconstruction(const TString& inFilename,const TString&  outFilename) :
-Reconstruction::Reconstruction(const string inFilename,const string outFilename,int stubWindow, bool publish) :
+Reconstruction::Reconstruction(const string inFilename,const string outFilename,float stubWindow, bool publish) :
   tBeamBase::tBeamBase(TString(inFilename))
 {
   outFile = outFilename; 
@@ -55,45 +55,64 @@ void Reconstruction::bookHistogram(TFile* fout_) {
   fout_->cd("det0");
   new TH1I("chsizeC0","dut0 channel occupancy per event col0;#Channels;#Events",30,-0.5,29.5);
   new TH1I("chsizeC1","dut0 channel occupancy per event col1;#Channels;#Events",30,-0.5,29.5);
-  new TH2I("hitmapfull","dut0 hitmap;strip no.;#Events",1016,0.5,1016.5,2,-0.5,1.5);
-  new TH1I("hitmapC0","dut0 hitmap col0;strip no.;#Events",1016,0.5,1016.5);
-  new TH1I("hitmapC1","dut0 hitmap col1;strip no.;#Events",1016,0.5,1016.5);
+  new TH2I("hitmapfull","dut0 hitmap;strip no.;#Events",1016,-0.5,1015.5,2,-0.5,1.5);
+  new TH1I("hitmapC0","dut0 hitmap col0;strip no.;#Events",1016,-0.5,1015.5);
+  new TH1I("hitmapC1","dut0 hitmap col1;strip no.;#Events",1016,-0.5,1015.5);
   new TH1D("nclusterC0","#cluster dut0 col0;#Clusters;#Events",40,-0.5,39.5);
   new TH1D("nclusterC1","#cluster dut0 col1;#Clusters;#Events",40,-0.5,29.5);
   new TH1I("clusterWidthC0","dut0 clusterWidth col0;#ClusterWidth;#Events",20,-0.5,19.5);
   new TH1I("clusterWidthC1","dut0 clusterWidth col1;#ClusterWidth;#Events",20,-0.5,19.5);
-  new TH1D("clusterPosC0","dut0 clusterPos col0;Strip Number;#Events",1016,0.5,1016.5);
-  new TH1D("clusterPosC1","dut0 clusterPos col1;Strip Number;#Events",1016,0.5,1016.5);
+  new TH1D("clusterPosC0","dut0 clusterPos col0;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("clusterPosC1","dut0 clusterPos col1;Strip Number;#Events",1016,-0.5,1015.5);
+  new TProfile("clusterWidthVsPosProfC0","dut0 clusterWidthVsPos col0;Strip Number;Cluster Width",1016,-0.5,1015.5);
+  new TProfile("clusterWidthVsPosProfC1","dut0 clusterWidthVsPos col1;Strip Number;Cluster Width",1016,-0.5,1015.5);
+  new TH2D("clusterWidthVsPos2DC0","dut0 clusterWidthVsPos col0;Strip Number;Cluster Width",1016,-0.5,1015.5, 20,-0.5,19.5);
+  new TH2D("clusterWidthVsPos2DC1","dut0 clusterWidthVsPos col1;Strip Number;Cluster Width",1016,-0.5,1015.5, 20,-0.5,19.5);
   fout_->cd();
   
   fout_->mkdir("det1");
   fout_->cd("det1");
   new TH1I("chsizeC0","dut1 channel occupancy per event col0;#Channels;#Events",30,-0.5,29.5);
   new TH1I("chsizeC1","dut1 channel occupancy per event col1;#Channels;#Events",30,-0.5,29.5);
-  new TH2I("hitmapfull","dut1 hitmap;strip no.;#Events",1016,0.5,1016.5,2,-0.5,1.5);
-  new TH1I("hitmapC0","dut1 hitmap col0;strip no.;#Events",1016,0.5,1016.5);
-  new TH1I("hitmapC1","dut1 hitmap col1;strip no.;#Events",1016,0.5,1016.5);
+  new TH2I("hitmapfull","dut1 hitmap;strip no.;#Events",1016,-0.5,1015.5,2,-0.5,1.5);
+  new TH1I("hitmapC0","dut1 hitmap col0;strip no.;#Events",1016,-0.5,1015.5);
+  new TH1I("hitmapC1","dut1 hitmap col1;strip no.;#Events",1016,-0.5,1015.5);
   new TH1D("nclusterC0","#cluster dut1 col0;#Clusters;#Events",40,-0.5,39.5);
   new TH1D("nclusterC1","#cluster dut1 col1;#Clusters;#Events",40,-0.5,29.5);
   new TH1I("clusterWidthC0","dut1 clusterWidth col0;#ClusterWidth;#Events",20,-0.5,19.5);
   new TH1I("clusterWidthC1","dut1 clusterWidth col1;#ClusterWidth;#Events",20,-0.5,19.5);
-  new TH1D("clusterPosC0","dut1 clusterPos col0;Strip Number;#Events",1016,0.5,1016.5);
-  new TH1D("clusterPosC1","dut1 clusterPos col1;Strip Number;#Events",1016,0.5,1016.5);
+  new TH1D("clusterPosC0","dut1 clusterPos col0;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("clusterPosC1","dut1 clusterPos col1;Strip Number;#Events",1016,-0.5,1015.5);
+  new TProfile("clusterWidthVsPosProfC0","dut1 clusterWidthVsPos col0;Strip Number;Cluster Width",1016,-0.5,1015.5);
+  new TProfile("clusterWidthVsPosProfC1","dut1 clusterWidthVsPos col1;Strip Number;Cluster Width",1016,-0.5,1015.5);
+  new TH2D("clusterWidthVsPos2DC0","dut1 clusterWidthVsPos col0;Strip Number;Cluster Width",1016,-0.5,1015.5, 20,-0.5,19.5);
+  new TH2D("clusterWidthVsPos2DC1","dut1 clusterWidthVsPos col1;Strip Number;Cluster Width",1016,-0.5,1015.5, 20,-0.5,19.5);
 
   std::stringstream ss;
   ss << stubWindow_;
   TString ssW(ss.str());
   fout_->mkdir("StubInfo");
   fout_->cd("StubInfo");
+  new TH1I("cbcStubBit","Stub Bit from CBC",16,-0.5,15.5);
   new TH1I("nclusterdiffC0","Difference in #clusters between dut0 and dut1() col0;#cluster_{det0_col0} - #cluster_  {det1_col0};Events",20,-0.5,19.5);
   new TH1I("nclusterdiffC1","Difference in #clusters between dut0 and dut1() col1;#cluster_{det0_col1} - #cluster_  {det1_col1};Events",20,-0.5,19.5);
-  new TH1I("nstubC0","Number of stubs sw=" + ssW +" col0;#stubs;Events",20,-0.5,19.5);
-  new TH1I("nstubC1","Number of stubs sw=" + ssW +" col1;#stubs;Events",20,-0.5,19.5);
-  new TH1I("stubEffC0","StubEfficiency sw=" + ssW + " col0;#stub found if det0 && det1 has cluster;Events",2,-0.5,1.5);
-  new TH1I("stubEffC1","StubEfficiency sw=" + ssW + " col1;#stub found if det0 && det1 has cluster;Events",2,-0.5,1.5);
-  new TH1I("stubWord","Total number of stubs from CBC stub word",20,-.5,19.5);
+  new TH1I("nstubRecoC0","Number of stubs sw=" + ssW +" col0;#stubs;Events",20,-0.5,19.5);
+  new TH1I("nstubRecoC1","Number of stubs sw=" + ssW +" col1;#stubs;Events",20,-0.5,19.5);
+  new TH1I("nstubCBCC0","Number of stubs from CBC col0;#stubs;Events",20,-0.5,19.5);
+  new TH1I("nstubCBCC1","Number of stubs from CBC col1;#stubs;Events",20,-0.5,19.5);
+  new TH1I("stubEffRecoC0","StubEfficiency sw=" + ssW + " col0;#stub found if det0 && det1 has cluster;Events",2,-0.5,1.5);
+  new TH1I("stubEffRecoC1","StubEfficiency sw=" + ssW + " col1;#stub found if det0 && det1 has cluster;Events",2,-0.5,1.5);
+  new TH1I("stubEffCBCC0","StubEfficiency col1;#of stub from CBC;Events",2,-0.5,1.5);
+  new TH1I("stubEffCBCC1","StubEfficiency col0;#of stub found CBC;Events",2,-0.5,1.5);
+  new TH1I("stubProfileRecoC0","StubProfile sw=" + ssW + " col0;#stub found if det0 && det1 has cluster;Events",8,-0.5,7.5);
+  new TH1I("stubProfileRecoC1","StubProfile sw=" + ssW + " col1;#stub found if det0 && det1 has cluster;Events",8,-0.5,7.5);
+  new TH1I("stubProfileCBCC0","StubProfile from CBC col0;#stub from CBC in Col0;Events",8,-0.5,7.5);
+  new TH1I("stubProfileCBCC1","StubProfile from CBC col1;#stub from CBC in col1;Events",8,-0.5,7.5);
+  new TH2D("stubCorrelationC1","StubCorrelation col1;Reconstructed Stubs;CBC Stubs",9,-0.5,8.5,9,-0.5,8.5);
+  new TH2D("stubCorrelationC0","StubCorrelation col0;Reconstructed Stubs;CBC Stubs",9,-0.5,8.5,9,-0.5,8.5);
+  new TH1I("nstubsFromCBC","Total number of stubs from CBC stub word",20,-.5,19.5);
   new TH1I("nstubsFromReco","Total number of stubs from Reconstruction(stub window " + ssW + ")",20,-.5,19.5);
-  new TH1I("nstubsdiff","#StubsReco - #StubsfromStubWord",20,-.5,19.5);
+  new TH1I("nstubsdiff","#StubsReco - #StubsfromStubWord",41,-19.5,19.5);
 
   fout_->mkdir("Correlation");
   fout_->cd("Correlation");
@@ -101,6 +120,10 @@ void Reconstruction::bookHistogram(TFile* fout_) {
   new TH1D("cor_eventC1","Sensor Hit Correlation col1",4,0.5,4.5);
   new TH1D("diffC0","#Hits det0 - #Hits det1 col0",100,-.5,99.5);
   new TH1D("diffC1","#Hits det0 - #Hits det1 col1",100,-.5,99.5);
+  new TH2D( "topBottomHitCorrC0", "Hit Correlation between Top Bottom Sensors in Column 0", 
+	    1016,-0.5,1015.5,1016,-0.5,1015.5);
+  new TH2D( "topBottomHitCorrC1", "Hit Correlation between Top Bottom Sensors in Column 1",
+	    1016,-0.5,1015.5,1016,-0.5,1015.5);
   fout_->cd();
 }
 
@@ -164,15 +187,15 @@ void Reconstruction::Loop()
       if( dut_channel->find("det0") != dut_channel->end() ) {
        for( unsigned int j = 0; j<(dut_channel->at("det0")).size(); j++ ) {
          int ch = (dut_channel->at("det0")).at(j);
-         if( ch <= 1016 )  dut0_chtempC0.push_back(ch);
-         else  dut0_chtempC1.push_back(ch - 1016);
+         if( ch <= 1015 )  dut0_chtempC0.push_back(ch);
+         else dut0_chtempC1.push_back(ch-1016);
        }
       }
       if( dut_channel->find("det1") != dut_channel->end() ) {
        for( unsigned int j = 0; j<(dut_channel->at("det1")).size(); j++ ) {
          int ch = (dut_channel->at("det1")).at(j);
-         if( ch <= 1016 )  dut1_chtempC0.push_back(ch);
-         else  dut1_chtempC1.push_back(ch - 1016);
+         if( ch <= 1015 )  dut1_chtempC0.push_back(ch);
+         else  dut1_chtempC1.push_back(ch-1016);
        }
       }
       //cout << "Point 2" << endl;
@@ -215,6 +238,11 @@ void Reconstruction::Loop()
 
       Utility::fillHist1D("diffC0",std::abs(dut0_chtempC0.size()-dut1_chtempC0.size())); 
       Utility::fillHist1D("diffC1",std::abs(dut0_chtempC1.size()-dut1_chtempC1.size())); 
+      if (dut0_chtempC0.size() ==1 && dut1_chtempC0.size() ==1) 
+	Utility::fillHist2D("topBottomHitCorrC0",dut0_chtempC0[0], dut1_chtempC0[0]);
+      if (dut0_chtempC1.size() ==1 && dut1_chtempC1.size() ==1) 
+	Utility::fillHist2D("topBottomHitCorrC1",dut0_chtempC1[0], dut1_chtempC1[0]);
+
       Utility::getInfofromClusterVec(detClustermap_["det0C0"],"det0",fout_,"C0");
       Utility::getInfofromClusterVec(detClustermap_["det0C1"],"det0",fout_,"C1");
       Utility::getInfofromClusterVec(detClustermap_["det1C0"],"det1",fout_,"C0");
@@ -223,17 +251,32 @@ void Reconstruction::Loop()
       int totalStubsRecoC0=0; 
       int totalStubsRecoC1=0; 
 
-      totalStubsRecoC0 = Utility::getStubInfoEDM(detClustermap_,stubWindow_,fout_,"C0");
-      totalStubsRecoC1 = Utility::getStubInfoEDM(detClustermap_,stubWindow_,fout_,"C1");
+      std::vector<unsigned int> stubBitsC0;
+      std::vector<unsigned int> stubBitsC1;
+      if (stubWord > 0) {
+	fout_->cd();
+	fout_->cd("StubInfo");
+	for (unsigned int i = 0; i < 16; i++) {
+          if ((stubWord >> i) & 0x1) Utility::fillHist1D("cbcStubBit",i);
+	  //          if (i == 11 || i == 13) continue;
+          if ((stubWord >> i) & 0x1) {
+	    if (i <= 7) stubBitsC0.push_back(i);
+            else stubBitsC1.push_back(i-8);
+	  }
+	}
+      }
+
+      totalStubsRecoC0 = Utility::getStubInfoEDM(detClustermap_,stubBitsC0,stubWindow_,fout_,"C0");
+      totalStubsRecoC1 = Utility::getStubInfoEDM(detClustermap_,stubBitsC1,stubWindow_,fout_,"C1");
       //if( totalStubsRecoC0 )  Utility::fillHist1D("stubEffC0",1);
       //else                    Utility::fillHist1D("stubEffC0",0);
       //if( totalStubsRecoC1 )  Utility::fillHist1D("stubEffC1",1);
       //else                    Utility::fillHist1D("stubEffC1",0);
 
-       
-      Utility::fillHist1D("stubWord",stubWord);
+      Utility::fillHist1D("nstubsFromCBC",stubBitsC0.size()+stubBitsC1.size());
+
       Utility::fillHist1D("nstubsFromReco",totalStubsRecoC0 + totalStubsRecoC1);
-      //Utility::fillHist1D("nstubsdiff",std::abs(totalStubsRecoC0 + totalStubsRecoC1 - totalStubs));
+      Utility::fillHist1D("nstubsdiff",(totalStubsRecoC0 + totalStubsRecoC1 - (stubBitsC0.size()+stubBitsC1.size())));
 
       detClustermap_.clear();
       fout_->cd("EventInfo");
