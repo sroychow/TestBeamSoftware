@@ -20,6 +20,7 @@ int main( int argc,char* argv[] ){
   cmd.addErrorCode( 0, "Success" );
   cmd.addErrorCode( 1, "Error" );
   cmd.defineOption( "iFile", "Input RawTuple name", ArgvParser::OptionRequiresValue);
+  cmd.defineOption( "tFile", "Input Telescope Tuple name", ArgvParser::OptionRequiresValue);
   cmd.defineOption( "oFile", "Output file name", ArgvParser::OptionRequiresValue);  
   cmd.defineOption( "raw", "Tuple type is Raw. Default is EDM", ArgvParser::NoOptionAttribute);  
   cmd.defineOption( "sw", "Stub Window. Default = 7", ArgvParser::NoOptionAttribute);
@@ -37,6 +38,12 @@ int main( int argc,char* argv[] ){
     std::cerr << "Error, no input file provided. Quitting" << std::endl;
     exit( 1 );
   }
+  std::string in_telFilename = ( cmd.foundOption( "tFile" ) ) ? cmd.optionValue( "tFile" ) : "";
+  
+  if ( in_telFilename.empty() ) {
+    std::cerr << "Error, no input file provided for Telescope. Quitting" << std::endl;
+    exit( 1 );
+  }
   std::string outFilename = ( cmd.foundOption( "oFile" ) ) ? cmd.optionValue( "oFile" ) : "";
   if ( outFilename.empty() ) {
     std::cerr << "Error, no output filename provided. Quitting" << std::endl;
@@ -51,7 +58,7 @@ int main( int argc,char* argv[] ){
   TStopwatch timer;
   timer.Start();
   if(!isRaw) {
-    Reconstruction r(inFilename,outFilename,stubWindow,publishPng);
+    Reconstruction r(inFilename,in_telFilename,outFilename,stubWindow,publishPng);
     std::cout << "Event Loop start" << std::endl;
     r.Loop();
     r.endJob();

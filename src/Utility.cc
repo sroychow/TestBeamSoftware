@@ -73,42 +73,41 @@ namespace Utility {
 
   void getCBCclsuterInfo(const string detName,const std::vector<int>& hmap,
                          std::map<std::string,std::vector<Cluster> >& detClustermap) {
+    if (!hmap.size()) return;
     int ch_last = -1;
-    int ncluster = 0;
     int width = 0;
     double pos = -1.;
-    if( hmap.size() == 1 ) {
-      ncluster = 1;
-      Cluster ctemp;
-      ctemp.position = hmap[0];
-      ctemp.width = 1;
-      detClustermap[detName].push_back(ctemp); 
-    } else {
-      for( unsigned int i=0; i<hmap.size(); i++ ) {
-        if( ch_last == -1 ) {
-	  width  = 1;
-	  ncluster++;
+
+    for( unsigned int i=0; i<hmap.size(); i++ ) {
+      if( i == 0) {
+	width  = 1;
+	pos = hmap[i];
+      } else {
+	if( std::abs(hmap[i] - ch_last) == 1) {
+	  width++;
+	  pos += hmap[i];
+	} else {
+	  pos /= width;
+	  Cluster ctemp0;
+	  ctemp0.position = pos;
+	  ctemp0.width = width;
+	  detClustermap[detName].push_back(ctemp0); 
+	  width = 1;
 	  pos = hmap[i];
-	} 
-	else {
-        if( std::abs(hmap[i] - ch_last) == 1) {
-          width++;
-          pos += hmap[i];
-        }
-        else {
-          pos /= width;
-          Cluster ctemp;
-          ctemp.position = pos;
-          ctemp.width = width;
-          detClustermap[detName].push_back(ctemp); 
-          width = 1;
-          pos = hmap[i];
-          ncluster++;
-        }
+	}
       }
       ch_last = hmap[i];
-     }
     }
+    Cluster ctemp;
+    ctemp.position = pos/width;
+    ctemp.width = width;
+    detClustermap[detName].push_back(ctemp); 
+    if (hmap.size() > 0 && detClustermap.size() < 1) {
+      std ::cout << " Mismatch " << hmap.size() << " " << detClustermap.size() << std::endl;
+      for( unsigned int i=0; i<hmap.size(); i++ ) std::cout << hmap[i] << "  " ;
+      std::cout << std::endl;
+    }
+  
   }
   /*
   void getInfofromClusterVec(const std::vector<Cluster>& cvec,const std::string det, TFile* fout) {
@@ -167,13 +166,16 @@ namespace Utility {
                                                    detClustermap["det1" + col].size() ) );
     std::vector<unsigned int> recoStubs;
     for( unsigned int i = 0; i< detClustermap["det0" + col].size(); i++ ) {
+      float pos0 = detClustermap["det0" + col].at(i).position;
+      unsigned int CBC0 = pos0/127;  
+      if (col.find("C1") != std::string::npos && (CBC0 == 3 || CBC0==5)) continue;
       for( unsigned int j = 0; j< detClustermap["det1" + col].size(); j++ ) {
-        if( std::fabs(detClustermap["det0" + col].at(i).position - 
-                      detClustermap["det1" + col].at(j).position ) <= stubwindow ) {
-          float pos0 = detClustermap["det0" + col].at(i).position;
-          float pos1 = detClustermap["det1" + col].at(j).position;
-          unsigned int CBC0 = pos0/127;  
-          unsigned int CBC1 = pos1/127;  
+	float pos1 = detClustermap["det1" + col].at(j).position;
+	unsigned int CBC1 = pos1/127;  
+	if (col.find("C1") != std::string::npos && (CBC1 == 3 || CBC1 == 5)) continue;
+        if (detClustermap["det0" + col].at(i).width <= 3 && 
+	    detClustermap["det1" + col].at(j).width <= 3 &&         
+            std::fabs(pos0 - pos1) <= stubwindow ) {
           if (col.find("C0") != std::string::npos) recoStubs.push_back(CBC0);
           else recoStubs.push_back(CBC1);
         }
