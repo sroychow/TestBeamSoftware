@@ -1,16 +1,18 @@
 #include "BeamAnaBase.h"
 #include "TSystem.h"
 #include "TChain.h"
+#include "Reco.h"
 
 BeamAnaBase::BeamAnaBase() :
   dutchain_(new TChain("treeMaker/tbeamTree")),
   telchain_(new TChain("tracks")),
   dutEvent_(new skbeam::tBeamBase()),
   telEvent_(new skbeam::telescopeBase()),
-  dut0_chtempC0(new std::vector<int>()),
-  dut0_chtempC1(new std::vector<int>()),
-  dut1_chtempC0(new std::vector<int>()),
-  dut1_chtempC1(new std::vector<int>())
+  dut0_chtempC0_(new std::vector<int>()),
+  dut0_chtempC1_(new std::vector<int>()),
+  dut1_chtempC0_(new std::vector<int>()),
+  dut1_chtempC1_(new std::vector<int>()),
+  dutClustermap_(new std::map<std::string,std::vector<skbeam::Cluster>>())
 {
   nTelchainentry = -1;
   nDutchainentry = -1;
@@ -138,19 +140,19 @@ void BeamAnaBase::setDetChannelVectors() {
   bool hExistD0 = false;
   bool hExistD1 = false;
   if( dutEvent_->dut_channel->find("det0") != dutEvent_->dut_channel->end() ) {
-    if ((dut_channel->at("det0"))->size()) hExistD0 = true;
+    if ((dutEvent_->dut_channel->at("det0")).size()) hExistD0 = true;
       for( unsigned int j = 0; j<(dutEvent_->dut_channel->at("det0")).size(); j++ ) {
         int ch = (dutEvent_->dut_channel->at("det0")).at(j);
-	if( ch <= 1015 )  dut0_chtempC0->push_back(ch);
-	else dut0_chtempC1->push_back(ch-1016);
+	if( ch <= 1015 )  dut0_chtempC0_->push_back(ch);
+	else dut0_chtempC1_->push_back(ch-1016);
       }
   }
   if( dutEvent_->dut_channel->find("det1") != dutEvent_->dut_channel->end() ) {
       if ((dutEvent_->dut_channel->at("det1")).size()) hExistD1 = true;
       for( unsigned int j = 0; j<(dutEvent_->dut_channel->at("det1")).size(); j++ ) {
         int ch = (dutEvent_->dut_channel->at("det1")).at(j);
-        if( ch <= 1015 )  dut1_chtempC0->push_back(ch);
-        else  dut1_chtempC1->push_back(ch-1016);
+        if( ch <= 1015 )  dut1_chtempC0_->push_back(ch);
+        else  dut1_chtempC1_->push_back(ch-1016);
       }
   }
   if (!hExistD0 && !hExistD1) nEventsNoHits++;
@@ -159,11 +161,24 @@ void BeamAnaBase::setDetChannelVectors() {
   if (!hExistD0 && hExistD1)  nEventsHitInDet1++;
 }
 
+void BeamAnaBase::doClustering() {
+  Reco::getCBCclsuterInfo("det0C0", *dut0_chtempC0_, *dutClustermap_);
+  Reco::getCBCclsuterInfo("det0C1", *dut0_chtempC1_, *dutClustermap_);
+  Reco::getCBCclsuterInfo("det1C0", *dut1_chtempC0_, *dutClustermap_);
+  Reco::getCBCclsuterInfo("det1C1", *dut1_chtempC1_, *dutClustermap_);
+}
+
+void BeamAnaBase::findStub() { 
+ std::vector<unsigned int> recoStubsC0;
+ std::vector<unsigned int> recoStubsC1;
+ Reco::getRecoStubInfo(dutClustermap_, 5,recoStubsC0,"C0");
+ Reco::getRecoStubInfo(dutClustermap_, 5,recoStubsC1,"C1");
+}
 void BeamAnaBase::clearEvent() {
-  dut0_chtempC0->clear();
-  dut0_chtempC1->clear();
-  dut1_chtempC0->clear();
-  dut1_chtempC1->clear();
+  dut0_chtempC0_->clear();
+  dut0_chtempC1_->clear();
+  dut1_chtempC0_->clear();
+  dut1_chtempC1_->clear();
 }
 
 BeamAnaBase::~BeamAnaBase() {
