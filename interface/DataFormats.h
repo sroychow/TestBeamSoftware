@@ -63,5 +63,11 @@ namespace skbeam {
       ~trawTupleBase(){}
       void reset(){}
   };
+  
+  struct Cluster {
+    float position;
+    int width;
+  };
+
 }
 #endif

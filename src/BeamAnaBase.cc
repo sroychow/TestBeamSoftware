@@ -14,6 +14,10 @@ BeamAnaBase::BeamAnaBase() :
 {
   nTelchainentry = -1;
   nDutchainentry = -1;
+  nEventsNoHits = 0;
+  nEventsHitInBoth = 0;
+  nEventsHitInDet0 = 0;
+  nEventsHitInDet1 = 0;
 }
 
 int BeamAnaBase::setDUTInputFile(const std::string& fname) {
@@ -131,8 +135,10 @@ int BeamAnaBase::getNtrack (const long int dutEvt) const {
 }
 
 void BeamAnaBase::setDetChannelVectors() {
+  bool hExistD0 = false;
+  bool hExistD1 = false;
   if( dutEvent_->dut_channel->find("det0") != dutEvent_->dut_channel->end() ) {
-    //if ((dut_channel->at("det0"))->size()) hExistD0 = true;
+    if ((dut_channel->at("det0"))->size()) hExistD0 = true;
       for( unsigned int j = 0; j<(dutEvent_->dut_channel->at("det0")).size(); j++ ) {
         int ch = (dutEvent_->dut_channel->at("det0")).at(j);
 	if( ch <= 1015 )  dut0_chtempC0->push_back(ch);
@@ -140,13 +146,17 @@ void BeamAnaBase::setDetChannelVectors() {
       }
   }
   if( dutEvent_->dut_channel->find("det1") != dutEvent_->dut_channel->end() ) {
-    //if ((dutEvent_->dut_channel->at("det1")).size()) hExistD1 = true;
+      if ((dutEvent_->dut_channel->at("det1")).size()) hExistD1 = true;
       for( unsigned int j = 0; j<(dutEvent_->dut_channel->at("det1")).size(); j++ ) {
         int ch = (dutEvent_->dut_channel->at("det1")).at(j);
         if( ch <= 1015 )  dut1_chtempC0->push_back(ch);
         else  dut1_chtempC1->push_back(ch-1016);
       }
   }
+  if (!hExistD0 && !hExistD1) nEventsNoHits++;
+  if ( hExistD0 && hExistD1)  nEventsHitInBoth++;
+  if ( hExistD0 && !hExistD1) nEventsHitInDet0++;
+  if (!hExistD0 && hExistD1)  nEventsHitInDet1++;
 }
 
 void BeamAnaBase::clearEvent() {

@@ -58,5 +58,9 @@ class BeamAnaBase {
     vector<int>* dut0_chtempC1;
     vector<int>* dut1_chtempC0;
     vector<int>* dut1_chtempC1;
+    int nEventsNoHits;
+    int nEventsHitInBoth;
+    int nEventsHitInDet0;
+    int nEventsHitInDet1;
 };
 #endif
