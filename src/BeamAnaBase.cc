@@ -12,11 +12,13 @@ BeamAnaBase::BeamAnaBase() :
   dut0_chtempC1_(new std::vector<int>()),
   dut1_chtempC0_(new std::vector<int>()),
   dut1_chtempC1_(new std::vector<int>()),
-  dutClustermap_(new std::map<std::string,std::vector<skbeam::Cluster>>())
+  dutClustermap_(new std::map<std::string,std::vector<skbeam::Cluster>>()),
+  dutRecoStubmap_(new std::map<std::string,std::vector<skbeam::Stub> >()),
+  dutCbcStubmap_(new std::map<std::string,std::vector<unsigned int>>())  
 {
   nTelchainentry = -1;
   nDutchainentry = -1;
-  nEventsNoHits = 0;
+  nEventsNoHits  = 0;
   nEventsHitInBoth = 0;
   nEventsHitInDet0 = 0;
   nEventsHitInDet1 = 0;
@@ -168,17 +170,18 @@ void BeamAnaBase::doClustering() {
   Reco::getCBCclsuterInfo("det1C1", *dut1_chtempC1_, *dutClustermap_);
 }
 
-void BeamAnaBase::findStub() { 
- std::vector<unsigned int> recoStubsC0;
- std::vector<unsigned int> recoStubsC1;
- Reco::getRecoStubInfo(dutClustermap_, 5,recoStubsC0,"C0");
- Reco::getRecoStubInfo(dutClustermap_, 5,recoStubsC1,"C1");
+void BeamAnaBase::findStub(const int stubWindow) { 
+ Reco::getRecoStubInfo(dutClustermap_, stubWindow,*dutStubmap_,"C0");
+ Reco::getRecoStubInfo(dutClustermap_, stubWindow,*dutStubmap_,"C1");
 }
 void BeamAnaBase::clearEvent() {
   dut0_chtempC0_->clear();
   dut0_chtempC1_->clear();
   dut1_chtempC0_->clear();
   dut1_chtempC1_->clear();
+  dutClustermap_->clear();
+  dutRecoStubmap_->clear();
+  dutCbcStubmap_->clear();
 }
 
 BeamAnaBase::~BeamAnaBase() {

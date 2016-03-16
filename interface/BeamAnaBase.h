@@ -39,12 +39,14 @@ class BeamAnaBase {
     long int getDutEntries() const { return nDutchainentry; }
     void setDetChannelVectors();    
     virtual void doClustering();
-    virtual void findStub();
+    virtual void findStub(const int stubWindow);
     vector<int>* dut0Ch0() const { return dut0_chtempC0_;}
     vector<int>* dut0Ch1() const { return dut0_chtempC1_;}
     vector<int>* dut1Ch0() const { return dut1_chtempC0_;}
     vector<int>* dut1Ch1() const { return dut1_chtempC1_;}
-    std::map<std::string,std::vector<skbeam::Cluster> >* dutClustermap() const { return dutClustermap_;}
+    std::map<std::string,std::vector<skbeam::Cluster> >* dutClustermap() const { return dutClustermap_; }
+    std::map<std::string,std::vector<skbeam::Stub> >* dutRecoStubmap() const { return dutRecoStubmap_; }
+    std::map<std::string,std::vector<unsigned int> >* dutCbcStubmap() const { return dutCbcStubmap_; }
     virtual void eventLoop() = 0; 
     virtual void bookHistograms() = 0;
     virtual void clearEvent();
@@ -62,6 +64,8 @@ class BeamAnaBase {
     vector<int>* dut1_chtempC0_;
     vector<int>* dut1_chtempC1_;
     std::map<std::string,std::vector<skbeam::Cluster> >* dutClustermap_;
+    std::map<std::string,std::vector<skbeam::Stub> >* dutRecoStubmap_;
+    std::map<std::string,std::vector<unsigned int>>* dutCbcStubmap_;
     int nEventsNoHits;
     int nEventsHitInBoth;
     int nEventsHitInDet0;

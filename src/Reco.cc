@@ -78,7 +78,7 @@ namespace Reco {
   }
   
   int getRecoStubInfo( const std::map<std::string,std::vector<skbeam::Cluster> >*  detClustermap, 
-		      const float stubwindow, std::vector<unsigned int>& recoStubs, const std::string col) {
+		      const float stubwindow, std::map<std::string,std::vector<skbeam::Stub> >& recoStubs, const std::string col) {
     
     for( unsigned int i = 0; i< detClustermap->at("det0" + col).size(); i++ ) {
       float pos0 = detClustermap->at("det0" + col).at(i).position;
@@ -91,8 +91,17 @@ namespace Reco {
         if (detClustermap->at("det0" + col).at(i).width <= 3 && 
 	    detClustermap->at("det1" + col).at(j).width <= 3 &&         
             std::fabs(pos0 - pos1) <= stubwindow ) {
-          if (col.find("C0") != std::string::npos) recoStubs.push_back(CBC0);
-          else recoStubs.push_back(CBC1);
+          skbeam::Stub stemp;
+          stemp.det0Cl = detClustermap->at("det0" + col).at(i);
+          stemp.det1Cl = detClustermap->at("det1" + col).at(j);
+          if (col.find("C0") != std::string::npos) {
+            stemp.cbcid = CBC0;
+            recoStubs[col].push_back(stemp);
+          }
+          else {
+            stemp.cbcid = CBC1; 
+            recoStubs[col].push_back(stemp);
+          }
         }
       }
     }

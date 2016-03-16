@@ -68,6 +68,12 @@ namespace skbeam {
     float position;
     int width;
   };
+  
+  struct Stub {
+    Cluster det0Cl;
+    Cluster det1Cl;
+    unsigned int cbcid;  
+  };
 
 }
 #endif

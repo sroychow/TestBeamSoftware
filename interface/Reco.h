@@ -22,6 +22,7 @@ namespace Reco {
   void getCBCclsuterInfo( const string detName,const std::vector<int>& hmap,
                           std::map<std::string,std::vector<skbeam::Cluster> >&  detClustermap); 
   int getRecoStubInfo( const std::map<std::string,std::vector<skbeam::Cluster> >*  detClustermap, 
-		      const float stubwindow, std::vector<unsigned int>& recoStubs, const std::string col );
+		       const float stubwindow, std::map<std::string,std::vector<skbeam::Stub> >& recoStubs, const std::string col );
+  int getCBCStubInfo( std::map<std::string,std::vector<skbeam::Stub> >& recoStubs, const std::string col )0;
 }
 #endif
