@@ -171,8 +171,9 @@ void BeamAnaBase::doClustering() {
 }
 
 void BeamAnaBase::findStub(const int stubWindow) { 
- Reco::getRecoStubInfo(dutClustermap_, stubWindow,*dutStubmap_,"C0");
- Reco::getRecoStubInfo(dutClustermap_, stubWindow,*dutStubmap_,"C1");
+ Reco::getRecoStubInfo(dutClustermap_, stubWindow,*dutRecoStubmap_,"C0");
+ Reco::getRecoStubInfo(dutClustermap_, stubWindow,*dutRecoStubmap_,"C1");
+ Reco::getCBCStubInfo(*dutCbcStubmap_,dutEvent_->stubWord);
 }
 void BeamAnaBase::clearEvent() {
   dut0_chtempC0_->clear();

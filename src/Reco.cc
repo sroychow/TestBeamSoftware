@@ -107,4 +107,19 @@ namespace Reco {
     }
     return recoStubs.size();
   }
+  
+  int getCBCStubInfo( std::map<std::string,std::vector<unsigned int> >& cbcStubs, const UInt_t sWord ) {
+    int ncbcSw = 0;
+    if (sWord > 0) {
+	for (unsigned int i = 0; i < 16; i++) {
+          if (i == 11 || i == 13) continue;
+          if ((sWord >> i) & 0x1) {
+            ncbcSw++;
+	    if (i <= 7) cbcStubs["C0"].push_back(i);
+            else cbcStubs["C1"].push_back(i-8);
+	  }
+	}
+      }
+    return ncbcSw;  
+  }
 }
