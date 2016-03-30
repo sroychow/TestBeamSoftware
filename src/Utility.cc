@@ -38,24 +38,6 @@ namespace Utility {
     }
   }
 
-  void correctHitorder( std::vector<int>& vec ) {
-    for( unsigned int i = 0; i<vec.size(); i++ ) {
-      if(vec[i] < 127)
-        vec[i] = 126 - vec[i];
-      else
-        vec[i] = 127 + (253 - vec[i]);
-    }
-  }
-
-  void getChannelMaskedHit( std::vector<int>& vec, const unsigned int chLow, const unsigned int chHigh ) {
-    std::vector<int> vtemp = vec;  
-    vec.clear();
-    for( unsigned int i = 0; i<vtemp.size(); i++ ) {
-      if( vtemp[i] >= chLow && vtemp[i] <= chHigh )     continue;
-      vec.push_back(vtemp[i]);
-    }
-  }
-
   void fillHistofromVec( const std::vector<int>& vec, const char* h) {
     for( unsigned int i = 0; i<vec.size(); i++ ) {
       Utility::fillHist1D(h,vec[i]);
@@ -71,54 +53,7 @@ namespace Utility {
     }
   }
 
-  void getCBCclsuterInfo(const string detName,const std::vector<int>& hmap,
-                         std::map<std::string,std::vector<Cluster> >& detClustermap) {
-    if (!hmap.size()) return;
-    int ch_last = -1;
-    int width = 0;
-    double pos = -1.;
 
-    for( unsigned int i=0; i<hmap.size(); i++ ) {
-      if( i == 0) {
-	width  = 1;
-	pos = hmap[i];
-      } else {
-	if( std::abs(hmap[i] - ch_last) == 1) {
-	  width++;
-	  pos += hmap[i];
-	} else {
-	  pos /= width;
-	  Cluster ctemp0;
-	  ctemp0.position = pos;
-	  ctemp0.width = width;
-	  detClustermap[detName].push_back(ctemp0); 
-	  width = 1;
-	  pos = hmap[i];
-	}
-      }
-      ch_last = hmap[i];
-    }
-    Cluster ctemp;
-    ctemp.position = pos/width;
-    ctemp.width = width;
-    detClustermap[detName].push_back(ctemp); 
-    if (hmap.size() > 0 && detClustermap.size() < 1) {
-      std ::cout << " Mismatch " << hmap.size() << " " << detClustermap.size() << std::endl;
-      for( unsigned int i=0; i<hmap.size(); i++ ) std::cout << hmap[i] << "  " ;
-      std::cout << std::endl;
-    }
-  
-  }
-  /*
-  void getInfofromClusterVec(const std::vector<Cluster>& cvec,const std::string det, TFile* fout) {
-    fout->cd(TString(det));
-    Utility::fillHist1D( "ncluster", cvec.size() );
-    for( unsigned int i =0; i<cvec.size(); i++ ) {
-      Utility::fillHist1D("clusterWidth",cvec[i].width);
-      Utility::fillHist1D("clusterPos",cvec[i].position);
-    }
-  }
-  */
   void getInfofromClusterVec(const std::vector<Cluster>& cvec,const std::string det, TFile* fout, const TString col) {
     fout->cd(TString(det));
     Utility::fillHist1D( "ncluster" + col, cvec.size() );
@@ -130,86 +65,6 @@ namespace Utility {
     }
   }
 
-  int getStubInfo( std::map<std::string,std::vector<Cluster> >&  detClustermap, const float stubwindow, 
-                    TFile* fout, const std::string col) {
-    std::stringstream stubHname;
-    stubHname << "nstub" << col;
-    std::stringstream stubEffname;
-    stubEffname << "stubEff" << col;
-    fout->cd();
-    fout->cd("StubInfo");
-    //Utility::fillHist1D("stubWord",stubWord);
-    Utility::fillHist1D( "nclusterdiff" + col, std::abs( detClustermap["det0" + col].size() - 
-                                                   detClustermap["det1" + col].size() ) );
-    int nstubs = 0;
-    for( unsigned int i = 0; i< detClustermap["det0" + col].size(); i++ ) {
-      for( unsigned int j = 0; j< detClustermap["det1" + col].size(); j++ ) {
-        if( std::fabs(detClustermap["det0" + col].at(i).position - 
-                      detClustermap["det1" + col].at(j).position ) <= stubwindow ) {
-          nstubs++;
-        }
-      }
-    }
-    Utility::fillHist1D( stubHname.str(), nstubs);
-    if( !detClustermap["det0" + col].empty()&& !detClustermap["det1" + col].empty() &&nstubs>0 )
-      Utility::fillHist1D(stubEffname.str(),1);
-     else if( !detClustermap["det0" + col].empty() && !detClustermap["det1" + col].empty() && nstubs==0 )
-       Utility::fillHist1D(stubEffname.str(),0);
-    return nstubs;
-  }
-  int getStubInfoEDM( std::map<std::string,std::vector<Cluster> >&  detClustermap, 
-		      std::vector<unsigned int> & cbcStubs, const float stubwindow, 
-		      TFile* fout, const std::string col) {
-    fout->cd();
-    fout->cd("StubInfo");
-    Utility::fillHist1D( "nclusterdiff" + col, std::abs( detClustermap["det0" + col].size() - 
-                                                   detClustermap["det1" + col].size() ) );
-    std::vector<unsigned int> recoStubs;
-    for( unsigned int i = 0; i< detClustermap["det0" + col].size(); i++ ) {
-      float pos0 = detClustermap["det0" + col].at(i).position;
-      unsigned int CBC0 = pos0/127;  
-      if (col.find("C1") != std::string::npos && (CBC0 == 3 || CBC0==5)) continue;
-      for( unsigned int j = 0; j< detClustermap["det1" + col].size(); j++ ) {
-	float pos1 = detClustermap["det1" + col].at(j).position;
-	unsigned int CBC1 = pos1/127;  
-	if (col.find("C1") != std::string::npos && (CBC1 == 3 || CBC1 == 5)) continue;
-        if (detClustermap["det0" + col].at(i).width <= 3 && 
-	    detClustermap["det1" + col].at(j).width <= 3 &&         
-            std::fabs(pos0 - pos1) <= stubwindow ) {
-          if (col.find("C0") != std::string::npos) recoStubs.push_back(CBC0);
-          else recoStubs.push_back(CBC1);
-        }
-      }
-    }
-    Utility::fillHist1D( "nstubReco"+col, recoStubs.size());
-    Utility::fillHist1D( "nstubCBC"+col, cbcStubs.size());
-    
-    for (unsigned int i = 0; i != cbcStubs.size(); i++) {
-      Utility::fillHist1D( "stubProfileCBC"+col, cbcStubs[i]);
-    }
-
-    for (unsigned int j = 0; j != recoStubs.size(); j++) {
-      Utility::fillHist1D( "stubProfileReco"+col, recoStubs[j]);
-    }
-    
-    for (unsigned int i = 0; i < 8; i++) {
-      std::vector<unsigned int>::iterator it_cbc  = find (cbcStubs.begin(),  cbcStubs.end(),  i);
-      std::vector<unsigned int>::iterator it_reco = find (recoStubs.begin(), recoStubs.end(), i);
-      if (it_cbc != cbcStubs.end() && it_reco != recoStubs.end()) Utility::fillHist2D( "stubCorrelation"+col, i, i);
-      else if (it_cbc == cbcStubs.end() && it_reco != recoStubs.end()) Utility::fillHist2D( "stubCorrelation"+col, i, 8);
-      else if (it_cbc != cbcStubs.end() && it_reco == recoStubs.end()) Utility::fillHist2D( "stubCorrelation"+col, 8, i);
-    }
-    
-    if( !detClustermap["det0" + col].empty()&& !detClustermap["det1" + col].empty() ) {
-      if (recoStubs.size() > 0 ) Utility::fillHist1D("stubEffReco"+col,1);
-      else Utility::fillHist1D("stubEffReco"+col,0);   
-      
-      if (cbcStubs.size() > 0 ) Utility::fillHist1D("stubEffCBC"+col,1);
-      else Utility::fillHist1D("stubEffCBC"+col,0);   
-    }
-    
-    return recoStubs.size();
-  }
   // ------------------------------------------------------------------------
   // Convenience routine for filling 1D histograms. We rely on root to keep 
   // track of all the histograms that are booked all over so that we do not 

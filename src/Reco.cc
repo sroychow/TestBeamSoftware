@@ -40,6 +40,8 @@ namespace Reco {
 
   void getCBCclsuterInfo(const string detName,const std::vector<int>& hmap,
                          std::map<std::string,std::vector<skbeam::Cluster> >& detClustermap) {
+    std::vector<skbeam::Cluster> tempV;
+    detClustermap[detName]=tempV;
     if (!hmap.size()) return;
     int ch_last = -1;
     int width = 0;
@@ -78,8 +80,10 @@ namespace Reco {
   }
   
   int getRecoStubInfo( const std::map<std::string,std::vector<skbeam::Cluster> >*  detClustermap, 
-		      const float stubwindow, std::map<std::string,std::vector<skbeam::Stub> >& recoStubs, const std::string col) {
-    
+		       const float stubwindow, std::map<std::string,std::vector<skbeam::Stub> >& recoStubs,
+                       const std::string col) {
+    std::vector<skbeam::Stub> tempV;
+    recoStubs[col]=tempV;
     for( unsigned int i = 0; i< detClustermap->at("det0" + col).size(); i++ ) {
       float pos0 = detClustermap->at("det0" + col).at(i).position;
       unsigned int CBC0 = pos0/127;  
@@ -109,6 +113,9 @@ namespace Reco {
   }
   
   int getCBCStubInfo( std::map<std::string,std::vector<unsigned int> >& cbcStubs, const UInt_t sWord ) {
+    std::vector<unsigned int> tempV;
+    cbcStubs["C0"]=tempV;
+    cbcStubs["C1"]=tempV;
     int ncbcSw = 0;
     if (sWord > 0) {
 	for (unsigned int i = 0; i < 16; i++) {

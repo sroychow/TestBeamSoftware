@@ -22,20 +22,20 @@ namespace Utility {
    int width;
   };
   void tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiter);
-  void correctHitorder( std::vector<int>& vec );
-  void getChannelMaskedHit( std::vector<int>& vec, const unsigned int chLow, const unsigned int chHigh );
+  //void correctHitorder( std::vector<int>& vec );
+  //void getChannelMaskedHit( std::vector<int>& vec, const unsigned int chLow, const unsigned int chHigh );
   void fillHistofromVec( const std::vector<int>& vec, const char* h);
   void fill2DHistofromVec( const std::vector<int>& vecC0, const std::vector<int>& vecC1,const char* h);
-  void getCBCclsuterInfo( const string detName,const std::vector<int>& hmap,
-                          std::map<std::string,std::vector<Cluster> >&  detClustermap);
+  //void getCBCclsuterInfo( const string detName,const std::vector<int>& hmap,
+  //                        std::map<std::string,std::vector<Cluster> >&  detClustermap);
   void getInfofromClusterVec(const std::vector<Cluster>& cvec,const std::string det,
                              TFile* fout, const TString col = "");
   //void getInfofromClusterVec(const std::vector<Cluster>& cvec,const std::string det,TFile* fout,TString col);
-  int getStubInfo(std::map<std::string,std::vector<Cluster> >&  detClustermap, const float stubwindow, 
-                   TFile* fout,const std::string col = "");
-  int getStubInfoEDM(std::map<std::string,std::vector<Cluster> >&  detClustermap, 
-		   std::vector<unsigned int> & cbcStubs, const float stubwindow, 
-                   TFile* fout,const std::string col = "");
+  //int getStubInfo(std::map<std::string,std::vector<Cluster> >&  detClustermap, const float stubwindow, 
+  //                 TFile* fout,const std::string col = "");
+  //int getStubInfoEDM(std::map<std::string,std::vector<Cluster> >&  detClustermap, 
+  //		   std::vector<unsigned int> & cbcStubs, const float stubwindow, 
+  //                 TFile* fout,const std::string col = "");
 
   TH1* getHist1D(const char* hname);
   TH1* getHist1D(const string& hname);

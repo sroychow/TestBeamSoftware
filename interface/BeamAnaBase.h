@@ -25,7 +25,7 @@ using std::cerr;
 
 class BeamAnaBase {
   public :
-    BeamAnaBase();
+    BeamAnaBase(const bool doTelescopeAnalysis);
     ~BeamAnaBase();
     int setDUTInputFile(const std::string& fname);
     int setTelescopeInputFile(const std::string& fname);
@@ -33,6 +33,8 @@ class BeamAnaBase {
     void setAddresses();
     TChain* telescopechain() const{ return telchain_; } 
     TChain* dutchain() const{ return dutchain_; } 
+    skbeam::tBeamBase* dutEvt() const { return dutEvent_; }
+    skbeam::telescopeBase* telEvt() const { return telEvent_; }
     void filltrigTrackmap();
     int getNtrack (const long int dutEvt) const;
     long int getTelEntries() const { return nTelchainentry; }
@@ -50,7 +52,10 @@ class BeamAnaBase {
     virtual void eventLoop() = 0; 
     virtual void bookHistograms() = 0;
     virtual void clearEvent();
-    
+    int nEventsNoHits;
+    int nEventsHitInBoth;
+    int nEventsHitInDet0;
+    int nEventsHitInDet1;    
   private :
     TChain *dutchain_; 
     TChain *telchain_;
@@ -66,9 +71,6 @@ class BeamAnaBase {
     std::map<std::string,std::vector<skbeam::Cluster> >* dutClustermap_;
     std::map<std::string,std::vector<skbeam::Stub> >* dutRecoStubmap_;
     std::map<std::string,std::vector<unsigned int>>* dutCbcStubmap_;
-    int nEventsNoHits;
-    int nEventsHitInBoth;
-    int nEventsHitInDet0;
-    int nEventsHitInDet1;
+    bool requireTelescope_;
 };
 #endif

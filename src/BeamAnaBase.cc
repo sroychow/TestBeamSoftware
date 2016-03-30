@@ -3,7 +3,7 @@
 #include "TChain.h"
 #include "Reco.h"
 
-BeamAnaBase::BeamAnaBase() :
+BeamAnaBase::BeamAnaBase(const bool doTelescopeAnalysis) :
   dutchain_(new TChain("treeMaker/tbeamTree")),
   telchain_(new TChain("tracks")),
   dutEvent_(new skbeam::tBeamBase()),
@@ -14,7 +14,8 @@ BeamAnaBase::BeamAnaBase() :
   dut1_chtempC1_(new std::vector<int>()),
   dutClustermap_(new std::map<std::string,std::vector<skbeam::Cluster>>()),
   dutRecoStubmap_(new std::map<std::string,std::vector<skbeam::Stub> >()),
-  dutCbcStubmap_(new std::map<std::string,std::vector<unsigned int>>())  
+  dutCbcStubmap_(new std::map<std::string,std::vector<unsigned int>>()),
+  requireTelescope_(doTelescopeAnalysis) 
 {
   nTelchainentry = -1;
   nDutchainentry = -1;
@@ -100,30 +101,31 @@ void BeamAnaBase::setAddresses() {
   if(branchFound(dutchain_,"dut_row") )
     dutchain_->SetBranchAddress("dut_row", &dutEvent_->dut_row);
   //set telescope branch address
-  if(branchFound(telchain_,"nTrackParams") )  
-  telchain_->SetBranchAddress("nTrackParams", &telEvent_->nTrackParams);
-  if(branchFound(telchain_,"euEvt") )  
-    telchain_->SetBranchAddress("euEvt", &telEvent_->euEvt);
-  if(branchFound(telchain_,"xPos") )  
-    telchain_->SetBranchAddress("xPos", &telEvent_->xPos);
-  if(branchFound(telchain_,"yPos") )  
-    telchain_->SetBranchAddress("yPos", &telEvent_->yPos);
-  if(branchFound(telchain_,"dxdz") )  
-    telchain_->SetBranchAddress("dxdz", &telEvent_->dxdz);
-  if(branchFound(telchain_,"dydz") )  
-    telchain_->SetBranchAddress("dydz", &telEvent_->dydz);
-  if(branchFound(telchain_,"trackNum") )  
-    telchain_->SetBranchAddress("trackNum", &telEvent_->trackNum);
-  if(branchFound(telchain_,"iden") )  
-    telchain_->SetBranchAddress("iden", &telEvent_->iden);
-  if(branchFound(telchain_,"chi2") )  
-    telchain_->SetBranchAddress("chi2", &telEvent_->chi2);
-  if(branchFound(telchain_,"ndof") )  
-    telchain_->SetBranchAddress("ndof", &telEvent_->ndof);
+  if(requireTelescope_) {
+    if(branchFound(telchain_,"nTrackParams") )  
+      telchain_->SetBranchAddress("nTrackParams", &telEvent_->nTrackParams);
+    if(branchFound(telchain_,"euEvt") )  
+      telchain_->SetBranchAddress("euEvt", &telEvent_->euEvt);
+    if(branchFound(telchain_,"xPos") )  
+      telchain_->SetBranchAddress("xPos", &telEvent_->xPos);
+    if(branchFound(telchain_,"yPos") )  
+      telchain_->SetBranchAddress("yPos", &telEvent_->yPos);
+    if(branchFound(telchain_,"dxdz") )  
+      telchain_->SetBranchAddress("dxdz", &telEvent_->dxdz);
+    if(branchFound(telchain_,"dydz") )  
+      telchain_->SetBranchAddress("dydz", &telEvent_->dydz);
+    if(branchFound(telchain_,"trackNum") )  
+      telchain_->SetBranchAddress("trackNum", &telEvent_->trackNum);
+    if(branchFound(telchain_,"iden") )  
+      telchain_->SetBranchAddress("iden", &telEvent_->iden);
+    if(branchFound(telchain_,"chi2") )  
+      telchain_->SetBranchAddress("chi2", &telEvent_->chi2);
+    if(branchFound(telchain_,"ndof") )  
+      telchain_->SetBranchAddress("ndof", &telEvent_->ndof);
+  }
 }
 
 void BeamAnaBase::filltrigTrackmap() {
-  
   for (Long64_t jentry=0; jentry<nTelchainentry;jentry++) {
     Long64_t ientry = telchain_->LoadTree(jentry);
     if (ientry < 0) break;

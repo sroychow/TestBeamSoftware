@@ -1,5 +1,5 @@
 UNAME    = $(shell uname)
-EXE      = reco
+EXE      = dutReco
  
 VPATH  = .:./interface
 vpath %.h ./interface
@@ -9,7 +9,7 @@ HSUF   = h
 DICTC  = Dict.$(CSUF)
 DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
 
-SRCS   = src/argvparser.cc src/BeamAnaBase.cc src/Reco.cc src/Utility.cc src/tBeamBase.cc src/trawTupleBase.cc src/telescopeBase.cc src/Reconstruction.cc  src/recoMain.cc  
+SRCS   = src/argvparser.cc src/BeamAnaBase.cc src/Reco.cc src/Utility.cc src/Histogrammer.cc src/DUTReconstruction.cc  src/dutReco.cc  
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
 PLOTSRCS = tools/PlotMakerBase.cc tools/plotMakermain.cc
@@ -40,7 +40,7 @@ $(DICTC): $(HDRS_DICT)
 	mv $(DICTC) src/
 	mv $(DICTH) interface/
 
-reco:   $(OBJS) src/Dict.o
+dutReco:   $(OBJS) src/DUTReconstruction.o src/dutReco.o src/Dict.o
 	$(CXX) $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 plotMaker:  $(PLOTOBJS) src/Utility.o src/argvparser.o
