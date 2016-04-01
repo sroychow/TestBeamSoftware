@@ -29,8 +29,10 @@ class BeamAnaBase {
     ~BeamAnaBase();
     int setDUTInputFile(const std::string& fname);
     int setTelescopeInputFile(const std::string& fname);
-    bool branchFound(TChain* chain,const string& b);
+    bool branchFound(TChain* chain,const string& b,std::vector<std::string>& brList_);
     void setAddresses();
+    int getDUTEntry(int lflag) const;
+    int getTelEntry(int lflag) const;
     TChain* telescopechain() const{ return telchain_; } 
     TChain* dutchain() const{ return dutchain_; } 
     skbeam::tBeamBase* dutEvt() const { return dutEvent_; }
@@ -59,6 +61,8 @@ class BeamAnaBase {
   private :
     TChain *dutchain_; 
     TChain *telchain_;
+    std::vector<std::string> dutbrList_;
+    std::vector<std::string> telbrList_;
     skbeam::tBeamBase* dutEvent_;
     skbeam::telescopeBase* telEvent_;
     std::map<long int,skbeam::telescopeBase*> trigTrackmap_;

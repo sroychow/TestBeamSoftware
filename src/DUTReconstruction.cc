@@ -55,11 +55,15 @@ void DUTReconstruction::eventLoop()
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
      //for (Long64_t jentry=0; jentry<50;jentry++) {
      Long64_t ientry = dutchain()->LoadTree(jentry);
+     int nbytes = getDUTEntry(ientry);
+     //std::cout << "Chain load status=" << ientry << std::endl;
      if (ientry < 0) break;
      if (jentry%1000 == 0)
        cout << " Events processed. " << std::setw(8) << jentry 
 	    << endl;
      // if (Cut(ientry) < 0) continue;
+     //std::cout << "Vcth=" << dutEvt()->vcth << std::endl;
+     cout << "Point 1" << endl;
      hist_->fillHist1D("EventInfo","hvSettings", dutEvt()->hvSettings);
      hist_->fillHist1D("EventInfo","dutAngle", dutEvt()->dutAngle);
      hist_->fillHist1D("EventInfo","vcth", dutEvt()->vcth);
@@ -71,47 +75,51 @@ void DUTReconstruction::eventLoop()
      hist_->fillHist1D("EventInfo","cbc1status", dutEvt()->cbc1Status);
      hist_->fillHist1D("EventInfo","cbc2status", dutEvt()->cbc2Status);
 
-      //cout << "Point 2" << endl;
+      cout << "Point 2" << endl;
       setDetChannelVectors();
       doClustering();
       findStub(stubWindow_);
-      //cout << "Point 2" << endl;
+      cout << "Point 3" << endl;
       //Fill histo for det0
+      //std::cout << "Hits det0c0=" << dut0Ch0()->size() << std::endl;
       hist_->fillHist1D("det0","chsizeC0", dut0Ch0()->size());
       hist_->fillHist1D("det0","chsizeC1", dut0Ch1()->size());
       hist_->fillHistofromVec(dut0Ch0(),"det0","hitmapC0");
       hist_->fillHistofromVec(dut0Ch1(),"det0","hitmapC1");
       hist_->fill2DHistofromVec(dut0Ch0(),dut0Ch1(),"det0","hitmapfull");
-      hist_->fillClusterHistograms("det0C0",dutClustermap()->at("det0C0"),"C0");
-      hist_->fillClusterHistograms("det0C1",dutClustermap()->at("det0C1"),"C1");
+      hist_->fillClusterHistograms("det0",dutClustermap()->at("det0C0"),"C0");
+      hist_->fillClusterHistograms("det0",dutClustermap()->at("det0C1"),"C1");
 
       //Fill histo for det1
+      //std::cout << "Hits det1c0=" << dut1Ch0()->size() << std::endl;
       hist_->fillHist1D("det1","chsizeC0", dut1Ch0()->size());
       hist_->fillHist1D("det1","chsizeC1", dut1Ch1()->size());
       hist_->fillHistofromVec(dut1Ch0(),"det1","hitmapC0");
       hist_->fillHistofromVec(dut1Ch1(),"det1","hitmapC1");
       hist_->fill2DHistofromVec(dut1Ch0(),dut1Ch1(),"det1","hitmapfull");
-      hist_->fillClusterHistograms("det1C0",dutClustermap()->at("det1C0"),"C0");
-      hist_->fillClusterHistograms("det011",dutClustermap()->at("det1C1"),"C1");
+      hist_->fillClusterHistograms("det1",dutClustermap()->at("det1C0"),"C0");
+      hist_->fillClusterHistograms("det1",dutClustermap()->at("det1C1"),"C1");
 
-      //cout << "Point 3" << endl;
+      cout << "Point 4" << endl;
       if(dut0Ch0()->size() && !dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 1);
       if(!dut0Ch0()->size() && dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 2);
       if(dut0Ch0()->size() && dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 3);
       if(!dut0Ch0()->size() && !dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 4);
-
+      cout << "Point 4a" << endl;
       if(dut0Ch0()->size() && !dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 1);
       if(!dut0Ch0()->size() && dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 2);
       if(dut0Ch0()->size() && dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 3);
       if(!dut0Ch0()->size() && !dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 4);
-
+      cout << "Point 4b" << endl;
       hist_->fillHist1D("Correlation","diffC0",std::abs(dut0Ch0()->size()-dut1Ch0()->size())); 
       hist_->fillHist1D("Correlation","diffC1",std::abs(dut0Ch1()->size()-dut1Ch1()->size())); 
-      if (dut0Ch0()->size() ==1 && dut1Ch1()->size() ==1) 
+      cout << "Point 4c" << endl;
+      if (dut0Ch0()->size() ==1 && dut1Ch0()->size() ==1) 
 	hist_->fillHist2D("Correlation","topBottomHitCorrC0",dut0Ch0()->at(0), dut1Ch0()->at(0));
+      cout << "Point 4d" << endl;
       if (dut0Ch1()->size() ==1 && dut1Ch1()->size() ==1) 
 	hist_->fillHist2D("Correlation","topBottomHitCorrC1",dut0Ch1()->at(0), dut1Ch1()->at(0));
-      //cout << "Point 4" << endl;  
+      cout << "Point 5" << endl;  
       //Fill cbc stub info
       int totStubCBC  = 0;
       for( auto& col : *dutCbcStubmap() ) {
@@ -129,6 +137,7 @@ void DUTReconstruction::eventLoop()
       }
       hist_->fillHist1D("StubInfo","nstubsFromCBC",totStubCBC);
       //Fill reco stub info
+      cout << "Point 6" << endl;
       int totStubReco = 0;
       for( auto& col : *dutRecoStubmap() ) {
         if( !dutClustermap()->at("det0" + col.first).empty() && 
@@ -144,7 +153,7 @@ void DUTReconstruction::eventLoop()
       }
       hist_->fillHist1D("StubInfo","nstubsFromReco",totStubReco);
 
-      //
+      
       hist_->fillHist1D("StubInfo","nclusterdiffC0", dutClustermap()->at("det0C0").size() - 
                                                      dutClustermap()->at("det1C0").size());
       hist_->fillHist1D("StubInfo","nclusterdiffC1", dutClustermap()->at("det0C1").size() - 
@@ -168,6 +177,7 @@ void DUTReconstruction::eventLoop()
 
       hist_->fillHist1D("EventInfo","ntotalHitsReco", dut0Ch0()->size() +dut0Ch1()->size() +
                                                       dut1Ch0()->size() + dut1Ch1()->size());
+      cout << "Point 7" << endl;
      clearEvent();
    }
 }
