@@ -63,7 +63,7 @@ void DUTReconstruction::eventLoop()
 	    << endl;
      // if (Cut(ientry) < 0) continue;
      //std::cout << "Vcth=" << dutEvt()->vcth << std::endl;
-     cout << "Point 1" << endl;
+     //cout << "Point 1" << endl;
      hist_->fillHist1D("EventInfo","hvSettings", dutEvt()->hvSettings);
      hist_->fillHist1D("EventInfo","dutAngle", dutEvt()->dutAngle);
      hist_->fillHist1D("EventInfo","vcth", dutEvt()->vcth);
@@ -75,11 +75,11 @@ void DUTReconstruction::eventLoop()
      hist_->fillHist1D("EventInfo","cbc1status", dutEvt()->cbc1Status);
      hist_->fillHist1D("EventInfo","cbc2status", dutEvt()->cbc2Status);
 
-      cout << "Point 2" << endl;
+      //cout << "Point 2" << endl;
       setDetChannelVectors();
       doClustering();
       findStub(stubWindow_);
-      cout << "Point 3" << endl;
+      //cout << "Point 3" << endl;
       //Fill histo for det0
       //std::cout << "Hits det0c0=" << dut0Ch0()->size() << std::endl;
       hist_->fillHist1D("det0","chsizeC0", dut0Ch0()->size());
@@ -100,26 +100,26 @@ void DUTReconstruction::eventLoop()
       hist_->fillClusterHistograms("det1",dutClustermap()->at("det1C0"),"C0");
       hist_->fillClusterHistograms("det1",dutClustermap()->at("det1C1"),"C1");
 
-      cout << "Point 4" << endl;
+      //cout << "Point 4" << endl;
       if(dut0Ch0()->size() && !dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 1);
       if(!dut0Ch0()->size() && dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 2);
       if(dut0Ch0()->size() && dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 3);
       if(!dut0Ch0()->size() && !dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 4);
-      cout << "Point 4a" << endl;
+      //cout << "Point 4a" << endl;
       if(dut0Ch0()->size() && !dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 1);
       if(!dut0Ch0()->size() && dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 2);
       if(dut0Ch0()->size() && dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 3);
       if(!dut0Ch0()->size() && !dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 4);
-      cout << "Point 4b" << endl;
+      //cout << "Point 4b" << endl;
       hist_->fillHist1D("Correlation","diffC0",std::abs(dut0Ch0()->size()-dut1Ch0()->size())); 
       hist_->fillHist1D("Correlation","diffC1",std::abs(dut0Ch1()->size()-dut1Ch1()->size())); 
-      cout << "Point 4c" << endl;
+      //cout << "Point 4c" << endl;
       if (dut0Ch0()->size() ==1 && dut1Ch0()->size() ==1) 
 	hist_->fillHist2D("Correlation","topBottomHitCorrC0",dut0Ch0()->at(0), dut1Ch0()->at(0));
-      cout << "Point 4d" << endl;
+      //cout << "Point 4d" << endl;
       if (dut0Ch1()->size() ==1 && dut1Ch1()->size() ==1) 
 	hist_->fillHist2D("Correlation","topBottomHitCorrC1",dut0Ch1()->at(0), dut1Ch1()->at(0));
-      cout << "Point 5" << endl;  
+      //cout << "Point 5" << endl;  
       //Fill cbc stub info
       int totStubCBC  = 0;
       for( auto& col : *dutCbcStubmap() ) {
@@ -137,7 +137,7 @@ void DUTReconstruction::eventLoop()
       }
       hist_->fillHist1D("StubInfo","nstubsFromCBC",totStubCBC);
       //Fill reco stub info
-      cout << "Point 6" << endl;
+      //cout << "Point 6" << endl;
       int totStubReco = 0;
       for( auto& col : *dutRecoStubmap() ) {
         if( !dutClustermap()->at("det0" + col.first).empty() && 
@@ -177,8 +177,8 @@ void DUTReconstruction::eventLoop()
 
       hist_->fillHist1D("EventInfo","ntotalHitsReco", dut0Ch0()->size() +dut0Ch1()->size() +
                                                       dut1Ch0()->size() + dut1Ch1()->size());
-      cout << "Point 7" << endl;
-     clearEvent();
+      //cout << "Point 7" << endl;
+      clearEvent();
    }
 }
 
@@ -186,18 +186,11 @@ void DUTReconstruction::clearEvent() {
   BeamAnaBase::clearEvent();
 }
 void DUTReconstruction::endJob() {
+  BeamAnaBase::endJob();
   hist_->closeFile();
-  /*
-  //std::cout << " Total Number Of Events " << nEvents << std::endl;
-  std::cout << " Total Number Of Events w/o Hits " << nEventsNoHits << std::endl;
-  std::cout << " Total Number Of Events with Hits " << nEvents - nEventsNoHits << std::endl;
-  std::cout << " Total Number Of Events with Hits in Det0 Only " << nEventsHitInDet0 << std::endl;
-  std::cout << " Total Number Of Events with Hits in Det1 Only " << nEventsHitInDet1 << std::endl;
-  std::cout << " Total Number Of Events with Hits in both Detectors " << nEventsHitInBoth << std::endl;
-  */
 }
 
 DUTReconstruction::~DUTReconstruction(){
   delete hist_;
-  //~BeamAnaBase();
+  BeamAnaBase::~BeamAnaBase();
 }

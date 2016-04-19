@@ -39,8 +39,8 @@ class BeamAnaBase {
     skbeam::telescopeBase* telEvt() const { return telEvent_; }
     void filltrigTrackmap();
     int getNtrack (const long int dutEvt) const;
-    long int getTelEntries() const { return nTelchainentry; }
-    long int getDutEntries() const { return nDutchainentry; }
+    long int getTelEntries() const { return nTelchainentry_; }
+    long int getDutEntries() const { return nDutchainentry_; }
     void setDetChannelVectors();    
     virtual void doClustering();
     virtual void findStub(const int stubWindow);
@@ -51,6 +51,8 @@ class BeamAnaBase {
     std::map<std::string,std::vector<skbeam::Cluster> >* dutClustermap() const { return dutClustermap_; }
     std::map<std::string,std::vector<skbeam::Stub> >* dutRecoStubmap() const { return dutRecoStubmap_; }
     std::map<std::string,std::vector<unsigned int> >* dutCbcStubmap() const { return dutCbcStubmap_; }
+    virtual void beginJob(){}
+    virtual void endJob();
     virtual void eventLoop() = 0; 
     virtual void bookHistograms() = 0;
     virtual void clearEvent();
@@ -66,8 +68,8 @@ class BeamAnaBase {
     skbeam::tBeamBase* dutEvent_;
     skbeam::telescopeBase* telEvent_;
     std::map<long int,skbeam::telescopeBase*> trigTrackmap_;
-    long int nTelchainentry;
-    long int nDutchainentry;
+    long int nTelchainentry_;
+    long int nDutchainentry_;
     vector<int>* dut0_chtempC0_;
     vector<int>* dut0_chtempC1_;
     vector<int>* dut1_chtempC0_;

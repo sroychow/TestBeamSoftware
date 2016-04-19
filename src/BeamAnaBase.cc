@@ -17,8 +17,8 @@ BeamAnaBase::BeamAnaBase(const bool doTelescopeAnalysis) :
   dutCbcStubmap_(new std::map<std::string,std::vector<unsigned int>>()),
   requireTelescope_(doTelescopeAnalysis) 
 {
-  nTelchainentry = -1;
-  nDutchainentry = -1;
+  nTelchainentry_ = -1;
+  nDutchainentry_ = -1;
   nEventsNoHits  = 0;
   nEventsHitInBoth = 0;
   nEventsHitInDet0 = 0;
@@ -34,8 +34,8 @@ int BeamAnaBase::setDUTInputFile(const std::string& fname) {
     return static_cast<int>(dutchain_->GetEntries()); 
   }
   dutchain_->AddFile(fname.c_str(), -1);
-  nDutchainentry = static_cast<long int>(dutchain_->GetEntries());
-  return nDutchainentry; 
+  nDutchainentry_ = static_cast<long int>(dutchain_->GetEntries());
+  return nDutchainentry_; 
 }
 
 int BeamAnaBase::setTelescopeInputFile(const std::string& fname) {
@@ -45,8 +45,8 @@ int BeamAnaBase::setTelescopeInputFile(const std::string& fname) {
     return static_cast<int>(telchain_->GetEntries()); 
   }
   telchain_->AddFile(fname.c_str(), -1);
-  nTelchainentry = static_cast<long int>(telchain_->GetEntries());
-  return nTelchainentry; 
+  nTelchainentry_ = static_cast<long int>(telchain_->GetEntries());
+  return nTelchainentry_; 
 }
 
 bool BeamAnaBase::branchFound(TChain* chain,const string& b,std::vector<std::string>& brList_)
@@ -157,7 +157,7 @@ int BeamAnaBase::getTelEntry(int lflag) const
 }
 
 void BeamAnaBase::filltrigTrackmap() {
-  for (Long64_t jentry=0; jentry<nTelchainentry;jentry++) {
+  for (Long64_t jentry=0; jentry<nTelchainentry_;jentry++) {
     Long64_t ientry = telchain_->LoadTree(jentry);
     int nb = getTelEntry(ientry);
     if (ientry < 0) break;
@@ -209,6 +209,15 @@ void BeamAnaBase::findStub(const int stubWindow) {
  Reco::getRecoStubInfo(dutClustermap_, stubWindow,*dutRecoStubmap_,"C1");
  Reco::getCBCStubInfo(*dutCbcStubmap_,dutEvent_->stubWord);
 }
+
+void BeamAnaBase::endJob() {
+  std::cout << " Total Number Of Events " << nDutchainentry_ << std::endl;
+  std::cout << " Total Number Of Events w/o Hits " << nEventsNoHits << std::endl;
+  std::cout << " Total Number Of Events with Hits " << nDutchainentry_ - nEventsNoHits << std::endl;
+  std::cout << " Total Number Of Events with Hits in Det0 Only " << nEventsHitInDet0 << std::endl;
+  std::cout << " Total Number Of Events with Hits in Det1 Only " << nEventsHitInDet1 << std::endl;
+  std::cout << " Total Number Of Events with Hits in both Detectors " << nEventsHitInBoth << std::endl;
+}
 void BeamAnaBase::clearEvent() {
   dut0_chtempC0_->clear();
   dut0_chtempC1_->clear();
@@ -224,4 +233,11 @@ BeamAnaBase::~BeamAnaBase() {
   delete telchain_;
   delete dutEvent_;
   delete telEvent_;
+  delete dut0_chtempC0_;
+  delete dut0_chtempC1_;
+  delete dut1_chtempC0_;
+  delete dut1_chtempC1_;
+  delete dutClustermap_;
+  delete dutRecoStubmap_;
+  delete dutCbcStubmap_;
 }
