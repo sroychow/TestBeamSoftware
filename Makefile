@@ -12,8 +12,8 @@ DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
 SRCS   = src/argvparser.cc src/BeamAnaBase.cc src/Reco.cc src/Utility.cc src/Histogrammer.cc src/DUTReconstruction.cc  src/dutReco.cc  
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
-PLOTSRCS = tools/PlotMakerBase.cc tools/plotMakermain.cc
-PLOTOBJS   = $(patsubst %.$(CSUF), %.o, $(PLOTSRCS))
+#PLOTSRCS = tools/PlotMakerBase.cc tools/plotMakermain.cc
+#PLOTOBJS   = $(patsubst %.$(CSUF), %.o, $(PLOTSRCS))
 
 LDFLAGS  = -g
 SOFLAGS  = -shared 
@@ -26,7 +26,7 @@ CXXFLAGS += -g -std=c++11
 
 HDRS_DICT = interface/LinkDef.h
 
-bin: reco plotMaker
+bin: dutReco 
 all: 
 	gmake cint 
 	gmake bin 
@@ -42,9 +42,6 @@ $(DICTC): $(HDRS_DICT)
 
 dutReco:   $(OBJS) src/DUTReconstruction.o src/dutReco.o src/Dict.o
 	$(CXX) $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
-
-plotMaker:  $(PLOTOBJS) src/Utility.o src/argvparser.o
-	    $(CXX) $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 # Create object files
 %.o : %.$(CSUF)

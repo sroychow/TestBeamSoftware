@@ -11,7 +11,7 @@
 #include <vector>
 #include <sstream>
 #include "DUTReconstruction.h"
-#include "telescopeBase.h"
+//#include "telescopeBase.h"
 using std::vector;
 using std::map;
 //DUTReconstruction::DUTReconstruction(const TString& inFilename,const TString&  outFilename) :
@@ -192,5 +192,4 @@ void DUTReconstruction::endJob() {
 
 DUTReconstruction::~DUTReconstruction(){
   delete hist_;
-  BeamAnaBase::~BeamAnaBase();
 }
