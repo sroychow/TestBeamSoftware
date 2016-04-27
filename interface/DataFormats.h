@@ -1,5 +1,6 @@
 #ifndef DataFormats_h
 #define DataFormats_h
+#include "TROOT.h"
 #include<vector>
 #include<map>
 #include<string>
@@ -29,9 +30,9 @@ namespace skbeam {
       Int_t           cbc2Status;
       map<string,vector<int> > *dut_channel;
       map<string,vector<int> > *dut_row;
-      tBeamBase(){}
-      ~tBeamBase(){}
-      void reset(){}
+      tBeamBase();
+      virtual ~tBeamBase();
+      //void reset(){}
   };
   class telescopeBase {
     public :
@@ -45,9 +46,9 @@ namespace skbeam {
       vector<int>     *iden;
       vector<double>  *chi2;
       vector<double>  *ndof;
-      telescopeBase(){}
-      ~telescopeBase(){}
-      void reset(){}
+      telescopeBase();
+      virtual ~telescopeBase();
+      //void reset(){}
   };
   class trawTupleBase {
     public :
@@ -59,9 +60,9 @@ namespace skbeam {
       vector<int>     *dut0Ch1data;
       vector<int>     *dut1Ch0data;
       vector<int>     *dut1Ch1data;
-      trawTupleBase(){}
-      ~trawTupleBase(){}
-      void reset(){}
+      trawTupleBase();
+      virtual ~trawTupleBase();
+      //void reset(){}
   };
   
   struct Cluster {

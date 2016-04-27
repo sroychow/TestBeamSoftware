@@ -9,7 +9,7 @@ HSUF   = h
 DICTC  = Dict.$(CSUF)
 DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
 
-SRCS   = src/argvparser.cc src/BeamAnaBase.cc src/Reco.cc src/Utility.cc src/Histogrammer.cc src/DUTReconstruction.cc  src/dutReco.cc  
+SRCS   = src/argvparser.cc src/DataFormats.cc src/BeamAnaBase.cc src/Reco.cc src/Utility.cc src/Histogrammer.cc src/DUTReconstruction.cc  src/dutReco.cc  
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
 #PLOTSRCS = tools/PlotMakerBase.cc tools/plotMakermain.cc
