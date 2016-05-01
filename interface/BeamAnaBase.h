@@ -26,7 +26,7 @@ using std::cerr;
 class BeamAnaBase {
   public :
     BeamAnaBase(const bool doTelescopeAnalysis);
-    ~BeamAnaBase();
+    virtual ~BeamAnaBase();
     int setDUTInputFile(const std::string& fname);
     int setTelescopeInputFile(const std::string& fname);
     bool branchFound(TChain* chain,const string& b,std::vector<std::string>& brList_);

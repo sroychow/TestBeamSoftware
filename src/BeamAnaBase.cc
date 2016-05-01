@@ -105,25 +105,25 @@ void BeamAnaBase::setAddresses() {
     dutchain_->SetBranchAddress("dut_row", &dutEvent_->dut_row);
   //set telescope branch address
   if(requireTelescope_) {
-    if(branchFound(telchain_,"nTrackParams",dutbrList_) )  
+    if(branchFound(telchain_,"nTrackParams",telbrList_) )  
       telchain_->SetBranchAddress("nTrackParams", &telEvent_->nTrackParams);
-    if(branchFound(telchain_,"euEvt",dutbrList_) )  
+    if(branchFound(telchain_,"euEvt",telbrList_) )  
       telchain_->SetBranchAddress("euEvt", &telEvent_->euEvt);
-    if(branchFound(telchain_,"xPos",dutbrList_) )  
+    if(branchFound(telchain_,"xPos",telbrList_) )  
       telchain_->SetBranchAddress("xPos", &telEvent_->xPos);
-    if(branchFound(telchain_,"yPos",dutbrList_) )  
+    if(branchFound(telchain_,"yPos",telbrList_) )  
       telchain_->SetBranchAddress("yPos", &telEvent_->yPos);
-    if(branchFound(telchain_,"dxdz",dutbrList_) )  
+    if(branchFound(telchain_,"dxdz",telbrList_) )  
       telchain_->SetBranchAddress("dxdz", &telEvent_->dxdz);
-    if(branchFound(telchain_,"dydz",dutbrList_) )  
+    if(branchFound(telchain_,"dydz",telbrList_) )  
       telchain_->SetBranchAddress("dydz", &telEvent_->dydz);
-    if(branchFound(telchain_,"trackNum",dutbrList_) )  
+    if(branchFound(telchain_,"trackNum",telbrList_) )  
       telchain_->SetBranchAddress("trackNum", &telEvent_->trackNum);
-    if(branchFound(telchain_,"iden",dutbrList_) )  
+    if(branchFound(telchain_,"iden",telbrList_) )  
       telchain_->SetBranchAddress("iden", &telEvent_->iden);
-    if(branchFound(telchain_,"chi2",dutbrList_) )  
+    if(branchFound(telchain_,"chi2",telbrList_) )  
       telchain_->SetBranchAddress("chi2", &telEvent_->chi2);
-    if(branchFound(telchain_,"ndof",dutbrList_) )  
+    if(branchFound(telchain_,"ndof",telbrList_) )  
       telchain_->SetBranchAddress("ndof", &telEvent_->ndof);
   }
 }

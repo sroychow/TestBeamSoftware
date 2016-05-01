@@ -11,7 +11,7 @@
 class Histogrammer {
   public:
     Histogrammer(std::string& outFile);
-    ~Histogrammer();
+    virtual ~Histogrammer();
     void bookEventHistograms();
     void bookDUTHistograms(std::string det);
     void bookDUTHistoForColumn(TString& d, TString c);

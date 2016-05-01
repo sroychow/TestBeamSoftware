@@ -72,8 +72,6 @@ void Histogrammer::bookStubHistograms() {
   new TH2I("stubMatchVsCBC#","Matching between CBC Stub and Reco Stub Vs CBC Id; ;CBC ID",4,0.5,4.5, 8,-0.5,7.5);
   new TH1I("stubEventsCBC","Events with CBC Stubs",2,-0.5,1.5);
   new TH1I("stubEventsReco","Events with Reco Stubs",2,-0.5,1.5);
-  new TH1I("stubEventsCBCTelmatch","Events with CBC Stubs",4,-0.5,3.5);
-  new TH1I("stubEventsRecoTelmatch","Events with Reco Stubs",4,-0.5,3.5);
   bookStubHistoForColumn("C0");
   bookStubHistoForColumn("C1");
 }
@@ -88,7 +86,6 @@ void Histogrammer::bookStubHistoForColumn(TString c) {
   new TH1I("stubProfileReco" + c,"StubProfile for " + c + ";#stub found if det0 && det1 has cluster;Events",8,-0.5,7.5);
   new TH1I("stubProfileCBC" + c,"StubProfile from CBC for " + c + ";#stub from CBC;Events",8,-0.5,7.5);
   new TH2D("stubCorrelation" + c,"StubCorrelation for " + c + ";Reconstructed Stubs;CBC Stubs",9,-0.5,8.5,9,-0.5,8.5);
-  new TH1I("stubEventsRecoTelmatch2" + c,"Events with Reco Stubs",2,-0.5,1.5);
 }
 
 void Histogrammer::bookCorrelationHistograms() {
