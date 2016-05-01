@@ -10,13 +10,13 @@
 #include <utility>
 #include <vector>
 #include <sstream>
-#include "DUTReconstruction.h"
+#include "TelMatchDUTReconstruction.h"
 //#include "telescopeBase.h"
 using std::vector;
 using std::map;
-//DUTReconstruction::DUTReconstruction(const TString& inFilename,const TString&  outFilename) :
-DUTReconstruction::DUTReconstruction(const string inFilename,const string outFilename,int stubWindow) :
-  BeamAnaBase::BeamAnaBase(false),
+TelMatchDUTReconstruction::TelMatchDUTReconstruction(const string inFilename,const string telFileName, 
+const string outFilename,int stubWindow) :
+  BeamAnaBase::BeamAnaBase(true),
   outFile_(outFilename),
   stubWindow_(stubWindow)
 {
@@ -26,26 +26,39 @@ DUTReconstruction::DUTReconstruction(const string inFilename,const string outFil
             << "\nStubWindow: " << stubWindow_
             << std::endl; 
   setDUTInputFile(inFilename);
+  setTelescopeInputFile(telFileName);
   hist_ = new Histogrammer(outFile_);
   beginJob();
 
 }
-void DUTReconstruction::bookHistograms() {
+void TelMatchDUTReconstruction::bookHistograms() {
   hist_->bookEventHistograms();
   hist_->bookDUTHistograms("det0");
   hist_->bookDUTHistograms("det1");
   hist_->bookStubHistograms();
   hist_->bookCorrelationHistograms();
+  //For booking addtional hisograms
+  hist_->hfile()->cd(); 
+  hist_->hfile()->mkdir("telmatch");
+  hist_->hfile()->cd("telmatch");
+  new TH1I("stubEventsCBCTelmatch","Events with CBC Stubs",4,-0.5,3.5);
+  new TH1I("stubEventsRecoTelmatch","Events with Reco Stubs",4,-0.5,3.5);
+  new TH1I("stubEventsRecoTelmatch2C0","Events with Reco Stubs",2,-0.5,1.5);
+  new TH1I("stubEventsRecoTelmatch2C1","Events with Reco Stubs",2,-0.5,1.5);
+
 }
 
-void DUTReconstruction::beginJob() {
+void TelMatchDUTReconstruction::beginJob() {
   setAddresses();
   bookHistograms();
 }
  
-void DUTReconstruction::eventLoop()
+void TelMatchDUTReconstruction::eventLoop()
 {
    //if (fChain == 0) return;
+   
+   //fill the map of telescope events
+   filltrigTrackmap();
 
    Long64_t nentries = getDutEntries();
 
@@ -61,9 +74,13 @@ void DUTReconstruction::eventLoop()
      if (jentry%1000 == 0)
        cout << " Events processed. " << std::setw(8) << jentry 
 	    << endl;
-     // if (Cut(ientry) < 0) continue;
-     //std::cout << "Vcth=" << dutEvt()->vcth << std::endl;
-     //cout << "Point 1" << endl;
+
+     //Telescope ad DUT event matching, select events where there are only 
+     //1track in telescope
+     if(getNtrack (dutEvt()->event) != 1)    continue;
+    
+     //put additional code here
+     //cout << "Point 2" << endl;
      hist_->fillHist1D("EventInfo","hvSettings", dutEvt()->hvSettings);
      hist_->fillHist1D("EventInfo","dutAngle", dutEvt()->dutAngle);
      hist_->fillHist1D("EventInfo","vcth", dutEvt()->vcth);
@@ -182,14 +199,14 @@ void DUTReconstruction::eventLoop()
    }
 }
 
-void DUTReconstruction::clearEvent() {
+void TelMatchDUTReconstruction::clearEvent() {
   BeamAnaBase::clearEvent();
 }
-void DUTReconstruction::endJob() {
+void TelMatchDUTReconstruction::endJob() {
   BeamAnaBase::endJob();
   hist_->closeFile();
 }
 
-DUTReconstruction::~DUTReconstruction(){
+TelMatchDUTReconstruction::~TelMatchDUTReconstruction(){
   delete hist_;
 }

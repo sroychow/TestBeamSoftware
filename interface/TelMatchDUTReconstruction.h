@@ -1,5 +1,5 @@
-#ifndef DUTReconstruction_h
-#define DUTReconstruction_h
+#ifndef TelMatchDUTReconstruction_h
+#define TelMatchDUTReconstruction_h
 
 #include "BeamAnaBase.h"
 
@@ -11,10 +11,10 @@
 class TH1;
 
 
-class DUTReconstruction : public BeamAnaBase {
+class TelMatchDUTReconstruction : public BeamAnaBase {
  public:
-  DUTReconstruction(const string inFilename,const string outFilename,int stubWindow);
-  ~DUTReconstruction();
+  TelMatchDUTReconstruction(const string inFilename,const string telFileName,const string outFilename,int stubWindow);
+  ~TelMatchDUTReconstruction();
   void beginJob();
   void eventLoop(); 
   void bookHistograms();

@@ -3,7 +3,7 @@
 #include <string>
 #include "TROOT.h"
 #include "TStopwatch.h"
-#include "DUTReconstruction.h"
+#include "BaselineAnalysis.h"
 //#include "ReconstructionFromRaw.h"
 #include "argvparser.h"
 using std::cout;
@@ -51,7 +51,7 @@ int main( int argc,char* argv[] ){
   //Let's roll
   TStopwatch timer;
   timer.Start();
-  DUTReconstruction r(inFilename,outFilename,stubWindow);
+  BaselineAnalysis r(inFilename,outFilename,stubWindow);
   std::cout << "Event Loop start" << std::endl;
   r.eventLoop();
   r.endJob();
