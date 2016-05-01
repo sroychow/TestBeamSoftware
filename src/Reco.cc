@@ -84,6 +84,8 @@ namespace Reco {
                        const std::string col) {
     std::vector<skbeam::Stub> tempV;
     recoStubs[col]=tempV;
+    /*
+    //Stub reco when seeding in det0
     for( unsigned int i = 0; i< detClustermap->at("det0" + col).size(); i++ ) {
       float pos0 = detClustermap->at("det0" + col).at(i).position;
       unsigned int CBC0 = pos0/127;  
@@ -98,6 +100,34 @@ namespace Reco {
           skbeam::Stub stemp;
           stemp.det0Cl = detClustermap->at("det0" + col).at(i);
           stemp.det1Cl = detClustermap->at("det1" + col).at(j);
+          if (col.find("C0") != std::string::npos) {
+            stemp.cbcid = CBC0;
+            recoStubs[col].push_back(stemp);
+          }
+          else {
+            stemp.cbcid = CBC1; 
+            recoStubs[col].push_back(stemp);
+          }
+        }
+      }
+    }
+    return recoStubs.size();
+    */
+    //Stub reco when seeding in det1
+    for( unsigned int i = 0; i< detClustermap->at("det1" + col).size(); i++ ) {
+      float pos1 = detClustermap->at("det1" + col).at(i).position;
+      unsigned int CBC1 = pos1/127;  
+      if (col.find("C1") != std::string::npos && (CBC1 == 3 || CBC1==5)) continue;
+      for( unsigned int j = 0; j< detClustermap->at("det0" + col).size(); j++ ) {
+	float pos0 = detClustermap->at("det0" + col).at(j).position;
+	unsigned int CBC0 = pos0/127;  
+	if (col.find("C1") != std::string::npos && (CBC0 == 3 || CBC0 == 5)) continue;
+        if (detClustermap->at("det1" + col).at(i).width <= 3 && 
+	    detClustermap->at("det0" + col).at(j).width <= 3 &&         
+            std::fabs(pos0 - pos1) <= stubwindow ) {
+          skbeam::Stub stemp;
+          stemp.det0Cl = detClustermap->at("det1" + col).at(i);
+          stemp.det1Cl = detClustermap->at("det0" + col).at(j);
           if (col.find("C0") != std::string::npos) {
             stemp.cbcid = CBC0;
             recoStubs[col].push_back(stemp);
