@@ -47,6 +47,7 @@ namespace skbeam {
       vector<double>  *chi2;
       vector<double>  *ndof;
       telescopeBase();
+      telescopeBase(const telescopeBase& t);
       virtual ~telescopeBase();
       //void reset(){}
   };

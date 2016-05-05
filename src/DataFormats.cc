@@ -18,6 +18,18 @@ namespace skbeam {
    chi2 = new vector<double>();
    ndof = new vector<double>();
  }
+ telescopeBase::telescopeBase(const telescopeBase& t) {
+   nTrackParams = t.nTrackParams;
+   euEvt = t.euEvt;
+   xPos = new vector<double>(*t.xPos);
+   yPos = new vector<double>(*t.yPos);
+   dxdz = new vector<double>(*t.dxdz);
+   dydz = new vector<double>(*t.dydz);
+   trackNum = new vector<int>(*t.trackNum);
+   iden = new vector<int>(*t.iden);
+   chi2 = new vector<double>(*t.chi2);
+   ndof = new vector<double>(*t.ndof);
+ }
  telescopeBase::~telescopeBase() {
    delete xPos;
    delete yPos;

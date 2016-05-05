@@ -8,6 +8,7 @@ BeamAnaBase::BeamAnaBase(const bool doTelescopeAnalysis) :
   telchain_(new TChain("tracks")),
   dutEvent_(new skbeam::tBeamBase()),
   telEvent_(new skbeam::telescopeBase()),
+  trigTrackmap_(new std::map<Int_t,skbeam::telescopeBase>()), 
   dut0_chtempC0_(new std::vector<int>()),
   dut0_chtempC1_(new std::vector<int>()),
   dut1_chtempC0_(new std::vector<int>()),
@@ -157,18 +158,26 @@ int BeamAnaBase::getTelEntry(int lflag) const
 }
 
 void BeamAnaBase::filltrigTrackmap() {
+  std::cout << "Filling Trigger Track Map" << std::endl;
+  //for (Long64_t jentry=0; jentry<20;jentry++) {
   for (Long64_t jentry=0; jentry<nTelchainentry_;jentry++) {
     Long64_t ientry = telchain_->LoadTree(jentry);
     int nb = getTelEntry(ientry);
     if (ientry < 0) break;
-    trigTrackmap_[telEvent_->euEvt] = telEvent_;
+    //std::cout << "Filling tel ev=" << jentry  
+    //         <<  "\teuEvt=" << telEvent_->euEvt
+    //          <<  "\tntracks=" <<  telEvent_->nTrackParams 
+    //          << std::endl;
+    skbeam::telescopeBase telTemp(*telEvent_);
+    //std::cout << telEvent_->xPos->size() << "\t" << telEvent_->yPos->size() << std::endl;
+    trigTrackmap_->insert({telEvent_->euEvt,telTemp});
   }
 }
 
-int BeamAnaBase::getNtrack (const long int dutEvt) const {
+int BeamAnaBase::getNtrack (const Int_t dutEvt) const {
   int nt = -1;
-  if( trigTrackmap_.find(dutEvt) != trigTrackmap_.end() )
-    nt = trigTrackmap_.at(dutEvt)->nTrackParams;
+  if( trigTrackmap_->find(dutEvt) != trigTrackmap_->end() )
+    nt = trigTrackmap_->at(dutEvt).nTrackParams;
   return nt;
 }
 
@@ -211,6 +220,10 @@ void BeamAnaBase::findStub(const int stubWindow) {
 }
 
 void BeamAnaBase::endJob() {
+  //for(auto& m: trigTrackmap_)
+  //   delete m.second;
+  std::cout <<  trigTrackmap_->empty() << std::endl;
+  if(!trigTrackmap_->empty())   trigTrackmap_->clear();
   std::cout << " Total Number Of Events " << nDutchainentry_ << std::endl;
   std::cout << " Total Number Of Events w/o Hits " << nEventsNoHits << std::endl;
   std::cout << " Total Number Of Events with Hits " << nDutchainentry_ - nEventsNoHits << std::endl;

@@ -38,7 +38,8 @@ class BeamAnaBase {
     skbeam::tBeamBase* dutEvt() const { return dutEvent_; }
     skbeam::telescopeBase* telEvt() const { return telEvent_; }
     void filltrigTrackmap();
-    int getNtrack (const long int dutEvt) const;
+    std::map<Int_t,skbeam::telescopeBase>* trigTrkmap() const { return trigTrackmap_;}
+    int getNtrack (const Int_t dutEvt) const;
     long int getTelEntries() const { return nTelchainentry_; }
     long int getDutEntries() const { return nDutchainentry_; }
     void setDetChannelVectors();    
@@ -67,7 +68,7 @@ class BeamAnaBase {
     std::vector<std::string> telbrList_;
     skbeam::tBeamBase* dutEvent_;
     skbeam::telescopeBase* telEvent_;
-    std::map<long int,skbeam::telescopeBase*> trigTrackmap_;
+    std::map<Int_t,skbeam::telescopeBase>* trigTrackmap_;
     long int nTelchainentry_;
     long int nDutchainentry_;
     vector<int>* dut0_chtempC0_;

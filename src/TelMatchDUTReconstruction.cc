@@ -45,6 +45,12 @@ void TelMatchDUTReconstruction::bookHistograms() {
   new TH1I("stubEventsRecoTelmatch","Events with Reco Stubs",4,-0.5,3.5);
   new TH1I("stubEventsRecoTelmatch2C0","Events with Reco Stubs",2,-0.5,1.5);
   new TH1I("stubEventsRecoTelmatch2C1","Events with Reco Stubs",2,-0.5,1.5);
+  hist_->hfile()->cd(); 
+  hist_->hfile()->mkdir("telescopeProp");
+  hist_->hfile()->cd("telescopeProp");
+  new TH1D("nTrackParams","",30,0,30);
+  new TH1D("xpos","",200,-20.,20.);
+  new TH1D("ypos","",200,-20.,20.);
 
 }
 
@@ -66,7 +72,7 @@ void TelMatchDUTReconstruction::eventLoop()
    cout << "#Events=" << nentries << endl;
    hist_->fillHist1D("EventInfo","nevents", nentries);
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
-     //for (Long64_t jentry=0; jentry<50;jentry++) {
+   //for (Long64_t jentry=0; jentry<20;jentry++) {
      Long64_t ientry = dutchain()->LoadTree(jentry);
      int nbytes = getDUTEntry(ientry);
      //std::cout << "Chain load status=" << ientry << std::endl;
@@ -74,6 +80,17 @@ void TelMatchDUTReconstruction::eventLoop()
      if (jentry%1000 == 0)
        cout << " Events processed. " << std::setw(8) << jentry 
 	    << endl;
+     Int_t duev = dutEvt()->event;
+     //std::cout << duev << " # of tracks " << getNtrack(duev) << std::endl;
+     if( trigTrkmap()->find(duev) != trigTrkmap()->end() ) {
+       hist_->fillHist1D("telescopeProp","nTrackParams", trigTrkmap()->at(duev).nTrackParams);
+       //std::cout << trigTrkmap()->at(duev).xPos->size() << "\t"
+       //          << trigTrkmap()->at(duev).yPos->size() << std::endl;
+       for(auto& x: *(trigTrkmap()->at(duev).xPos))
+         hist_->fillHist1D("telescopeProp","xpos", x);
+       for(auto& y: *(trigTrkmap()->at(duev).yPos))
+         hist_->fillHist1D("telescopeProp","ypos", y);
+     }
 
      //Telescope ad DUT event matching, select events where there are only 
      //1track in telescope
