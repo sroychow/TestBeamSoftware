@@ -1,19 +1,16 @@
 UNAME    = $(shell uname)
-EXE      = baselineReco telmatchdutReco clswStudy
+EXE      = ntupleMerger
  
-VPATH  = .:./interface
-vpath %.h ./interface
+VPATH  = .:./
+vpath %.h ./
 
 CSUF   = cc
 HSUF   = h
 DICTC  = Dict.$(CSUF)
 DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
 
-SRCS   = src/argvparser.cc src/DataFormats.cc src/BeamAnaBase.cc src/Reco.cc src/Utility.cc src/Histogrammer.cc   
+SRCS   = DataFormats.cc NtupleMerger.cc
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
-
-#PLOTSRCS = tools/PlotMakerBase.cc tools/plotMakermain.cc
-#PLOTOBJS   = $(patsubst %.$(CSUF), %.o, $(PLOTSRCS))
 
 LDFLAGS  = -g
 SOFLAGS  = -shared 
@@ -24,9 +21,9 @@ CXXFLAGS += -g -std=c++11
 #-Wall -Wno-deprecated -std=c++11
 
 
-HDRS_DICT = interface/LinkDef.h
+HDRS_DICT = DataFormats.h LinkDef.h
 
-bin: baselineReco telmatchdutReco clswStudy
+bin: ntupleMerger
 all: 
 	gmake cint 
 	gmake bin 
@@ -35,28 +32,9 @@ cint: $(DICTC)
 $(DICTC): $(HDRS_DICT)
 	@echo "Generating dictionary $(DICTC) and $(DICTH) ..."
 	rootcint -f $@ -c $(CXXFLAGS) $^ 
-	perl -pi -e 's#interface/##' $(DICTH) 
-	perl -pi -e 's/#include <math.h>/#include <math.h>\n#include <map>/'  $(DICTH)
-	mv $(DICTC) src/
-	mv $(DICTH) interface/
+	perl -pi -e 's/#include <math.h>/#include <math.h>\n#include <map>/' $(DICTH)
 
-BaselineAnalysis.o : src/BaselineAnalysis.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-	mv $@ ../src/
-
-baselineReco:   src/baselineReco.cc $(OBJS) src/BaselineAnalysis.o src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
-
-TelMatchDUTReconstruction.o : src/TelMatchDUTReconstruction.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-
-telmatchdutReco:   src/telmatchdutReco.cc $(OBJS) src/TelMatchDUTReconstruction.o src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
-
-ClusterWidthAnalysis.o : src/ClusterWidthAnalysis.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-
-clswStudy:   src/clusterwidthStudy.cc $(OBJS) src/ClusterWidthAnalysis.o src/Dict.o
+ntupleMerger:  $(OBJS) Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 # Create object files
@@ -75,5 +53,5 @@ include Makefile.dep
 # Clean 
 .PHONY   : clean 
 clean : 
-	@-rm $(OBJS) $(EXE) interface/$(DICTH) src/$(DICTC) src/*.o  
+	@-rm $(OBJS) $(EXE) $(DICTH) $(DICTC) *.o  
 
