@@ -55,10 +55,6 @@ class NtupleMerger {
     bool periodicityFlag_;
     bool pFlag_;
     bool goodEventFlag_;
-    //input branchlist
-    std::vector<std::string> dutbrList_;
-    std::vector<std::string> telbrList_;
-    std::vector<std::string> dqmbrList_;
 
     //branches to update
     //TBranch* condBranch_;
