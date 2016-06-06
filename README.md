@@ -10,4 +10,4 @@ make
 
 ## Usage
 ##
-./ntuplemerger <EDMTupleName> <TelescopeTupleName> <DQMTupleName>
+./ntuplemerger \<EDMTupleName\> \<TelescopeTupleName\> \<DQMTupleName\>
