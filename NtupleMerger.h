@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 #include <iomanip>
-
+#include<stdint.h>
 #include <map>
 #include <string>
 
@@ -28,18 +28,11 @@ using std::cerr;
 
 class NtupleMerger {
   public :
-    NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string dqmTuple);
+    NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string dqmTuple, const std::string outTuple);
     virtual ~NtupleMerger();
-    int setDUTInputFile(const std::string& fname);
-    int setTelescopeInputFile(const std::string& fname);
-    int setDQMInputFile(const std::string& fname);
 
     bool branchFound(TTree* chain,const string& b,std::vector<std::string>& brList_);
     void setInputBranchAddresses();
-
-    int getDUTEntry(int lflag) const;
-    int getTelEntry(int lflag) const;
-    int getDQMEntry(int lflag) const;
 
     void filltrigTrackmap();
     void eventLoop();
@@ -52,7 +45,8 @@ class NtupleMerger {
     TTree *dutchain_; 
     TTree *telchain_;
     TTree *dqmchain_;
-    //TTree* outTuple_;
+    TTree* outTree_;
+    TFile* fout_;
      
     //input format
     std::vector<int>* cbcErrorVal_;
@@ -67,17 +61,19 @@ class NtupleMerger {
     std::vector<std::string> dqmbrList_;
 
     //branches to update
-    TBranch* condBranch_;
+    //TBranch* condBranch_;
     TBranch* telBranch_;
     TBranch* periodicityBranch_;
     TBranch* goodEvBranch_;
     //TBranch* eventQualityBranch_; 
 
     //output format
-    //tbeam::dutEvent* dutEvent_;
-    //tbeam::dutEvent* outdutEvent_;
+    
+    //
     tbeam::TelescopeEvent* telOutputEvent_;
     tbeam::condEvent* condEvent_;
+    tbeam::dutEvent* dutEvent_;
+    tbeam::dutEvent* outdutEvent_;
     //TBranch* condBranch_;
 
     std::map<Int_t,tbeam::TelescopeEvent>* trigTrackmap_;

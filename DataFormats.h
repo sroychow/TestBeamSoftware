@@ -49,7 +49,6 @@ namespace tbeam {
      std::map < std::string, std::vector <tbeam::cluster*> > clusters;
      std::map< std::string,std::vector<int> > dut_channel;
      std::map< std::string,std::vector<int> > dut_row;
-     //std::map < std::string, std::vector <int> > hits;
      std::vector <tbeam::stub*> stubs;
      uint32_t stubWord;
      uint32_t stubWordReco;
