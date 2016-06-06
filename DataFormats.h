@@ -11,29 +11,52 @@ using std::vector;
 using std::map;
 using std::string;
 namespace tbeam {
-  class cluster{
+  class cluster;
+  class stub;
+  class cluster : public TObject {
    public:
      cluster();
      ~cluster();
      uint16_t x;
      uint16_t size;
+     //std::vector<tbeam::stub *> stubs;
+     ClassDef(cluster,1)
   };
-  class stub{
+  class stub : public TObject {
    public:
      stub();
+     stub(const tbeam::stub& t);
      tbeam::cluster * seeding;  // Bottom sensor cluster
      tbeam::cluster * matched;  // Top sensor cluster
      uint16_t x;        // Position of the stub (bottom sensor)
      int16_t direction; // Direction of the stub (cl0-cl1)
+     ClassDef(stub,1)
   };
-  class cbc{
+  class cbc : public TObject {
    public:
      cbc();
      uint16_t pipelineAdd;
      uint8_t status;
      uint8_t error;
+     ClassDef(cbc,1)
   };
-  class CondEvent : public TObject {
+  
+  class dutEvent : public TObject {
+   public:
+     dutEvent();
+     dutEvent(const tbeam::dutEvent& t);
+     virtual ~dutEvent();
+     std::map < std::string, std::vector <tbeam::cluster*> > clusters;
+     std::map< std::string,std::vector<int> > dut_channel;
+     std::map< std::string,std::vector<int> > dut_row;
+     //std::map < std::string, std::vector <int> > hits;
+     std::vector <tbeam::stub*> stubs;
+     uint32_t stubWord;
+     uint32_t stubWordReco;
+     //bool isGood;
+     ClassDef(dutEvent,1)
+  };
+  class condEvent : public TObject {
    public:
     unsigned int run;
     unsigned int lumiSection;
@@ -53,27 +76,11 @@ namespace tbeam {
     int condData;
     int glibStatus;
     std::vector<tbeam::cbc> cbcs;
-    CondEvent();
-    void reset();
-    virtual ~CondEvent(){}
-    ClassDef(CondEvent,1)
+    condEvent();
+    virtual ~condEvent(){}
+    ClassDef(condEvent,1)
   };
 
-  
-  class DutEvent : public TObject {
-   public:
-     DutEvent();
-     virtual ~DutEvent();
-     std::map< std::string,std::vector<int> > dut_channel;
-     std::map< std::string,std::vector<int> > dut_row;
-     std::map < std::string, std::vector <tbeam::cluster*> > clusters;//keys are det0,det1
-     std::vector <tbeam::stub*> stubs;
-     uint32_t stubWord;
-     uint32_t stubWordReco;
-     bool isGood;
-     void reset();
-     ClassDef(DutEvent,1)
-  };
   class TelescopeEvent : public TObject {
     public :
       Int_t           nTrackParams;

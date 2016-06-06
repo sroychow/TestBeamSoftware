@@ -1,7 +1,11 @@
 #include "DataFormats.h"
-ClassImp(tbeam::CondEvent)
-ClassImp(tbeam::DutEvent)
+ClassImp(tbeam::cbc)
+ClassImp(tbeam::cluster)
+ClassImp(tbeam::stub)
+ClassImp(tbeam::dutEvent)
+ClassImp(tbeam::condEvent)
 ClassImp(tbeam::TelescopeEvent)
+
 tbeam::cbc::cbc():
    pipelineAdd(0),
    status(0),
@@ -22,11 +26,63 @@ tbeam::stub::stub():
    x(0),
    direction(0)
 {
-   seeding=0;
-   matched=0;
+   seeding = new tbeam::cluster();
+   matched = new tbeam::cluster();
 }
 
-tbeam::CondEvent::CondEvent() :
+tbeam::stub::stub(const tbeam::stub& t) 
+{
+  seeding = new tbeam::cluster(*(t.seeding));
+  matched = new tbeam::cluster(*(t.matched));
+  x = t.x;
+  direction = t.direction;
+}
+
+tbeam::dutEvent::dutEvent():
+   stubWord(0),
+   stubWordReco(0)
+{
+   //isGood(1)
+   //stubs=std::vector<tbeam::stub*>();
+}
+
+tbeam::dutEvent::dutEvent(const tbeam::dutEvent& t) 
+{
+  //std::map < std::string, std::vector <tbeam::cluster*> > clusters;
+  for(auto& d : t.clusters ) {
+    std::vector<tbeam::cluster*> ctemp;
+    for(auto cp : d.second) {
+      tbeam::cluster* cc = new tbeam::cluster(*cp);
+      ctemp.push_back(cc);
+    }
+    clusters[d.first] = ctemp;
+  }
+  //std::map< std::string,std::vector<int> > dut_channel;
+  dut_channel = t.dut_channel;
+  //std::map< std::string,std::vector<int> > dut_row;
+  dut_row = t.dut_row;
+  //std::vector <tbeam::stub*> stubs;
+  for(auto& sp : t.stubs) {
+    tbeam::stub* ss = new tbeam::stub(*sp);
+    stubs.push_back(ss);
+  }
+  stubWord = t.stubWord;
+  stubWordReco = t.stubWordReco;
+}
+
+tbeam::dutEvent::~dutEvent(){
+   //std::cout << "Entering dutEvent destructor!" << std::endl;   
+   /*
+   for (unsigned int i=0; i<stubs.size(); i++){ if(stubs.at(i))   delete stubs.at(i);}
+   for(std::map<std::string,std::vector<tbeam::cluster *> >::iterator it = clusters.begin(); it != clusters.end(); ++it) {
+      for(std::vector<tbeam::cluster *>::iterator cl = it->second.begin(); cl!=it->second.end(); ++cl){
+         if(*cl)  delete *cl;
+      }
+   }*/
+   //std::cout << "Leaving dutEvent destructor!" << std::endl;   
+}
+
+tbeam::condEvent::condEvent() :
    run(999999), 
    lumiSection(999999), 
    event(999999),  
@@ -42,40 +98,11 @@ tbeam::CondEvent::CondEvent() :
    vcth(999999),
    stubLatency(999999),
    triggerLatency(999999),
-   condData(9999),
+   condData(999),
    glibStatus(9999)
 {
+  //cbcs = std::vector<tbeam::cbc>();
 }
-void tbeam::CondEvent::reset()
-{
-  cbcs.clear();
-}
-
-tbeam::DutEvent::DutEvent():
-   stubWord(0),
-   stubWordReco(0),
-   isGood(0)
-{
-
-}
-void tbeam::DutEvent::reset()
-{
-  dut_channel.clear();
-  dut_row.clear();
-  //std::map < std::string, std::vector <tbeam::cluster*> > 
-  for(auto& d : clusters){
-    for(auto p : d.second)     delete p;
-    d.second.clear();
-  } 
-  clusters.clear();
-  //std::vector <tbeam::stub*> 
-  for(auto s : stubs)    delete s;
-  stubs.clear(); 
-}
-tbeam::DutEvent::~DutEvent(){
-   reset();
-}
-
 
 tbeam::TelescopeEvent::TelescopeEvent() 
 {

@@ -14,7 +14,7 @@ OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
 LDFLAGS  = -g
 SOFLAGS  = -shared 
-CXXFLAGS = -I./interface -I./  
+CXXFLAGS = -I./  
 
 CXX       = g++
 CXXFLAGS += -g -std=c++11
@@ -54,4 +54,3 @@ include Makefile.dep
 .PHONY   : clean 
 clean : 
 	@-rm $(OBJS) $(EXE) $(DICTH) $(DICTC) *.o  
-

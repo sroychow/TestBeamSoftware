@@ -18,13 +18,18 @@
 #pragma link C++ class std::map<std::string,int>+;
 //input formats
 #pragma link C++ class tbeam::cluster+;
-#pragma link C++ class tbeam::stub+;
 #pragma link C++ class tbeam::cbc+;
-#pragma link C++ class std::vector<tbeam::cbc>+;
-#pragma link C++ class std::vector<tbeam::stub*>+;
-#pragma link C++ class std::vector<tbeam::cluster*>+;
-#pragma link C++ class std::map<std::string,std::vector<tbeam::cluster*>>+;
-#pragma link C++ class tbeam::CondEvent+;
-#pragma link C++ class tbeam::DutEvent+;
+#pragma link C++ class tbeam::stub+;
+#pragma link C++ class std::vector<tbeam::cluster >+;
+#pragma link C++ class std::map<std::string,std::vector<tbeam::cluster > >+;
+#pragma link C++ class std::map<std::string,std::vector<tbeam::cluster* > >+;
+#pragma link C++ class std::vector<tbeam::stub>+;
+#pragma link C++ class std::vector<tbeam::stub* >+;
+#pragma link C++ class tbeam::dutEvent+;
+#pragma link C++ class tbeam::condEvent+;
+
+#pragma link C++ class  std::vector<unsigned short>+;
+#pragma link C++ class  std::map< std::string,std::vector<int> >+;
+#pragma link C++ class  std::map< std::string,std::vector<unsigned short> >+;
 #pragma link C++ class tbeam::TelescopeEvent+; 
 #endif

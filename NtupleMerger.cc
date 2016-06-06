@@ -1,15 +1,14 @@
 #include "NtupleMerger.h"
 
 NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string dqmTuple) :
-  dutchain_(new TChain("treeMaker/tbeamTree")),
-  telchain_(new TChain("tracks")),
-  dqmchain_(new TChain("sensorHitTree")),
   cbcErrorVal_(new std::vector<int>()),
   cbcPLAddressVal_(new std::vector<int>()),
-  dutEvent_(new tbeam::DutEvent()),
   telOutputEvent_(new tbeam::TelescopeEvent()),//for output
   telEvent_(new tbeam::TelescopeEvent()),//for input
-  condEvent_(new tbeam::CondEvent()),
+  periodicityFlag_(true),
+  pFlag_(true),
+  goodEventFlag_(true),
+  condEvent_(new tbeam::condEvent()),
   trigTrackmap_(new std::map<Int_t,tbeam::TelescopeEvent>()) 
 {
   setDUTInputFile(dutTuple);
@@ -29,10 +28,6 @@ NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTupl
             << "\nLooping Over " << nEventstoLoop_ 
             << std::endl;
   setInputBranchAddresses();
-  outTuple_ = new TTree("analysisTree", "Analysis Tree");
-  outTuple_->Branch("DUTEvent",&dutEvent_);
-  outTuple_->Branch("TelescopeEvent",&telOutputEvent_);
-  outTuple_->Branch("ConditionData",&condEvent_);
 }
 
 int NtupleMerger::setDUTInputFile(const std::string& fname) {
@@ -41,7 +36,9 @@ int NtupleMerger::setDUTInputFile(const std::string& fname) {
     std::cerr << ">>> Warning: File <<" << fname << ">> was not found!!" << endl;
     return static_cast<int>(dutchain_->GetEntries()); 
   }
-  dutchain_->AddFile(fname.c_str(), -1);
+  dutF_ = TFile::Open(fname.c_str(),"update");
+  //dutchain_->AddFile(fname.c_str(), -1);
+  dutchain_ = dynamic_cast<TTree*>(dutF_->Get("treeMaker/tbeamTree"));
   nDutchainentry_ = static_cast<long int>(dutchain_->GetEntries());
   return nDutchainentry_; 
 }
@@ -52,7 +49,8 @@ int NtupleMerger::setTelescopeInputFile(const std::string& fname) {
     std::cerr << ">>> Warning: File <<" << fname << ">> was not found!!" << endl;
     return static_cast<int>(telchain_->GetEntries()); 
   }
-  telchain_->AddFile(fname.c_str(), -1);
+  telF_ = TFile::Open(fname.c_str());
+  telchain_ =dynamic_cast<TTree*>(telF_->Get("tracks"));
   nTelchainentry_ = static_cast<long int>(telchain_->GetEntries());
   return nTelchainentry_; 
 }
@@ -63,11 +61,12 @@ int NtupleMerger::setDQMInputFile(const std::string& fname) {
     std::cerr << ">>> Warning: File <<" << fname << ">> was not found!!" << endl;
     return static_cast<int>(dqmchain_->GetEntries()); 
   }
-  dqmchain_->AddFile(fname.c_str(), -1);
+  dqmF_ = TFile::Open(fname.c_str());
+  dqmchain_ = dynamic_cast<TTree*>(dqmF_->Get("sensorHitTree"));
   nDqmchainentry_ = static_cast<long int>(dqmchain_->GetEntries());
   return nDqmchainentry_; 
 }
-bool NtupleMerger::branchFound(TChain* chain,const string& b,std::vector<std::string>& brList_)
+bool NtupleMerger::branchFound(TTree* chain,const string& b,std::vector<std::string>& brList_)
 {
   TBranch* branch = chain->GetBranch(b.c_str());
   if (!branch) {
@@ -81,8 +80,14 @@ bool NtupleMerger::branchFound(TChain* chain,const string& b,std::vector<std::st
 
 void NtupleMerger::setInputBranchAddresses() {
   //set the address of the input DUT tree
-  if( branchFound(dutchain_,"DUT",dutbrList_) ) dutchain_->SetBranchAddress("DUT", &dutEvent_);
-  if( branchFound(dutchain_,"Condition",dutbrList_) ) dutchain_->SetBranchAddress("Condition", &condEvent_);
+  if( branchFound(dutchain_,"Condition",dutbrList_) )    dutchain_->SetBranchAddress("Condition", &condEvent_);
+  //dutchain_->SetBranchAddress("Condition", &condEvent_);
+  //dutbrList_.push_back("Condition");
+  condBranch_ = dutchain_->GetBranch("Condition");
+  telBranch_ = dutchain_->Branch("TelescopeEvent",&telOutputEvent_);
+  periodicityBranch_ = dutchain_->Branch("periodicityFlag",&pFlag_);
+  goodEvBranch_ = dutchain_->Branch("goodEventFlag",&goodEventFlag_);
+  
   //set the address of the input Telescope tree
   if(branchFound(telchain_,"nTrackParams",telbrList_) )  telchain_->SetBranchAddress("nTrackParams", &telEvent_->nTrackParams);
   if(branchFound(telchain_,"euEvt",telbrList_) )  telchain_->SetBranchAddress("euEvt", &telEvent_->euEvt);
@@ -96,7 +101,8 @@ void NtupleMerger::setInputBranchAddresses() {
   if(branchFound(telchain_,"ndof",telbrList_) )  telchain_->SetBranchAddress("ndof", &telEvent_->ndof);
   //set branches of the input dqm tree
   if(branchFound(dqmchain_,"cbcError",dqmbrList_) )  dqmchain_->SetBranchAddress("cbcError", &cbcErrorVal_);
-  if(branchFound(dqmchain_,"cbcPLAddress",dqmbrList_) )  dqmchain_->SetBranchAddress("cbcPLAddress", &cbcPLAddressVal_);   
+  if(branchFound(dqmchain_,"cbcPLAddress",dqmbrList_) )  dqmchain_->SetBranchAddress("cbcPLAddress", &cbcPLAddressVal_);
+  if(branchFound(dqmchain_,"eventFlag",dqmbrList_) )  dqmchain_->SetBranchAddress("eventFlag", &periodicityFlag_);   
 }
 
 int NtupleMerger::getDUTEntry(int lflag) const
@@ -157,7 +163,7 @@ void NtupleMerger::filltrigTrackmap() {
 void NtupleMerger::eventLoop() {
   filltrigTrackmap();
   std::cout << "Trigtrackmap size="<< trigTrackmap_->size() << std::endl;
-  for (Long64_t jentry=0; jentry<nEventstoLoop_ ;jentry++) {
+  for (Long64_t jentry=0; jentry<nEventstoLoop_;jentry++) {//nEventstoLoop_
      Long64_t dutentry = dutchain_->LoadTree(jentry);
      Long64_t dqmentry = dqmchain_->LoadTree(jentry);
      int nbytes = getDUTEntry(dutentry);
@@ -166,38 +172,51 @@ void NtupleMerger::eventLoop() {
        cout << " Events processed. " << std::setw(8) << jentry << endl;
        std::cout << "Telescope Event=" << trigTrackmap_->at(condEvent_->event).euEvt << "\tntracks=" 
                  << trigTrackmap_->at(condEvent_->event).nTrackParams << std::endl;
-       std::cout << "DQM Event::ErrorValSize=" << cbcErrorVal_->size() << "\tPLAddressValSize" << cbcPLAddressVal_->size() << std::endl;     
+       std::cout << "DQM Event::ErrorValSize=" << cbcErrorVal_->size() << "\tPLAddressValSize" << cbcPLAddressVal_->size() << std::endl; 
      }
+     
+     //if(!periodicityFlag_) std::cout << "Event no>>>" << jentry << std::endl;
      for(unsigned int i = 0; i<cbcErrorVal_->size(); i++)
        condEvent_->cbcs[i].error = cbcErrorVal_->at(i);
      for(unsigned int i = 0; i<cbcPLAddressVal_->size(); i++)
        condEvent_->cbcs[i].pipelineAdd = cbcPLAddressVal_->at(i);
      telOutputEvent_ = &trigTrackmap_->at(condEvent_->event);
-     outTuple_->Fill();
+     pFlag_ = periodicityFlag_;
+     periodicityBranch_->Fill();
+     goodEvBranch_->Fill();
+     condBranch_->Fill();
+     telBranch_->Fill();
   }
+  endJob();
 }
 
 
 void NtupleMerger::endJob() {
-   TFile* fout = TFile::Open("test.root","RECREATE");
-   fout->cd();
-   outTuple_->Write();
-   fout->Close();
+   telF_->Close();
+   dqmF_->Close();
+   dutF_->cd("treeMaker");
+   dutchain_->Write("", TObject::kOverwrite);
+   //"", TObject::kOverwrite);
+   dutF_->Close();
 }
 
 NtupleMerger::~NtupleMerger() {
-  delete dutchain_;
-  delete telchain_;
-  delete dqmchain_;
-  delete dutEvent_;
-  delete telEvent_;
-  delete condEvent_;
+  //if(dutchain_) delete dutchain_;
+  //if(telchain_) delete telchain_;
+  //if(dqmchain_) delete dqmchain_;
+  //if(telEvent_) delete telEvent_;
+  //if(condEvent_) delete condEvent_;
 }
 
-int main() {
+int main(int argc, char** argv) {
+  if(argc<3)   {
+    std::cout << "Wrong Usage!!" << std::endl;
+    std::cout << "Usage: ./ntuplemerger <EDMTupleName> <TelescopeTupleName> <DQMTupleName>" << std::endl;
+    exit(1);
+  }
   
-  NtupleMerger m("EDMntuple_776.root","NtupleTelescope_1612.root","Rawtuple_run362_dqm.root");
+  NtupleMerger m(argv[1],argv[2],argv[3]);
   m.eventLoop(); 
-  m.endJob();
+  //m.endJob();
   return 0;
 }
