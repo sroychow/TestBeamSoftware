@@ -95,14 +95,15 @@ void NtupleMerger::eventLoop() {
      if (jentry%1000 == 0)  {
        cout << " Events processed. " << std::setw(8) << jentry 
             << "\t Load DUT=" << dutentry << "\t Load Dqm=" << dqmentry << endl;
-       std::cout << "Telescope Event=" << trigTrackmap_->at(condEvent_->event).euEvt 
-                 << "\tntracks=" << trigTrackmap_->at(condEvent_->event).nTrackParams << std::endl;
-       std::cout << "DQM Event::ErrorValSize=" << cbcErrorVal_->size() 
-                 << "\tPLAddressValSize" << cbcPLAddressVal_->size() << std::endl; 
-       std::cout << "condEvent pointer=" << condEvent_ 
-                 << "\teuEvt=" << condEvent_->event
-                 << std::endl;
+       //std::cout << "Telescope Event=" << trigTrackmap_->at(condEvent_->event).euEvt 
+       //          << "\tntracks=" << trigTrackmap_->at(condEvent_->event).nTrackParams << std::endl;
+       //std::cout << "DQM Event::ErrorValSize=" << cbcErrorVal_->size() 
+       //          << "\tPLAddressValSize" << cbcPLAddressVal_->size() << std::endl; 
+       //std::cout << "condEvent pointer=" << condEvent_ 
+       //          << "\teuEvt=" << condEvent_->event
+       //          << std::endl;
      }
+      goodEventFlag_ = true;
       for(unsigned int i = 0; i<condEvent_->cbcs.size(); i++) 
          std::cout << static_cast<unsigned int>(condEvent_->cbcs[i].error) << ",";  
        std::cout << std::endl;
@@ -134,7 +135,7 @@ void NtupleMerger::endJob() {
    telF_->Close();
    dqmF_->Close();
    dutF_->Close();
-   outTree_->Write();
+   outTree_->AutoSave();
    fout_->Close();
    
 }
@@ -148,7 +149,7 @@ NtupleMerger::~NtupleMerger() {
 }
 
 int main(int argc, char** argv) {
-  if(argc<4)   {
+  if(argc<5)   {
     std::cout << "Wrong Usage!!" << std::endl;
     std::cout << "Usage: ./ntuplemerger <EDMTupleName> <TelescopeTupleName> <DQMTupleName> <OutPutTupleName>" << std::endl;
     exit(1);
