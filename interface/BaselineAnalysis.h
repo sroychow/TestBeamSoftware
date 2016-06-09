@@ -11,7 +11,7 @@
 class TH1;
 class BaselineAnalysis : public BeamAnaBase {
  public:
-  BaselineAnalysis(const string inFilename,const string outFilename,int stubWindow);
+  BaselineAnalysis(const string inFilename,const string outFilename);
   ~BaselineAnalysis();
   void beginJob();
   void eventLoop(); 
@@ -21,7 +21,6 @@ class BaselineAnalysis : public BeamAnaBase {
 
  private:
   std::string outFile_;
-  int stubWindow_;
   Histogrammer* hist_;
   unsigned long int nEntries_; 
 };

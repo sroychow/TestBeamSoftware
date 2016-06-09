@@ -13,16 +13,13 @@
 #include "BaselineAnalysis.h"
 using std::vector;
 using std::map;
-//BaselineAnalysis::BaselineAnalysis(const TString& inFilename,const TString&  outFilename) :
-BaselineAnalysis::BaselineAnalysis(const string inFilename,const string outFilename,int stubWindow) :
+BaselineAnalysis::BaselineAnalysis(const std::string inFilename,const std::string outFilename) :
   BeamAnaBase::BeamAnaBase(),
-  outFile_(outFilename),
-  stubWindow_(stubWindow)
+  outFile_(outFilename)
 {
   std::cout << "EDM Tuple Analyzer initialized with the following options\n" 
             << "Infile: " << inFilename
             << "\nOutFile: " << outFile_
-            << "\nStubWindow: " << stubWindow_
             << std::endl; 
   if( setInputFile(inFilename) == 0 ) {
     std::cout << "Empty Chain!!";
@@ -81,6 +78,11 @@ void BaselineAnalysis::eventLoop()
        hist_->fillHist1D("EventInfo","window", stubWindow());
        hist_->fillHist1D("EventInfo","tilt", static_cast<unsigned long int>(condEv()->tilt));
      }
+     hist_->fillHist1D("EventInfo","isPeriodic",isPeriodic());
+     hist_->fillHist1D("EventInfo","isGoodFlag",isGoodEvent());
+
+     if(!isGoodEvent())   continue;
+
      hist_->fillHist1D("EventInfo","condData", condEv()->condData);
      hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(condEv()->tdcPhase));
       

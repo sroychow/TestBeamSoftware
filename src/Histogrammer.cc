@@ -33,6 +33,8 @@ void Histogrammer::bookEventHistograms() {
   new TH1I("tilt", ";tilt;#Events", 200,-0.5,199.5);
   new TH1I("condData", ";condData;#Events", 20,-0.5,19.5);
   new TH1I("tdcPhase",";tdc;#Events",17,-0.5,16.5);
+  new TH1I("isPeriodic",";isPeriodic;#Events",2,-0.5,1.5);
+  new TH1I("isGoodFlag",";isGood;#Events",2,-0.5,1.5);
 }
 
 void Histogrammer::bookDUTHistograms(std::string det) {

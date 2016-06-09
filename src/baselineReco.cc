@@ -19,11 +19,8 @@ int main( int argc,char* argv[] ){
   cmd.setHelpOption( "h", "help", "Print this help page" );
   cmd.addErrorCode( 0, "Success" );
   cmd.addErrorCode( 1, "Error" );
-  cmd.defineOption( "iFile", "Input RawTuple name", ArgvParser::OptionRequiresValue);
+  cmd.defineOption( "iFile", "Input Tree name", ArgvParser::OptionRequiresValue);
   cmd.defineOption( "oFile", "Output file name", ArgvParser::OptionRequiresValue);  
-  cmd.defineOption( "raw", "Tuple type is Raw. Default is EDM", ArgvParser::NoOptionAttribute);  
-  cmd.defineOption( "sw", "Stub Window. Default = 7", ArgvParser::NoOptionAttribute);
-  cmd.defineOption( "png", "Produce png files for web. Default = false", ArgvParser::NoOptionAttribute); 
   int result = cmd.parse( argc, argv );
   if (result != ArgvParser::NoParserError)
   {
@@ -43,15 +40,11 @@ int main( int argc,char* argv[] ){
     std::cerr << "Error, no output filename provided. Quitting" << std::endl;
     exit( 1 );
   }
-  bool isRaw = ( cmd.foundOption( "raw" ) ) ? true:false;
-  float stubWindow = ( cmd.foundOption( "sw" ) ) ? std::stod(cmd.optionValue( "sw")) : 7;
-  bool publishPng = ( cmd.foundOption( "png" ) ) ? true : false;
   
-  std::cout << "isRaw=" << isRaw << std::endl;  
   //Let's roll
   TStopwatch timer;
   timer.Start();
-  BaselineAnalysis r(inFilename,outFilename,stubWindow);
+  BaselineAnalysis r(inFilename,outFilename);
   std::cout << "Event Loop start" << std::endl;
   r.eventLoop();
   r.endJob();
