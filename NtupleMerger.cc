@@ -103,7 +103,6 @@ void NtupleMerger::eventLoop() {
        //          << "\teuEvt=" << condEvent_->event
        //          << std::endl;
      }
-      goodEventFlag_ = true;
       for(unsigned int i = 0; i<condEvent_->cbcs.size(); i++) 
          std::cout << static_cast<unsigned int>(condEvent_->cbcs[i].error) << ",";  
        std::cout << std::endl;
@@ -124,7 +123,9 @@ void NtupleMerger::eventLoop() {
      outdutEvent_ = dutEvent_;
      telOutputEvent_ = &trigTrackmap_->at(condEvent_->event);
      pFlag_ = periodicityFlag_;
-     if( !cbcErrorVal_ || !pFlag_)      goodEventFlag_ = false;
+     goodEventFlag_ = cbcErrflag && pFlag_;
+     //goodEventFlag_ = true;
+     //if( !cbcErrflag || !pFlag_)      goodEventFlag_ = false;
      outTree_->Fill();
   }
   endJob();
