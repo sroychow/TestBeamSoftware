@@ -39,18 +39,18 @@ class Histogrammer {
     } 
  
     template <class T>
-    void fillHistofromVec( const std::vector<T>* vec, const char* dir, const char* h) {
+    void fillHistofromVec( const std::vector<T>& vec, const char* dir, const char* h) {
       fout_->cd(dir);
-      Utility::fillHistofromVec( *vec, h); 
+      Utility::fillHistofromVec( vec, h); 
     }
     template <class T1, class T2>
-    void fill2DHistofromVec( const std::vector<T1>* vecC0, const std::vector<T2>* vecC1, 
+    void fill2DHistofromVec( const std::vector<T1>& vecC0, const std::vector<T2>& vecC1, 
                              const char* dir, const char* h) {
       fout_->cd(dir);
-      Utility::fill2DHistofromVec( *vecC0, *vecC1,h);
+      Utility::fill2DHistofromVec( vecC0, vecC1,h);
      }
     
-    void fillClusterHistograms( const char* det, std::vector<skbeam::Cluster>& cvec, const char* col);
+    void fillClusterHistograms( const char* det, std::vector<tbeam::cluster>& cvec, const char* col);
     void closeFile();
     
     TFile* hfile() const { return fout_;}

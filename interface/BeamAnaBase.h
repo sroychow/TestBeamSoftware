@@ -25,59 +25,59 @@ using std::cerr;
 
 class BeamAnaBase {
   public :
-    BeamAnaBase(const bool doTelescopeAnalysis);
+    BeamAnaBase();
     virtual ~BeamAnaBase();
-    int setDUTInputFile(const std::string& fname);
-    int setTelescopeInputFile(const std::string& fname);
-    bool branchFound(TChain* chain,const string& b,std::vector<std::string>& brList_);
+    bool setInputFile(const std::string& fname);
     void setAddresses();
-    int getDUTEntry(int lflag) const;
-    int getTelEntry(int lflag) const;
-    TChain* telescopechain() const{ return telchain_; } 
-    TChain* dutchain() const{ return dutchain_; } 
-    skbeam::tBeamBase* dutEvt() const { return dutEvent_; }
-    skbeam::telescopeBase* telEvt() const { return telEvent_; }
-    void filltrigTrackmap();
-    std::map<Int_t,skbeam::telescopeBase>* trigTrkmap() const { return trigTrackmap_;}
-    int getNtrack (const Int_t dutEvt) const;
-    long int getTelEntries() const { return nTelchainentry_; }
-    long int getDutEntries() const { return nDutchainentry_; }
-    void setDetChannelVectors();    
-    virtual void doClustering();
-    virtual void findStub(const int stubWindow);
-    vector<int>* dut0Ch0() const { return dut0_chtempC0_;}
-    vector<int>* dut0Ch1() const { return dut0_chtempC1_;}
-    vector<int>* dut1Ch0() const { return dut1_chtempC0_;}
-    vector<int>* dut1Ch1() const { return dut1_chtempC1_;}
-    std::map<std::string,std::vector<skbeam::Cluster> >* dutClustermap() const { return dutClustermap_; }
-    std::map<std::string,std::vector<skbeam::Stub> >* dutRecoStubmap() const { return dutRecoStubmap_; }
-    std::map<std::string,std::vector<unsigned int> >* dutCbcStubmap() const { return dutCbcStubmap_; }
+    void setDetChannelVectors();
+    TTree* analysisTree() const{ return analysisTree_; } 
+    tbeam::dutEvent* dutEv() const { return dutEv_; }
+    tbeam::condEvent* condEv() const {return condEv_;}
+    tbeam::TelescopeEvent* telEv() const { return telEv_; }
+    bool isPeriodic() const { return periodcictyF_;}
+    bool isGoodEvent() const { return isGood_;}
+    int stubWindow()  const { return sw_;}
+    int cbcClusterWidth()  const { return cwd_;}
+    int cbcOffset1() const {return offset1_;}
+    int cbcOffset2() const {return offset2_;}
+    vector<int>* det0C0() const { return dut0_chtempC0_;}
+    vector<int>* det0C1() const { return dut0_chtempC1_;}
+    vector<int>* det1C0() const { return dut1_chtempC0_;}
+    vector<int>* det1C1() const { return dut1_chtempC1_;}
+    std::map<std::string,std::vector<tbeam::cluster>>* dutRecoClmap() const {return dutRecoClmap_;} 
+    std::map<std::string,std::vector<tbeam::stub> >* dutRecoStubmap() const {return dutRecoStubmap_;};
+    std::map<std::string,std::vector<unsigned int>>* recostubChipids() const { return recostubChipids_;}
+    std::map<std::string,std::vector<unsigned int>>* cbcstubChipids() const { return cbcstubChipids_;}
+    int nStubsrecoSword() const { return nStubsrecoSword_;}
+    int nStubscbcSword() const { return nStubscbcSword_;}
     virtual void beginJob(){}
     virtual void endJob();
     virtual void eventLoop() = 0; 
     virtual void bookHistograms() = 0;
     virtual void clearEvent();
-    int nEventsNoHits;
-    int nEventsHitInBoth;
-    int nEventsHitInDet0;
-    int nEventsHitInDet1;    
+    void getCbcConfig(uint32_t cwdWord, uint32_t windowWord);
   private :
-    TChain *dutchain_; 
-    TChain *telchain_;
-    std::vector<std::string> dutbrList_;
-    std::vector<std::string> telbrList_;
-    skbeam::tBeamBase* dutEvent_;
-    skbeam::telescopeBase* telEvent_;
-    std::map<Int_t,skbeam::telescopeBase>* trigTrackmap_;
-    long int nTelchainentry_;
-    long int nDutchainentry_;
+    TFile* fin_;
+    TTree *analysisTree_; 
+    tbeam::dutEvent* dutEv_;
+    tbeam::condEvent* condEv_;
+    tbeam::TelescopeEvent* telEv_;
+    bool periodcictyF_;
+    bool isGood_;
+    int sw_;
+    int offset1_;
+    int offset2_;
+    int cwd_;
     vector<int>* dut0_chtempC0_;
     vector<int>* dut0_chtempC1_;
     vector<int>* dut1_chtempC0_;
     vector<int>* dut1_chtempC1_;
-    std::map<std::string,std::vector<skbeam::Cluster> >* dutClustermap_;
-    std::map<std::string,std::vector<skbeam::Stub> >* dutRecoStubmap_;
-    std::map<std::string,std::vector<unsigned int>>* dutCbcStubmap_;
-    bool requireTelescope_;
+    std::map<std::string,std::vector<tbeam::cluster> >* dutRecoClmap_;
+    std::map<std::string,std::vector<tbeam::stub> >* dutRecoStubmap_;
+    std::map<std::string,std::vector<unsigned int>>* recostubChipids_;
+    std::map<std::string,std::vector<unsigned int>>* cbcstubChipids_;
+    int nStubsrecoSword_;
+    int nStubscbcSword_;
+    //std::map<std::string,std::vector<unsigned int>>* dutCbcStubmap_;
 };
 #endif

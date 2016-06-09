@@ -1,5 +1,5 @@
 UNAME    = $(shell uname)
-EXE      = baselineReco telmatchdutReco clswStudy
+EXE      = baselineReco 
  
 VPATH  = .:./interface
 vpath %.h ./interface
@@ -9,11 +9,9 @@ HSUF   = h
 DICTC  = Dict.$(CSUF)
 DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
 
-SRCS   = src/argvparser.cc src/DataFormats.cc src/BeamAnaBase.cc src/Reco.cc src/Utility.cc src/Histogrammer.cc   
+SRCS   = src/argvparser.cc src/DataFormats.cc src/BeamAnaBase.cc src/Utility.cc src/Histogrammer.cc   
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
-#PLOTSRCS = tools/PlotMakerBase.cc tools/plotMakermain.cc
-#PLOTOBJS   = $(patsubst %.$(CSUF), %.o, $(PLOTSRCS))
 
 LDFLAGS  = -g
 SOFLAGS  = -shared 
@@ -21,12 +19,11 @@ CXXFLAGS = -I./interface -I./
 
 CXX       = g++
 CXXFLAGS += -g -std=c++11
-#-Wall -Wno-deprecated -std=c++11
 
 
-HDRS_DICT = interface/LinkDef.h
+HDRS_DICT = interface/DataFormats.h interface/LinkDef.h
 
-bin: baselineReco telmatchdutReco clswStudy
+bin: baselineReco 
 all: 
 	gmake cint 
 	gmake bin 
@@ -47,17 +44,6 @@ BaselineAnalysis.o : src/BaselineAnalysis.cc
 baselineReco:   src/baselineReco.cc $(OBJS) src/BaselineAnalysis.o src/Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
-TelMatchDUTReconstruction.o : src/TelMatchDUTReconstruction.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-
-telmatchdutReco:   src/telmatchdutReco.cc $(OBJS) src/TelMatchDUTReconstruction.o src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
-
-ClusterWidthAnalysis.o : src/ClusterWidthAnalysis.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-
-clswStudy:   src/clusterwidthStudy.cc $(OBJS) src/ClusterWidthAnalysis.o src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 # Create object files
 %.o : %.$(CSUF)

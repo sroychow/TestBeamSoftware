@@ -11,12 +11,11 @@
 #include <vector>
 #include <sstream>
 #include "BaselineAnalysis.h"
-//#include "telescopeBase.h"
 using std::vector;
 using std::map;
 //BaselineAnalysis::BaselineAnalysis(const TString& inFilename,const TString&  outFilename) :
 BaselineAnalysis::BaselineAnalysis(const string inFilename,const string outFilename,int stubWindow) :
-  BeamAnaBase::BeamAnaBase(false),
+  BeamAnaBase::BeamAnaBase(),
   outFile_(outFilename),
   stubWindow_(stubWindow)
 {
@@ -25,7 +24,11 @@ BaselineAnalysis::BaselineAnalysis(const string inFilename,const string outFilen
             << "\nOutFile: " << outFile_
             << "\nStubWindow: " << stubWindow_
             << std::endl; 
-  setDUTInputFile(inFilename);
+  if( setInputFile(inFilename) == 0 ) {
+    std::cout << "Empty Chain!!";
+    exit(1);
+  }
+  nEntries_ = analysisTree()->GetEntries();
   hist_ = new Histogrammer(outFile_);
   beginJob();
 
@@ -41,143 +44,99 @@ void BaselineAnalysis::bookHistograms() {
 void BaselineAnalysis::beginJob() {
   setAddresses();
   bookHistograms();
+  analysisTree()->GetEntry(0);
+  getCbcConfig(condEv()->cwd, condEv()->window);
 }
  
 void BaselineAnalysis::eventLoop()
 {
    //if (fChain == 0) return;
 
-   Long64_t nentries = getDutEntries();
-
    Long64_t nbytes = 0, nb = 0;
-   cout << "#Events=" << nentries << endl;
-   hist_->fillHist1D("EventInfo","nevents", nentries);
-   for (Long64_t jentry=0; jentry<nentries;jentry++) {
+   cout << "#Events=" << nEntries_ << endl;
+   hist_->fillHist1D("EventInfo","nevents", nEntries_);
+
+   std::cout << "CBC configuration:: SW=" << stubWindow()
+             << "\tCWD=" << cbcClusterWidth()
+             << "\tOffset1="<< cbcOffset1() 
+             << "\tOffset2" << cbcOffset2()
+   << std::endl;
+ 
+   for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
      //for (Long64_t jentry=0; jentry<50;jentry++) {
-     Long64_t ientry = dutchain()->LoadTree(jentry);
-     int nbytes = getDUTEntry(ientry);
+     Long64_t ientry = analysisTree()->GetEntry(jentry);
      //std::cout << "Chain load status=" << ientry << std::endl;
      if (ientry < 0) break;
-     if (jentry%1000 == 0)
+     if (jentry%1000 == 0) {
        cout << " Events processed. " << std::setw(8) << jentry 
 	    << endl;
-     // if (Cut(ientry) < 0) continue;
-     //std::cout << "Vcth=" << dutEvt()->vcth << std::endl;
+     }
      //cout << "Point 1" << endl;
-     hist_->fillHist1D("EventInfo","hvSettings", dutEvt()->hvSettings);
-     hist_->fillHist1D("EventInfo","dutAngle", dutEvt()->dutAngle);
-     hist_->fillHist1D("EventInfo","vcth", dutEvt()->vcth);
-     hist_->fillHist1D("EventInfo","offset", dutEvt()->offset);
-     hist_->fillHist1D("EventInfo","window", dutEvt()->window);
-     hist_->fillHist1D("EventInfo","tilt", dutEvt()->tilt);
-     hist_->fillHist1D("EventInfo","condData", dutEvt()->condData);
-     hist_->fillHist1D("EventInfo","glibstatus", dutEvt()->glibStatus);
-     hist_->fillHist1D("EventInfo","cbc1status", dutEvt()->cbc1Status);
-     hist_->fillHist1D("EventInfo","cbc2status", dutEvt()->cbc2Status);
-
+     if(jentry==0) {
+       hist_->fillHist1D("EventInfo","hvSettings", condEv()->HVsettings);
+       hist_->fillHist1D("EventInfo","dutAngle", condEv()->DUTangle);
+       hist_->fillHist1D("EventInfo","vcth", condEv()->vcth);
+       hist_->fillHist1D("EventInfo","offset", cbcOffset1());
+       hist_->fillHist1D("EventInfo","offset", cbcOffset2());
+       hist_->fillHist1D("EventInfo","window", stubWindow());
+       hist_->fillHist1D("EventInfo","tilt", static_cast<unsigned long int>(condEv()->tilt));
+     }
+     hist_->fillHist1D("EventInfo","condData", condEv()->condData);
+     hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(condEv()->tdcPhase));
+      
       //cout << "Point 2" << endl;
       setDetChannelVectors();
-      doClustering();
-      findStub(stubWindow_);
+      
+      const auto& d0c0 = *det0C0();
+      const auto& d0c1 = *det0C1();
+      const auto& d1c0 = *det1C0();
+      const auto& d1c1 = *det1C1();      
       //cout << "Point 3" << endl;
       //Fill histo for det0
-      //std::cout << "Hits det0c0=" << dut0Ch0()->size() << std::endl;
-      hist_->fillHist1D("det0","chsizeC0", dut0Ch0()->size());
-      hist_->fillHist1D("det0","chsizeC1", dut0Ch1()->size());
-      hist_->fillHistofromVec(dut0Ch0(),"det0","hitmapC0");
-      hist_->fillHistofromVec(dut0Ch1(),"det0","hitmapC1");
-      hist_->fill2DHistofromVec(dut0Ch0(),dut0Ch1(),"det0","hitmapfull");
-      hist_->fillClusterHistograms("det0",dutClustermap()->at("det0C0"),"C0");
-      hist_->fillClusterHistograms("det0",dutClustermap()->at("det0C1"),"C1");
+      hist_->fillHist1D("det0","chsizeC0", d0c0.size());
+      //hist_->fillHist1D("det0","chsizeC1", det0C1()->size());
+      hist_->fillHistofromVec(d0c0,"det0","hitmapC0");
+      //hist_->fillHistofromVec(d0c1,"det0","hitmapC1");
+      hist_->fill2DHistofromVec(d0c0,d0c1,"det0","hitmapfull");
+      hist_->fillClusterHistograms("det0",dutRecoClmap()->at("det0C0"),"C0");
+      //hist_->fillClusterHistograms("det0",dutRecoClmap()->at("det0C1"),"C1");
 
       //Fill histo for det1
       //std::cout << "Hits det1c0=" << dut1Ch0()->size() << std::endl;
-      hist_->fillHist1D("det1","chsizeC0", dut1Ch0()->size());
-      hist_->fillHist1D("det1","chsizeC1", dut1Ch1()->size());
-      hist_->fillHistofromVec(dut1Ch0(),"det1","hitmapC0");
-      hist_->fillHistofromVec(dut1Ch1(),"det1","hitmapC1");
-      hist_->fill2DHistofromVec(dut1Ch0(),dut1Ch1(),"det1","hitmapfull");
-      hist_->fillClusterHistograms("det1",dutClustermap()->at("det1C0"),"C0");
-      hist_->fillClusterHistograms("det1",dutClustermap()->at("det1C1"),"C1");
-
+      hist_->fillHist1D("det1","chsizeC0", d1c0.size());
+      //hist_->fillHist1D("det1","chsizeC1", d1c1.size());
+      hist_->fillHistofromVec(d1c0,"det1","hitmapC0");
+      //hist_->fillHistofromVec(d1c1,"det1","hitmapC1");
+      hist_->fill2DHistofromVec(d1c0,d1c1,"det1","hitmapfull");
+      hist_->fillClusterHistograms("det1",dutRecoClmap()->at("det1C0"),"C0");
+      //hist_->fillClusterHistograms("det1",dutRecoClmap()->at("det1C1"),"C1");
+      
       //cout << "Point 4" << endl;
-      if(dut0Ch0()->size() && !dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 1);
-      if(!dut0Ch0()->size() && dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 2);
-      if(dut0Ch0()->size() && dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 3);
-      if(!dut0Ch0()->size() && !dut1Ch0()->size()) hist_->fillHist1D("Correlation","cor_eventC0", 4);
+      if(d0c0.size() && !d1c0.size()) hist_->fillHist1D("Correlation","cor_hitC0", 1);
+      if(!d0c0.size() && d1c0.size()) hist_->fillHist1D("Correlation","cor_hitC0", 2);
+      if(d0c0.size() && d1c0.size()) hist_->fillHist1D("Correlation","cor_hitC0", 3);
+      if(!d0c0.size() && !d1c0.size()) hist_->fillHist1D("Correlation","cor_hitC0", 4);
+      hist_->fillHist1D("Correlation","nclusterdiffC0", dutRecoClmap()->at("det1C0").size() - 
+                                                     dutRecoClmap()->at("det1C0").size()); 
       //cout << "Point 4a" << endl;
-      if(dut0Ch0()->size() && !dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 1);
-      if(!dut0Ch0()->size() && dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 2);
-      if(dut0Ch0()->size() && dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 3);
-      if(!dut0Ch0()->size() && !dut1Ch1()->size()) hist_->fillHist1D("Correlation","cor_eventC1", 4);
-      //cout << "Point 4b" << endl;
-      hist_->fillHist1D("Correlation","diffC0",std::abs(dut0Ch0()->size()-dut1Ch0()->size())); 
-      hist_->fillHist1D("Correlation","diffC1",std::abs(dut0Ch1()->size()-dut1Ch1()->size())); 
-      //cout << "Point 4c" << endl;
-      if (dut0Ch0()->size() ==1 && dut1Ch0()->size() ==1) 
-	hist_->fillHist2D("Correlation","topBottomHitCorrC0",dut0Ch0()->at(0), dut1Ch0()->at(0));
-      //cout << "Point 4d" << endl;
-      if (dut0Ch1()->size() ==1 && dut1Ch1()->size() ==1) 
-	hist_->fillHist2D("Correlation","topBottomHitCorrC1",dut0Ch1()->at(0), dut1Ch1()->at(0));
-      //cout << "Point 5" << endl;  
-      //Fill cbc stub info
-      int totStubCBC  = 0;
-      for( auto& col : *dutCbcStubmap() ) {
-        if( !dutClustermap()->at("det0" + col.first).empty() && 
-            !dutClustermap()->at("det1" + col.first).empty() ) {
-          if (col.second.size() > 0 ) hist_->fillHist1D("StubInfo","stubEffCBC"+col.first,1);
-          else hist_->fillHist1D("StubInfo","stubEffCBC"+col.first,0); 
-        }
-        totStubCBC += col.second.size();
-        hist_->fillHist1D("StubInfo","nstubCBC"+ col.first, col.second.size());
-        for( auto& c : col.second ) {
-          hist_->fillHist1D("StubInfo","cbcStubBit",c);
-          hist_->fillHist1D("StubInfo","stubProfileCBC" + col.first, c);
-        }
-      }
-      hist_->fillHist1D("StubInfo","nstubsFromCBC",totStubCBC);
-      //Fill reco stub info
-      //cout << "Point 6" << endl;
-      int totStubReco = 0;
-      for( auto& col : *dutRecoStubmap() ) {
-        if( !dutClustermap()->at("det0" + col.first).empty() && 
-            !dutClustermap()->at("det1" + col.first).empty() ) {
-          if ( col.second.size() > 0 ) hist_->fillHist1D("StubInfo","stubEffReco"+col.first,1);
-          else hist_->fillHist1D("StubInfo","stubEffReco"+col.first,0);
-        }
-        hist_->fillHist1D("StubInfo","nstubReco"+col.first, col.second.size());
-        totStubReco += col.second.size();
-        for( auto& c : col.second ) {
-          hist_->fillHist1D("StubInfo","stubProfileReco"+col.first, c.cbcid);
-        }
-      }
+      int totStubReco = dutEv()->stubs.size();
+      int nstubrecoSword = nStubsrecoSword();
+      int nstubscbcSword = nStubscbcSword();
+      hist_->fillHist1D("StubInfo","nstubRecoC0", dutRecoStubmap()->at("C0").size());      
       hist_->fillHist1D("StubInfo","nstubsFromReco",totStubReco);
+      hist_->fillHist1D("StubInfo","nstubsFromCBCSword",nstubrecoSword);
+      hist_->fillHist1D("StubInfo","nstubsFromRecoSword",nstubscbcSword);
+      for(auto& c : *recostubChipids())  
+        hist_->fillHistofromVec(c.second,"StubInfo","recoStubWord");
+      for(auto& c : *cbcstubChipids())  
+        hist_->fillHistofromVec(c.second,"StubInfo","cbcStubWord");
 
-      
-      hist_->fillHist1D("StubInfo","nclusterdiffC0", dutClustermap()->at("det0C0").size() - 
-                                                     dutClustermap()->at("det1C0").size());
-      hist_->fillHist1D("StubInfo","nclusterdiffC1", dutClustermap()->at("det0C1").size() - 
-                                                     dutClustermap()->at("det1C1").size());
-      
-      if (totStubReco > 0)  hist_->fillHist1D("StubInfo","stubEventsReco", 1);
-      else  hist_->fillHist1D("StubInfo","stubEventsReco",0 );
-      if ( totStubCBC > 0) hist_->fillHist1D("StubInfo","stubEventsCBC",1); 
-      else  hist_->fillHist1D("StubInfo","stubEventsCBC",0);  
-     
-      if (!totStubReco && !totStubCBC) hist_->fillHist1D("StubInfo","stubMatch", 1);
-      if (!totStubReco && totStubCBC) hist_->fillHist1D("StubInfo","stubMatch", 2);
-      if (totStubReco && !totStubCBC) hist_->fillHist1D("StubInfo","stubMatch", 3);
-      if (totStubReco && totStubCBC) hist_->fillHist1D("StubInfo","stubMatch", 4);
-      Utility::getHist1D("stubMatch")->GetXaxis()->SetBinLabel(1,"!CBC && !RECO");  
-      Utility::getHist1D("stubMatch")->GetXaxis()->SetBinLabel(2,"CBC && !RECO");  
-      Utility::getHist1D("stubMatch")->GetXaxis()->SetBinLabel(3,"!CBC && RECO");  
-      Utility::getHist1D("stubMatch")->GetXaxis()->SetBinLabel(4,"CBC && RECO");  
-
-      hist_->fillHist1D("StubInfo","nstubsdiff",(totStubReco -totStubCBC));
-
-      hist_->fillHist1D("EventInfo","ntotalHitsReco", dut0Ch0()->size() +dut0Ch1()->size() +
-                                                      dut1Ch0()->size() + dut1Ch1()->size());
-      //cout << "Point 7" << endl;
+      if (!nstubrecoSword && !nstubscbcSword) hist_->fillHist1D("StubInfo","stubMatch", 1);
+      if (!nstubrecoSword && nstubscbcSword)  hist_->fillHist1D("StubInfo","stubMatch", 2);
+      if (nstubrecoSword && !nstubscbcSword)  hist_->fillHist1D("StubInfo","stubMatch", 3);
+      if (nstubrecoSword && nstubscbcSword)   hist_->fillHist1D("StubInfo","stubMatch", 4);
+      hist_->fillHist1D("StubInfo","nstubsdiffSword",nstubrecoSword - nstubscbcSword);      
+      hist_->fillHist1D("StubInfo","nstubsdiff",totStubReco - nstubscbcSword);      
       clearEvent();
    }
 }
