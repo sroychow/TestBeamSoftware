@@ -18,6 +18,8 @@
 #include "DataFormats.h"
 #include "TSystem.h"
 #include "TChain.h"
+#include "TH1I.h"
+#include "TH1D.h"
 
 using std::cout;
 using std::endl;
@@ -50,7 +52,8 @@ class NtupleMerger {
      
     //input format
     std::vector<int>* cbcErrorVal_;
-    std::vector<int>* cbcPLAddressVal_;  
+    std::vector<int>* cbcPLAddressVal_;
+    int tdcCounterFromdqm_;  
     tbeam::TelescopeEvent* telEvent_;
     bool periodicityFlag_;
     bool pFlag_;
@@ -61,6 +64,7 @@ class NtupleMerger {
     TBranch* telBranch_;
     TBranch* periodicityBranch_;
     TBranch* goodEvBranch_;
+    
     //TBranch* eventQualityBranch_; 
 
     //output format
@@ -77,5 +81,20 @@ class NtupleMerger {
     long int nDutchainentry_; 
     long int nDqmchainentry_; 
     long int nEventstoLoop_;
+    //validation histograms
+    TFile* fval;
+    TH1D* tdc1;
+    TH1D* tdc2;
+    TH1D* tdc3;
+    TH1D* tdc4;
+    TH1D* tdc5;
+    TH1D* tdc6;
+    TH1I* pflagfromdqm;
+    TH1I* pflagmanual;
+    TH1I* pflagmismatch;
+    TH1I* isGoodEventF;
+    TH1I* cbcErrF;
+    TH1I* tdcmismatch;
+    TH1D* tdcdiff;
 };
 #endif
