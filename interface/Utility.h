@@ -12,31 +12,16 @@
 #include "TH1.h"
 #include "TH2.h"
 #include "TProfile.h"
+#include "stdint.h"
 class TFile;
 using std::string;
 
 namespace Utility {
   
-  struct Cluster {
-   float position;
-   int width;
-  };
   void tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiter);
-  //void correctHitorder( std::vector<int>& vec );
   //void getChannelMaskedHit( std::vector<int>& vec, const unsigned int chLow, const unsigned int chHigh );
-  void fillHistofromVec( const std::vector<int>& vec, const char* h);
-  void fill2DHistofromVec( const std::vector<int>& vecC0, const std::vector<int>& vecC1,const char* h);
-  //void getCBCclsuterInfo( const string detName,const std::vector<int>& hmap,
-  //                        std::map<std::string,std::vector<Cluster> >&  detClustermap);
-  void getInfofromClusterVec(const std::vector<Cluster>& cvec,const std::string det,
-                             TFile* fout, const TString col = "");
-  //void getInfofromClusterVec(const std::vector<Cluster>& cvec,const std::string det,TFile* fout,TString col);
-  //int getStubInfo(std::map<std::string,std::vector<Cluster> >&  detClustermap, const float stubwindow, 
-  //                 TFile* fout,const std::string col = "");
-  //int getStubInfoEDM(std::map<std::string,std::vector<Cluster> >&  detClustermap, 
-  //		   std::vector<unsigned int> & cbcStubs, const float stubwindow, 
-  //                 TFile* fout,const std::string col = "");
-
+ 
+  int readStubWord( std::map<std::string,std::vector<unsigned int> >& stubids, const uint32_t sWord );
   TH1* getHist1D(const char* hname);
   TH1* getHist1D(const string& hname);
 
@@ -52,6 +37,13 @@ namespace Utility {
   bool fillHist1D(const string& hname, T value, double w=1.0) {
     return fillHist1D(hname.c_str(), value, w);
   }
+   template <class T>
+  void fillHistofromVec( const std::vector<T>& vec, const char* h) {
+    for( unsigned int i = 0; i<vec.size(); i++ ) {
+      fillHist1D(h,vec.at(i));
+    }
+  }
+  void fill2DHistofromVec( const std::vector<int>& vecC0, const std::vector<int>& vecC1,const char* h);
 
   // ---------------------------------------------
   // Convenience routine for filling 2D histograms

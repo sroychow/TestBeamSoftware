@@ -38,31 +38,28 @@ namespace Utility {
     }
   }
 
-  void fillHistofromVec( const std::vector<int>& vec, const char* h) {
-    for( unsigned int i = 0; i<vec.size(); i++ ) {
-      Utility::fillHist1D(h,vec[i]);
-    }
-  }
-
   void fill2DHistofromVec( const std::vector<int>& vecC0, const std::vector<int>& vecC1,const char* h) {
     for( unsigned int i = 0; i<vecC0.size(); i++ ) {
-      Utility::fillHist2D(h,vecC0[i],0);
+      Utility::fillHist2D(h,vecC0.at(i),0);
     }
     for( unsigned int i = 0; i<vecC1.size(); i++ ) {
-      Utility::fillHist2D(h,1015-vecC1[i],1);
+      Utility::fillHist2D(h,1015-vecC1.at(i),1);
     }
   }
 
-
-  void getInfofromClusterVec(const std::vector<Cluster>& cvec,const std::string det, TFile* fout, const TString col) {
-    fout->cd(TString(det));
-    Utility::fillHist1D( "ncluster" + col, cvec.size() );
-    for( unsigned int i =0; i<cvec.size(); i++ ) {
-      Utility::fillHist1D("clusterWidth" + col,cvec[i].width);
-      Utility::fillHist1D("clusterPos" + col,cvec[i].position);
-      Utility::fillHistProfile("clusterWidthVsPosProf" + col,cvec[i].position,cvec[i].width);
-      Utility::fillHist2D("clusterWidthVsPos2D" + col,cvec[i].position,cvec[i].width);
-    }
+  int readStubWord( std::map<std::string,std::vector<unsigned int> >& stubids, const uint32_t sWord ) {
+    int ncbcSw = 0;
+    if (sWord > 0) {
+	for (unsigned int i = 0; i < 16; i++) {
+          if (i == 11 || i == 13) continue;//only for nov15
+          if ((sWord >> i) & 0x1) {
+            ncbcSw++;
+	    if (i <= 7) stubids.at("C0").push_back(i);
+            else stubids.at("C1").push_back(i-8);
+	  }
+	}
+      }
+    return ncbcSw;  
   }
 
   // ------------------------------------------------------------------------
