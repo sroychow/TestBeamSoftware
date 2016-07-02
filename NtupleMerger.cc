@@ -1,9 +1,9 @@
 #include "NtupleMerger.h"
-
-
-NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string dqmTuple, const std::string outTuple) :
-  cbcErrorVal_(new std::vector<int>()),
-  cbcPLAddressVal_(new std::vector<int>()),
+#include<iomanip>
+using std::setw;
+NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string dqmTuple, const std::string runNumber) :
+  cbcErrorVal_(new std::vector<unsigned int>()),
+  cbcPLAddressVal_(new std::vector<unsigned int>()),
   telOutputEvent_(new tbeam::TelescopeEvent()),//for output
   telEvent_(new tbeam::TelescopeEvent()),//for input
   periodicityFlag_(true),
@@ -12,57 +12,64 @@ NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTupl
   condEvent_(new tbeam::condEvent()),
   dutEvent_(new tbeam::dutEvent()),
   outdutEvent_(new tbeam::dutEvent()),
-  trigTrackmap_(new std::map<Int_t,tbeam::TelescopeEvent>()) 
+  outcondEvent_(new tbeam::condEvent()),
+  trigTrackmap_(new std::map<Int_t,tbeam::TelescopeEvent>())
 {
   tdcCounterFromdqm_ = 0;
+  dut0C0chData_ = new std::vector<unsigned int>();
+  dut0C1chData_ = new std::vector<unsigned int>();
+  dut1C0chData_ = new std::vector<unsigned int>();
+  dut1C1chData_ = new std::vector<unsigned int>();
+  cbcCondmap_ = new std::map<long int,cbcCond>();
+  debug_ = false;
+  
   dutF_ = TFile::Open(dutTuple.c_str());
+  if(!dutF_) {
+    std::cout << dutTuple << " could not be onened!!" << std::endl;
+    exit(1);
+  }
   dutchain_ = dynamic_cast<TTree*>(dutF_->Get("treeMaker/tbeamTree"));
   nDutchainentry_ = static_cast<long int>(dutchain_->GetEntries());
-
+  
   telF_ = TFile::Open(telTuple.c_str());
+  if(!telF_) {
+    std::cout << telTuple << " could not be onened!!" << std::endl;
+    exit(1);
+  }
   telchain_ =dynamic_cast<TTree*>(telF_->Get("tracks"));
   nTelchainentry_ = static_cast<long int>(telchain_->GetEntries());
-
+  
   dqmF_ = TFile::Open(dqmTuple.c_str());
+  if(!dqmF_) {
+    std::cout << dqmTuple << " could not be onened!!" << std::endl;
+    exit(1);
+  }
   dqmchain_ = dynamic_cast<TTree*>(dqmF_->Get("sensorHitTree"));
   nDqmchainentry_ = static_cast<long int>(dqmchain_->GetEntries());
-
+  
   if(nTelchainentry_ == 0 || nDutchainentry_ == 0 || nDqmchainentry_ == 0) {
-     std::cout << "One of the trees have zero entries!!!" << std::endl;
-     exit(1);
+    std::cout << "One of the trees have zero entries!!!" << std::endl;
+    exit(1);
   }
   if(nDutchainentry_ > nDqmchainentry_) {
-     std::cout << "Warning::Total Entries in DUT > DQM Tree!!!Running only upto events processed by DQM" << std::endl;
-     nEventstoLoop_ = nDqmchainentry_;
+    std::cout << "Warning::Total Entries in DUT > DQM Tree!!!Running only upto events processed by DQM" << std::endl;
+    nEventstoLoop_ = nDqmchainentry_;
   } else nEventstoLoop_ = nDutchainentry_;
   std::cout << "DUT Entries=" << nDutchainentry_
             << "\nTelescope Entries=" << nTelchainentry_
             << "\nDQM Entries=" << nDqmchainentry_ 
             << "\nLooping Over " << nEventstoLoop_ 
             << std::endl;
+
   setInputBranchAddresses();
-  //book validation histograms
-  fval = TFile::Open("validation.root","recreate");
-  tdc1 = new TH1D("tdc1","TDC phase before filter(edm)",16,-0.5,15.5);
-  tdc2 = new TH1D("tdc2","TDC phase after periodicity filter(edm)",16,-0.5,15.5);
-  tdc3 = new TH1D("tdc3","TDC phase after good event filter(edm)",16,-0.5,15.5);
- 
-  tdc4 = new TH1D("tdc4","TDC phase before filter(dqm)",16,-0.5,15.5);
-  tdc5 = new TH1D("tdc5","TDC phase after periodicity filter(dqm)",16,-0.5,15.5);
-  tdc6 = new TH1D("tdc6","TDC phase after good event filter(dqm)",16,-0.5,15.5);
-  
-  pflagfromdqm = new TH1I("pflagfromdqm","Periodicity flag from dqm tree",2,-0.5,1.5);
-  pflagmanual = new TH1I("pflagfrommanual","Periodicity flag computed in loop",2,-0.5,1.5);
-  pflagmismatch = new TH1I("pflagmismatch","Periodicity flag mismatch",2,-0.5,1.5);
-  cbcErrF = new TH1I("cbcerrorflag","CBC error flag",2,-0.5,1.5);
-  isGoodEventF = new TH1I("isGoodEventF","Good flag mismatch",2,-0.5,1.5);
-  tdcmismatch = new TH1I("tdcmismatch","TDC mismatch between dqm and edm",2,-0.5,1.5); 
-  tdcdiff = new TH1D("tdcdiff","TDC phase(edm) - TDC phase(dqm)",200,-99.5,101.5);
-  //outTree_ = dutchain_->CloneTree(0);
+
+  bookValidationHistograms(runNumber); 
+
+  std::string outTuple = "AnalysisTree_" + runNumber + ".root";
   fout_ = TFile::Open(outTuple.c_str(),"recreate");
   outTree_ = new TTree("analysisTree","");
   outTree_->Branch("DUT", &outdutEvent_);
-  outTree_->Branch("Condition",&condEvent_);
+  outTree_->Branch("Condition",&outcondEvent_);
   outTree_->Branch("TelescopeEvent",&telOutputEvent_);
   outTree_->Branch("periodicityFlag",&pFlag_);
   outTree_->Branch("goodEventFlag",&goodEventFlag_);
@@ -85,11 +92,37 @@ void NtupleMerger::setInputBranchAddresses() {
   telchain_->SetBranchAddress("chi2", &telEvent_->chi2);
   telchain_->SetBranchAddress("ndof", &telEvent_->ndof);
   //set branches of the input dqm tree
-  //dqmchain_->SetBranchStatus("*",1);
+  dqmchain_->SetBranchStatus("*",1);
   dqmchain_->SetBranchAddress("cbcError", &cbcErrorVal_);
   dqmchain_->SetBranchAddress("cbcPLAddress", &cbcPLAddressVal_);
   dqmchain_->SetBranchAddress("eventFlag", &periodicityFlag_); 
   dqmchain_->SetBranchAddress("tdcCounter",&tdcCounterFromdqm_);  
+  dqmchain_->SetBranchAddress("l1Accept", &l1adqm_);
+  dqmchain_->SetBranchAddress("eventCbc", &evCountcbc_);
+  dqmchain_->SetBranchAddress("totalHits", &totalHitsdqm_);
+  dqmchain_->SetBranchAddress("totalStubs", &totalStubsdqm_);
+  dqmchain_->SetBranchAddress("dut0Ch0data",  &dut0C0chData_);
+  dqmchain_->SetBranchAddress("dut0Ch1data", &dut0C1chData_);
+  dqmchain_->SetBranchAddress("dut1Ch0data", &dut1C0chData_);
+  dqmchain_->SetBranchAddress("dut1Ch1data", &dut1C1chData_);
+}
+
+void NtupleMerger::bookValidationHistograms(const std::string run) {
+  std::string fname = "validation_" + run +".root";
+  //book validation histograms
+  fval = TFile::Open(fname.c_str(),"recreate");
+  tdc1 = new TH1D("tdc1","TDC phase before filter(edm)",16,-0.5,15.5);
+  tdc2 = new TH1D("tdc2","TDC phase after periodicity filter(edm)",16,-0.5,15.5);
+  tdc3 = new TH1D("tdc3","TDC phase after good event filter(edm)",16,-0.5,15.5);
+  
+  tdc4 = new TH1D("tdc4","TDC phase before filter(dqm)",16,-0.5,15.5);
+  tdc5 = new TH1D("tdc5","TDC phase after periodicity filter(dqm)",16,-0.5,15.5);
+  tdc6 = new TH1D("tdc6","TDC phase after good event filter(dqm)",16,-0.5,15.5);
+  
+  eventFilter = new TH1I("goodEventCounter","Good flag",5,-0.5,4.5);
+  hitmatch = new TH1I("hitmatch","#Hits match raw vs edm",2,-0.5,1.5);
+  hitdqm = new TH1D("hitdqm","Total Hits dqm",50,-0.5,49.5);
+  hitedm = new TH1D("hitedm","Total Hits edm",50,-0.5,49.5);
 }
 
 void NtupleMerger::filltrigTrackmap() {
@@ -104,101 +137,147 @@ void NtupleMerger::filltrigTrackmap() {
     tbeam::TelescopeEvent telTemp(*telEvent_);
     trigTrackmap_->insert({telEvent_->euEvt,telTemp});
   }
+  for (Long64_t jentry=0; jentry<nDqmchainentry_;jentry++) {
+    Long64_t dqmentry = dqmchain_->GetEntry(jentry);
+    if (jentry%1000 == 0)  
+      cout << " Events processed. " << std::setw(8) << jentry  
+           << "\t loadDQMTree="<< dqmentry 
+           << "\t L1A=" << l1adqm_
+           << std::endl;
+    cbcCond ctemp;
+    ctemp.l1Accept_ = l1adqm_;
+    ctemp.tdcCounter_ = tdcCounterFromdqm_;
+    ctemp.totalHits_ = totalHitsdqm_;  
+    ctemp.totalStubs_ = totalStubsdqm_;  
+    ctemp.eventFlag_ = periodicityFlag_;
+    ctemp.eventCountCBC_ = evCountcbc_;
+    ctemp.cbcErrorVal_ = *cbcErrorVal_;
+    ctemp.cbcPLAddressVal_ = *cbcPLAddressVal_;
+    ctemp.dut0C0chData_ = *dut0C0chData_;
+    ctemp.dut0C1chData_ = *dut0C1chData_;
+    ctemp.dut1C0chData_ = *dut1C0chData_;
+    ctemp.dut1C1chData_ = *dut1C1chData_;
+    cbcCondmap_->insert({l1adqm_,ctemp});
+  }
 }
 
 void NtupleMerger::eventLoop() {
   //manual calculation ov evflag
-  long unsigned int ival = 0;
-  long int pcounter = 1976;
-  int periodicity = 344; 
-  int line = 0;
-
+  
   filltrigTrackmap();
   std::cout << "Trigtrackmap size="<< trigTrackmap_->size() << std::endl;
-  for (Long64_t jentry=0; jentry<nEventstoLoop_;jentry++) {//nEventstoLoop_
-     Long64_t dutentry = dutchain_->GetEntry(jentry);
-     Long64_t dqmentry = dqmchain_->GetEntry(jentry);
-     if (jentry%1000 == 0)  {
-       cout << " Events processed. " << std::setw(8) << jentry 
-            << "\t Load DUT=" << dutentry << "\t Load Dqm=" << dqmentry << endl;
-     }
-    //copy of calculation of periodicity flag in dqm code
-    ival++;
-    line = ival * 42;
-    bool dqmFlag = true;
-    if ( (ival%10000) == 0) pcounter = ival*42 + 600;
-    if ((pcounter) <= line) {
-      pcounter += periodicity;
-      dqmFlag = false;
+  std::cout << "CBCCondmap size=" << cbcCondmap_->size() << std::endl;
+  int counter[5] = {0,0,0,0,0};  
+  for (Long64_t jentry=0; jentry<nDutchainentry_;jentry++) {//nEventstoLoop_
+    Long64_t dutentry = dutchain_->GetEntry(jentry);
+    //Long64_t dqmentry = dqmchain_->GetEntry(jentry);
+    if (jentry%1000 == 0)  {
+      cout << " Events processed. " << std::setw(8) << jentry 
+	   << "\t Load DUT=" << dutentry 
+           << "EDM Event = " << condEvent_->event 
+           << endl;
     }
-    pflagfromdqm->Fill(periodicityFlag_);
-    pflagmanual->Fill(dqmFlag);
-    if(dqmFlag == periodicityFlag_)     pflagmismatch->Fill(1);
-    else pflagmismatch->Fill(0);
+    counter[0]++;
+    eventFilter->Fill(0);//all
+    //std::cout << "EDM Event = " << condEvent_->event << std::endl; 
+    //l1A match
+    if(cbcCondmap_->find(condEvent_->event) == cbcCondmap_->end() || trigTrackmap_->find(condEvent_->event) == trigTrackmap_->end())     continue;
+ 
+    eventFilter->Fill(1);//l1A matched
+    counter[1]++;
 
-    ///////////////////////////////////////////////////////
-
-     bool cbcErrflag = true;
-     for(unsigned int i = 0; i<cbcErrorVal_->size(); i++) {
-       condEvent_->cbcs[i].error = cbcErrorVal_->at(i);
-       if(cbcErrflag && condEvent_->cbcs[i].error!=0)    cbcErrflag = false; 
-     }
-     for(unsigned int i = 0; i<cbcPLAddressVal_->size(); i++)
-       condEvent_->cbcs[i].pipelineAdd = cbcPLAddressVal_->at(i);
+    auto& cbctemp = cbcCondmap_->at(condEvent_->event);
+    auto& dtemp = *dutEvent_;
+    auto& ctemp = *condEvent_;
     
-     outdutEvent_ = dutEvent_;
-     telOutputEvent_ = &trigTrackmap_->at(condEvent_->event);
-     pFlag_ = periodicityFlag_;
-     goodEventFlag_ = cbcErrflag && pFlag_;
-
-     //Fill validation histograms
-     tdc1->Fill(condEvent_->tdcPhase);
-     tdc4->Fill(tdcCounterFromdqm_);
-     if(pFlag_)   {
-       tdc2->Fill(condEvent_->tdcPhase);
-       tdc5->Fill(tdcCounterFromdqm_);
-     }
-     if(goodEventFlag_) {
-       tdc3->Fill(condEvent_->tdcPhase);
-       tdc6->Fill(tdcCounterFromdqm_);
-     }
-     cbcErrF->Fill(cbcErrflag); 
-     isGoodEventF->Fill(goodEventFlag_);
-     if(tdcCounterFromdqm_ == condEvent_->tdcPhase)   tdcmismatch->Fill(1);
-     else tdcmismatch->Fill(0);
-     tdcdiff->Fill(int(condEvent_->tdcPhase - tdcCounterFromdqm_));
-     std::cout  << "tdc diff=" << int(condEvent_->tdcPhase - tdcCounterFromdqm_) 
-                << "\ttdcCounterFromdqm=" << tdcCounterFromdqm_ 
-                << "\tcondEvent>>tdcPhase=" << condEvent_->tdcPhase
-     << std::endl;
+    bool cbcErrflag = true;
+    for(unsigned int i = 0; i<cbctemp.cbcErrorVal_.size(); i++) {
+      ctemp.cbcs[i].error = cbctemp.cbcErrorVal_.at(i);
+      if(cbcErrflag && ctemp.cbcs[i].error!=0)    cbcErrflag = false; 
+    }
+    for(unsigned int i = 0; i<cbctemp.cbcPLAddressVal_.size(); i++)
+      ctemp.cbcs[i].pipelineAdd = cbctemp.cbcPLAddressVal_.at(i);
     
-     if(condEvent_->tdcPhase == 0)  std::cout << "Event=" << jentry
-     << "\tcbcF=" << cbcErrflag
-     << "\tpFlag=" << pFlag_
-     << "\tgoodEv=" << goodEventFlag_
-     << std::endl;
+    outdutEvent_ = &dtemp;
+    outcondEvent_ = &ctemp;
+    telOutputEvent_ = &trigTrackmap_->at(ctemp.event);
+    pFlag_ = cbctemp.eventFlag_;
+    bool tdcMatch = (cbctemp.tdcCounter_ == ctemp.tdcPhase);
+    goodEventFlag_ = cbcErrflag && pFlag_ && tdcMatch;
 
-     //Fill output tree
-     outTree_->Fill();
+    //Fill output tree
+    outTree_->Fill();
+
+    //Fill validation histograms
+    tdc1->Fill(ctemp.tdcPhase);
+    tdc4->Fill(cbctemp.tdcCounter_);
+    if(pFlag_)   {
+      tdc2->Fill(ctemp.tdcPhase);
+      tdc5->Fill(cbctemp.tdcCounter_);
+    }
+    if(goodEventFlag_) {
+      tdc3->Fill(ctemp.tdcPhase);
+      tdc6->Fill(cbctemp.tdcCounter_);
+    }
+    if(pFlag_)   {
+      eventFilter->Fill(2);
+      counter[2]++;  
+    }
+    if(cbcErrflag && pFlag_)  {
+      eventFilter->Fill(3);
+      counter[3]++;
+    }
+    if(goodEventFlag_)  {
+      eventFilter->Fill(4);
+      counter[4]++;
+    }
+
+    int totalHitsDQMch = cbctemp.dut0C0chData_.size() + cbctemp.dut0C1chData_.size() + 
+                         cbctemp.dut1C0chData_.size() + cbctemp.dut1C1chData_.size();
+    int totalHitsEDM = 0;
+    for(auto& dc : dtemp.dut_channel) 
+      totalHitsEDM += dc.second.size();
+    if(totalHitsEDM == totalHitsDQMch)  hitmatch->Fill(1);
+    else hitmatch->Fill(0);
+    hitdqm->Fill(totalHitsDQMch);
+    hitedm->Fill(totalHitsEDM);
+    if(debug_) {
+      std::cout << "DQM Hits>>>det0C0>>("; 
+      for(auto& h : cbctemp.dut0C0chData_) std::cout << h << ",";
+      std::cout << ")\t>>>det1C0>>("; 
+      for(auto& h : cbctemp.dut1C0chData_) std::cout << h << ",";
+      std::cout << endl;
+      std::cout << "EDM Hits>>>";
+      for(auto& dc : dtemp.dut_channel) {
+        std::cout << dc.first << ">>(";
+        for(auto& h : dc.second) std::cout << h << ",";
+        std::cout << ")\t>>";
+      }
+      std::cout << endl;
+      std::cout << "L1A=" << condEvent_->event << "\tHitsEDM=" << totalHitsEDM 
+              << "\tHitsDQM=" <<  int(cbctemp.totalHits_) 
+              << "\tHHdqm=" <<  totalHitsDQMch << std::endl;
+    }
+  }
+  
+  TString  binS[] = {"All DUT", "L1Match", "Periodicity", "CBCError", "TDC Match"};
+  for(unsigned int i = 0; i<5; i++) {
+    eventFilter->GetXaxis()->SetBinLabel(i+1, binS[i]);
+    eventFilter->SetBinContent(i+1,eventFilter->GetBinContent(i+1)/eventFilter->GetBinContent(1));
+    std::cout << binS[i] << "\t" << counter[i] << "\t" << float(counter[i])/float(counter[0]) << std::endl;
   }
   endJob();
-   //TFile* fval = TFile::Open("validation.root","recreate");
-   //fval->cd();
-   //tdc1->Write();
-   //tdc2->Write();
-   //tdc3->Write();
-   //fval->Close();
 }
 
 
 void NtupleMerger::endJob() {
-   telF_->Close();
-   dqmF_->Close();
-   dutF_->Close();
-   outTree_->AutoSave();
-   fout_->Close();
-   fval->Write();
-   fval->Close();
+  telF_->Close();
+  dqmF_->Close();
+  dutF_->Close();
+  outTree_->AutoSave();
+  fout_->Close();
+  fval->Write();
+  fval->Close();
 }
 
 NtupleMerger::~NtupleMerger() {

@@ -28,13 +28,31 @@ using std::vector;
 using std::map;
 using std::cerr;
 
+
+struct cbcCond {
+    uint32_t l1Accept_;
+    uint32_t tdcCounter_;
+    uint32_t totalHits_;  
+    uint32_t totalStubs_;  
+    bool eventFlag_;
+    uint32_t eventCountCBC_;
+    std::vector<unsigned int> cbcErrorVal_;
+    std::vector<unsigned int> cbcPLAddressVal_;
+    std::vector<unsigned int> dut0C0chData_;
+    std::vector<unsigned int> dut0C1chData_;
+    std::vector<unsigned int> dut1C0chData_;
+    std::vector<unsigned int> dut1C1chData_;
+};
+
+
 class NtupleMerger {
   public :
-    NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string dqmTuple, const std::string outTuple);
+    NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string dqmTuple, const std::string runNumber);
     virtual ~NtupleMerger();
 
     bool branchFound(TTree* chain,const string& b,std::vector<std::string>& brList_);
     void setInputBranchAddresses();
+    void bookValidationHistograms(const std::string run);
 
     void filltrigTrackmap();
     void eventLoop();
@@ -51,13 +69,21 @@ class NtupleMerger {
     TFile* fout_;
      
     //input format
-    std::vector<int>* cbcErrorVal_;
-    std::vector<int>* cbcPLAddressVal_;
-    int tdcCounterFromdqm_;  
+    std::vector<unsigned int>* cbcErrorVal_;
+    std::vector<unsigned int>* cbcPLAddressVal_;
+    unsigned int tdcCounterFromdqm_;  
     tbeam::TelescopeEvent* telEvent_;
     bool periodicityFlag_;
     bool pFlag_;
     bool goodEventFlag_;
+    unsigned int l1adqm_;
+    unsigned int totalHitsdqm_;
+    unsigned int totalStubsdqm_;
+    unsigned int evCountcbc_;
+    std::vector<unsigned int>* dut0C0chData_;
+    std::vector<unsigned int>* dut0C1chData_;
+    std::vector<unsigned int>* dut1C0chData_;
+    std::vector<unsigned int>* dut1C1chData_;
 
     //branches to update
     //TBranch* condBranch_;
@@ -74,9 +100,11 @@ class NtupleMerger {
     tbeam::condEvent* condEvent_;
     tbeam::dutEvent* dutEvent_;
     tbeam::dutEvent* outdutEvent_;
+    tbeam::condEvent* outcondEvent_;
     //TBranch* condBranch_;
 
     std::map<Int_t,tbeam::TelescopeEvent>* trigTrackmap_;
+    std::map<long int,cbcCond>*  cbcCondmap_;
     long int nTelchainentry_;
     long int nDutchainentry_; 
     long int nDqmchainentry_; 
@@ -89,12 +117,10 @@ class NtupleMerger {
     TH1D* tdc4;
     TH1D* tdc5;
     TH1D* tdc6;
-    TH1I* pflagfromdqm;
-    TH1I* pflagmanual;
-    TH1I* pflagmismatch;
-    TH1I* isGoodEventF;
-    TH1I* cbcErrF;
-    TH1I* tdcmismatch;
-    TH1D* tdcdiff;
+    TH1I* eventFilter;
+    TH1I* hitmatch;    
+    TH1D* hitdqm;
+    TH1D* hitedm;
+    bool  debug_;
 };
 #endif
