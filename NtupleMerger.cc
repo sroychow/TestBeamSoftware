@@ -2,6 +2,7 @@
 #include<iomanip>
 using std::setw;
 NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string dqmTuple, const std::string runNumber) :
+  telFound_(true),
   cbcErrorVal_(new std::vector<unsigned int>()),
   cbcPLAddressVal_(new std::vector<unsigned int>()),
   telOutputEvent_(new tbeam::TelescopeEvent()),//for output
@@ -34,10 +35,15 @@ NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTupl
   telF_ = TFile::Open(telTuple.c_str());
   if(!telF_) {
     std::cout << telTuple << " could not be onened!!" << std::endl;
-    exit(1);
-  }
-  telchain_ =dynamic_cast<TTree*>(telF_->Get("tracks"));
-  nTelchainentry_ = static_cast<long int>(telchain_->GetEntries());
+    telFound_ = false;
+    //exit(1);
+  } else {
+    telchain_ =dynamic_cast<TTree*>(telF_->Get("tracks"));
+    if(telchain_)  {
+      nTelchainentry_ = static_cast<long int>(telchain_->GetEntries());
+      telFound_ = telFound_ && nTelchainentry_;
+    } else telFound_ = false;
+  }  
   
   dqmF_ = TFile::Open(dqmTuple.c_str());
   if(!dqmF_) {
@@ -47,7 +53,7 @@ NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTupl
   dqmchain_ = dynamic_cast<TTree*>(dqmF_->Get("sensorHitTree"));
   nDqmchainentry_ = static_cast<long int>(dqmchain_->GetEntries());
   
-  if(nTelchainentry_ == 0 || nDutchainentry_ == 0 || nDqmchainentry_ == 0) {
+  if(nDutchainentry_ == 0 || nDqmchainentry_ == 0) {
     std::cout << "One of the trees have zero entries!!!" << std::endl;
     exit(1);
   }
@@ -70,7 +76,7 @@ NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTupl
   outTree_ = new TTree("analysisTree","");
   outTree_->Branch("DUT", &outdutEvent_);
   outTree_->Branch("Condition",&outcondEvent_);
-  outTree_->Branch("TelescopeEvent",&telOutputEvent_);
+  if(telFound_)  outTree_->Branch("TelescopeEvent",&telOutputEvent_);
   outTree_->Branch("periodicityFlag",&pFlag_);
   outTree_->Branch("goodEventFlag",&goodEventFlag_);
 }
@@ -80,17 +86,19 @@ void NtupleMerger::setInputBranchAddresses() {
   dutchain_->SetBranchStatus("*",1);
   dutchain_->SetBranchAddress("DUT", &dutEvent_);
   dutchain_->SetBranchAddress("Condition", &condEvent_);
-  //set the address of the input Telescope tree
-  telchain_->SetBranchAddress("nTrackParams", &telEvent_->nTrackParams);
-  telchain_->SetBranchAddress("euEvt", &telEvent_->euEvt);
-  telchain_->SetBranchAddress("xPos", &telEvent_->xPos);
-  telchain_->SetBranchAddress("yPos", &telEvent_->yPos);
-  telchain_->SetBranchAddress("dxdz", &telEvent_->dxdz);
-  telchain_->SetBranchAddress("dydz", &telEvent_->dydz);
-  telchain_->SetBranchAddress("trackNum", &telEvent_->trackNum);
-  telchain_->SetBranchAddress("iden", &telEvent_->iden);
-  telchain_->SetBranchAddress("chi2", &telEvent_->chi2);
-  telchain_->SetBranchAddress("ndof", &telEvent_->ndof);
+  if(telFound_) {
+    //set the address of the input Telescope tree
+    telchain_->SetBranchAddress("nTrackParams", &telEvent_->nTrackParams);
+    telchain_->SetBranchAddress("euEvt", &telEvent_->euEvt);
+    telchain_->SetBranchAddress("xPos", &telEvent_->xPos);
+    telchain_->SetBranchAddress("yPos", &telEvent_->yPos);
+    telchain_->SetBranchAddress("dxdz", &telEvent_->dxdz);
+    telchain_->SetBranchAddress("dydz", &telEvent_->dydz);
+    telchain_->SetBranchAddress("trackNum", &telEvent_->trackNum);
+    telchain_->SetBranchAddress("iden", &telEvent_->iden);
+    telchain_->SetBranchAddress("chi2", &telEvent_->chi2);
+    telchain_->SetBranchAddress("ndof", &telEvent_->ndof);
+  }
   //set branches of the input dqm tree
   dqmchain_->SetBranchStatus("*",1);
   dqmchain_->SetBranchAddress("cbcError", &cbcErrorVal_);
@@ -126,16 +134,18 @@ void NtupleMerger::bookValidationHistograms(const std::string run) {
 }
 
 void NtupleMerger::filltrigTrackmap() {
-  std::cout << "Filling Trigger Track Map" << std::endl;
-  for (Long64_t jentry=0; jentry<nTelchainentry_;jentry++) {
-    Long64_t ientry = telchain_->GetEntry(jentry);
-    if (jentry%1000 == 0)  
-      cout << " Events processed. " << std::setw(8) << jentry 
-           << "\t loadTree="<< ientry 
-           << "\t ntracks=" << telEvent_->nTrackParams << endl;
-    if (ientry < 0) break;
-    tbeam::TelescopeEvent telTemp(*telEvent_);
-    trigTrackmap_->insert({telEvent_->euEvt,telTemp});
+  if(telFound_) {
+    std::cout << "Filling Trigger Track Map" << std::endl;
+    for (Long64_t jentry=0; jentry<nTelchainentry_;jentry++) {
+      Long64_t ientry = telchain_->GetEntry(jentry);
+      if (jentry%1000 == 0)  
+        cout << " Events processed. " << std::setw(8) << jentry 
+             << "\t loadTree="<< ientry 
+             << "\t ntracks=" << telEvent_->nTrackParams << endl;
+      if (ientry < 0) break;
+      tbeam::TelescopeEvent telTemp(*telEvent_);
+      trigTrackmap_->insert({telEvent_->euEvt,telTemp});
+    }
   }
   for (Long64_t jentry=0; jentry<nDqmchainentry_;jentry++) {
     Long64_t dqmentry = dqmchain_->GetEntry(jentry);
@@ -181,7 +191,8 @@ void NtupleMerger::eventLoop() {
     eventFilter->Fill(0);//all
     //std::cout << "EDM Event = " << condEvent_->event << std::endl; 
     //l1A match
-    if(cbcCondmap_->find(condEvent_->event) == cbcCondmap_->end() || trigTrackmap_->find(condEvent_->event) == trigTrackmap_->end())     continue;
+    if(cbcCondmap_->find(condEvent_->event) == cbcCondmap_->end())                       continue;
+    if(telFound_ && trigTrackmap_->find(condEvent_->event) == trigTrackmap_->end())     continue;
  
     eventFilter->Fill(1);//l1A matched
     counter[1]++;
@@ -200,7 +211,7 @@ void NtupleMerger::eventLoop() {
     
     outdutEvent_ = &dtemp;
     outcondEvent_ = &ctemp;
-    telOutputEvent_ = &trigTrackmap_->at(ctemp.event);
+    if(telFound_)  telOutputEvent_ = &trigTrackmap_->at(ctemp.event);
     pFlag_ = cbctemp.eventFlag_;
     bool tdcMatch = (cbctemp.tdcCounter_ == ctemp.tdcPhase);
     goodEventFlag_ = cbcErrflag && pFlag_ && tdcMatch;
@@ -271,7 +282,7 @@ void NtupleMerger::eventLoop() {
 
 
 void NtupleMerger::endJob() {
-  telF_->Close();
+  if(telFound_) telF_->Close();
   dqmF_->Close();
   dutF_->Close();
   outTree_->AutoSave();

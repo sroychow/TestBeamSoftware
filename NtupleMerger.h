@@ -67,7 +67,7 @@ class NtupleMerger {
     TTree *dqmchain_;
     TTree* outTree_;
     TFile* fout_;
-     
+    bool telFound_; 
     //input format
     std::vector<unsigned int>* cbcErrorVal_;
     std::vector<unsigned int>* cbcPLAddressVal_;
