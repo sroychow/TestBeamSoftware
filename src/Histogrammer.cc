@@ -1,3 +1,10 @@
+/*!
+        \file                Histogrammer.cc
+        \brief               Class provides user to book, fill histograms
+        \author              Suvankar Roy Chowdhury
+        \date                05/07/16
+        Support :            mail to : suvankar.roy.chowdhury@cern.ch
+*/
 #include "Histogrammer.h"
 #include <climits>
 #include <cmath>

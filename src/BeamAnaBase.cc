@@ -1,3 +1,13 @@
+/*!
+        \file                BeamAnaBase.cc
+        \brief               Base Analysis class, reads input files, sets the hit vectors etc. Provides
+                             access to hits, clusters, stubs, condition, telescope data. All individual applications
+                             should inherit from this class.
+        \author              Suvankar Roy Chowdhury
+        \date                05/07/16
+        Support :            mail to : suvankar.roy.chowdhury@cern.ch
+*/
+
 #include "BeamAnaBase.h"
 #include "Utility.h"
 #include "TSystem.h"

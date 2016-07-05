@@ -1,5 +1,5 @@
 UNAME    = $(shell uname)
-EXE      = baselineReco 
+EXE      = baselineReco deltaClusAnalysis
  
 VPATH  = .:./interface
 vpath %.h ./interface
@@ -23,7 +23,7 @@ CXXFLAGS += -g -std=c++11
 
 HDRS_DICT = interface/DataFormats.h interface/LinkDef.h
 
-bin: baselineReco 
+bin: baselineReco deltaClusAnalysis
 all: 
 	gmake cint 
 	gmake bin 
@@ -41,9 +41,15 @@ BaselineAnalysis.o : src/BaselineAnalysis.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
 
+DeltaClusterAnalysis.o : src/DeltaClusterAnalysis.cc
+	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+	mv $@ ../src/
+
 baselineReco:   src/baselineReco.cc $(OBJS) src/BaselineAnalysis.o src/Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
+deltaClusAnalysis: src/dclusAnalysis.cc $(OBJS) src/DeltaClusterAnalysis.o src/Dict.o
+	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 # Create object files
 %.o : %.$(CSUF)
