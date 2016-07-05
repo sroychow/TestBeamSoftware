@@ -1,3 +1,10 @@
+/*!
+        \file                BaselineAnalysis.cc
+        \brief               Example user code for Analysis
+        \author              Suvankar Roy Chowdhury, Rajarshi Bhattacharya
+        \date                05/07/16
+        Support :            mail to : suvankar.roy.chowdhury@cern.ch, rajarshi.bhattacharya@cern.ch
+*/
 #include "TROOT.h"
 #include "TInterpreter.h"
 #include "TH1.h"
@@ -60,9 +67,8 @@ void BaselineAnalysis::eventLoop()
    << std::endl;
  
    for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
-     //for (Long64_t jentry=0; jentry<50;jentry++) {
+      clearEvent();
      Long64_t ientry = analysisTree()->GetEntry(jentry);
-     //std::cout << "Chain load status=" << ientry << std::endl;
      if (ientry < 0) break;
      if (jentry%1000 == 0) {
        cout << " Events processed. " << std::setw(8) << jentry 
@@ -118,8 +124,8 @@ void BaselineAnalysis::eventLoop()
       if(!d0c0.size() && d1c0.size()) hist_->fillHist1D("Correlation","cor_hitC0", 2);
       if(d0c0.size() && d1c0.size()) hist_->fillHist1D("Correlation","cor_hitC0", 3);
       if(!d0c0.size() && !d1c0.size()) hist_->fillHist1D("Correlation","cor_hitC0", 4);
-      hist_->fillHist1D("Correlation","nclusterdiffC0", dutRecoClmap()->at("det1C0").size() - 
-                                                     dutRecoClmap()->at("det1C0").size()); 
+      hist_->fillHist1D("Correlation","nclusterdiffC0", std::abs(dutRecoClmap()->at("det1C0").size() - 
+                                                        dutRecoClmap()->at("det1C0").size())); 
       //cout << "Point 4a" << endl;
       int totStubReco = dutEv()->stubs.size();
       int nstubrecoSword = nStubsrecoSword();
@@ -139,7 +145,6 @@ void BaselineAnalysis::eventLoop()
       if (nstubrecoSword && nstubscbcSword)   hist_->fillHist1D("StubInfo","stubMatch", 4);
       hist_->fillHist1D("StubInfo","nstubsdiffSword",nstubrecoSword - nstubscbcSword);      
       hist_->fillHist1D("StubInfo","nstubsdiff",totStubReco - nstubscbcSword);      
-      clearEvent();
    }
 }
 

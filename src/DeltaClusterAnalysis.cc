@@ -101,8 +101,8 @@ void DeltaClusterAnalysis::eventLoop()
       bool cls1 = dutRecoClmap()->at("det0C0").size() == 1 && dutRecoClmap()->at("det1C0").size() == 1;
       hist_->fillHist2D("DeltaCluster", "nclsCorrelation", dutRecoClmap()->at("det0C0").size(), dutRecoClmap()->at("det1C0").size()); 
       hist_->fillHist1D("DeltaCluster", "evtsW1cls",cls1);
-      hist_->fillHist1D("DeltaCluster","nclusterdiffC0", dutRecoClmap()->at("det0C0").size() - 
-                                                         dutRecoClmap()->at("det1C0").size());
+      hist_->fillHist1D("DeltaCluster","nclusterdiffC0", std::abs(dutRecoClmap()->at("det0C0").size() - 
+                                                         dutRecoClmap()->at("det1C0").size()));
 
       if(!cls1)  continue;//single cluster on both sensors
       //Follow up all other study for single cluster events here        
