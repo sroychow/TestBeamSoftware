@@ -11,4 +11,7 @@ make
 
 ## Usage
 ##
-./ntuplemerger \<EDMTupleName\> \<TelescopeTupleName\> \<DQMTupleName\> \<OutPutTupleName\>
+./ntuplemerger \<EDMTupleName\> \<TelescopeTupleName\> \<DQMTupleName\> \<RunNumber\>
+
+It produces 2 files AnalysisTree_RunNumber.root & validation_RunNumber.root. The first file is the main tuple for analyis
+while the second one contains some historgrams to validate the merge step.
