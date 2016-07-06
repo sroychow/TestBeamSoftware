@@ -28,6 +28,7 @@ class BeamAnaBase {
     BeamAnaBase();
     virtual ~BeamAnaBase();
     bool setInputFile(const std::string& fname);
+    bool branchFound(const string& b);
     void setAddresses();
     void setDetChannelVectors();
     TTree* analysisTree() const{ return analysisTree_; } 
@@ -50,6 +51,7 @@ class BeamAnaBase {
     std::map<std::string,std::vector<unsigned int>>* cbcstubChipids() const { return cbcstubChipids_;}
     int nStubsrecoSword() const { return nStubsrecoSword_;}
     int nStubscbcSword() const { return nStubscbcSword_;}
+    bool hasTelescope() const { return hasTelescope_;}
     virtual void beginJob(){}
     virtual void endJob();
     virtual void eventLoop() = 0; 
@@ -64,6 +66,7 @@ class BeamAnaBase {
     tbeam::TelescopeEvent* telEv_;
     bool periodcictyF_;
     bool isGood_;
+    bool hasTelescope_;
     int sw_;
     int offset1_;
     int offset2_;

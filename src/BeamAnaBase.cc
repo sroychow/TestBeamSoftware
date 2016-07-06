@@ -21,6 +21,7 @@ BeamAnaBase::BeamAnaBase() :
   telEv_(new  tbeam::TelescopeEvent()),
   periodcictyF_(false),
   isGood_(false),
+  hasTelescope_(false),
   sw_(-1),
   offset1_(-1),
   offset2_(-1),
@@ -59,13 +60,26 @@ bool BeamAnaBase::setInputFile(const std::string& fname) {
   return false; 
 }
 
+bool BeamAnaBase::branchFound(const string& b)
+{
+  TBranch* branch = analysisTree_->GetBranch(b.c_str());
+  if (!branch) {
+    cout << ">>> SetBranchAddress: <" << b << "> not found!" << endl;
+    return false;
+  }
+  cout << ">>> SetBranchAddress: <" << b << "> found!" << endl;
+  hasTelescope_ = true;
+  return true;
+}
+
+
 void BeamAnaBase::setAddresses() {
   //set the address of the DUT tree
-  analysisTree_->SetBranchAddress("DUT", &dutEv_);
-  analysisTree_->SetBranchAddress("Condition", &condEv_);
-  analysisTree_->SetBranchAddress("TelescopeEvent",&telEv_);
-  analysisTree_->SetBranchAddress("periodicityFlag",&periodcictyF_);
-  analysisTree_->SetBranchAddress("goodEventFlag",&isGood_);
+  if(branchFound("DUT"))    analysisTree_->SetBranchAddress("DUT", &dutEv_);
+  if(branchFound("Condition"))    analysisTree_->SetBranchAddress("Condition", &condEv_);
+  if(branchFound("TelescopeEvent"))    analysisTree_->SetBranchAddress("TelescopeEvent",&telEv_);
+  if(branchFound("periodicityFlag"))    analysisTree_->SetBranchAddress("periodicityFlag",&periodcictyF_);
+  if(branchFound("goodEventFlag"))    analysisTree_->SetBranchAddress("goodEventFlag",&isGood_);
   analysisTree_->SetBranchStatus("*",1);
 }
 
