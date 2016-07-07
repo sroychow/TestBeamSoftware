@@ -12,6 +12,7 @@
 #include "Utility.h"
 #include "TSystem.h"
 #include "TChain.h"
+#include<algorithm>
 
 BeamAnaBase::BeamAnaBase() :
   fin_(nullptr),
@@ -128,14 +129,36 @@ void BeamAnaBase::setDetChannelVectors() {
 
 
 void BeamAnaBase::getCbcConfig(uint32_t cwdWord, uint32_t windowWord){
-   sw_ = windowWord >>4;
-   offset1_ = (cwdWord)%4;
-   if ((cwdWord>>2)%2) offset1_ = -offset1_;
-   offset2_ = (cwdWord>>3)%4;
-   if ((cwdWord>>5)%2) offset2_ = -offset2_;
-   cwd_ = (cwdWord>>6)%4;
+  sw_ = windowWord >>4;
+  offset1_ = (cwdWord)%4;
+  if ((cwdWord>>2)%2) offset1_ = -offset1_;
+  offset2_ = (cwdWord>>3)%4;
+  if ((cwdWord>>5)%2) offset2_ = -offset2_;
+  cwd_ = (cwdWord>>6)%4;
 }
 
+void BeamAnaBase::getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vector<double>& xTkdut1) {
+  for(unsigned int itrk = 0; itrk<telEv_->nTrackParams;itrk++) {
+    double XTkatDUT0_itrk = (z_DUT0-z_FEI4)*telEv_->dxdz->at(itrk) + telEv_->xPos->at(itrk);
+    double XTkatDUT1_itrk = (z_DUT1-z_FEI4)*telEv_->dxdz->at(itrk) + telEv_->xPos->at(itrk);
+    //check for duplicate tracks
+    if(std::find(xTkdut0.begin(), xTkdut0.end(), XTkatDUT0_itrk) == xTkdut0.end() 
+       && std::find(xTkdut1.begin(), xTkdut1.end(), XTkatDUT1_itrk) == xTkdut1.end() ) {
+      xTkdut0.push_back(XTkatDUT0_itrk);
+      xTkdut1.push_back(XTkatDUT1_itrk);
+    }
+    /*   
+    ///Matched events
+    for(int check=0;check<itrk;check++){
+      if(X_TkatDUT0[itrk]==X_TkatDUT0[check] && X_TkatDUT1[itrk]==X_TkatDUT1[check]){
+      	//cout << " Trk " <<itrk<<" is a duplicate of trk "<<check<<endl;
+        duplicate=1;
+	ntraks--;
+      }
+    }
+    */
+  }
+}
 void BeamAnaBase::endJob() {
   
 }

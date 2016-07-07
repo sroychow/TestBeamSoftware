@@ -16,6 +16,7 @@ class BaselineAnalysis : public BeamAnaBase {
   void beginJob();
   void eventLoop(); 
   void bookHistograms();
+  void fitResidualHistograms();
   void clearEvent();
   void endJob();
 

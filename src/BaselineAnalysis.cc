@@ -43,6 +43,7 @@ void BaselineAnalysis::bookHistograms() {
   hist_->bookDUTHistograms("det1");
   hist_->bookStubHistograms();
   hist_->bookCorrelationHistograms();
+  hist_->bookTelescopeMatchedHistograms();
 }
 
 void BaselineAnalysis::beginJob() {
@@ -144,12 +145,34 @@ void BaselineAnalysis::eventLoop()
       if (nstubrecoSword && !nstubscbcSword)  hist_->fillHist1D("StubInfo","stubMatch", 3);
       if (nstubrecoSword && nstubscbcSword)   hist_->fillHist1D("StubInfo","stubMatch", 4);
       hist_->fillHist1D("StubInfo","nstubsdiffSword",nstubrecoSword - nstubscbcSword);      
-      hist_->fillHist1D("StubInfo","nstubsdiff",totStubReco - nstubscbcSword);      
+      hist_->fillHist1D("StubInfo","nstubsdiff",totStubReco - nstubscbcSword);  
+      //Telescope Matching
+      if(hasTelescope()) {
+        hist_->fillHist1D("TelescopeMatch","nTrackParams",telEv()->nTrackParams);
+        //for residual calculation use only events with 1 track and 1 cluster in both sensor
+        if(telEv()->nTrackParams == 1 
+           && dutRecoClmap()->at("det0C0").size() == 1 
+           && dutRecoClmap()->at("det1C0").size() == 1 ) {
+          std::vector<double> xtkdut0, xtkdut1;      
+          getExtrapolatedTracks(xtkdut0, xtkdut1);
+          for(const auto& x : *(telEv()->xPos))
+            hist_->fillHist1D("TelescopeMatch","xpos",x);
+          for(const auto& x : xtkdut0)        
+            hist_->fillHist1D("TelescopeMatch","xtkatDUT0",x);
+          for(const auto& x : xtkdut1)        
+            hist_->fillHist1D("TelescopeMatch","xtkatDUT1",x);
+           
+          hist_->fillHist1D("TelescopeMatch","residualDUT0",xtkdut0[0] - (dutRecoClmap()->at("det0C0").at(0).x-127)*0.09);
+          hist_->fillHist1D("TelescopeMatch","residualDUT1",xtkdut1[0] - (dutRecoClmap()->at("det1C0").at(0).x-127)*0.09);
+        }
+      }   
    }
 }
 
 void BaselineAnalysis::clearEvent() {
   BeamAnaBase::clearEvent();
+}
+void BaselineAnalysis::fitResidualHistograms() {
 }
 void BaselineAnalysis::endJob() {
   BeamAnaBase::endJob();

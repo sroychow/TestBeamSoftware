@@ -99,6 +99,19 @@ void Histogrammer::bookCorrelationHistoForColumn(TString c) {
   //new TH1D("nhitdiff" + c,"#Hits det0 - #Hits det1 " + c,100,-.5,99.5);
 }
 
+
+void Histogrammer::bookTelescopeMatchedHistograms() {
+  fout_->mkdir("TelescopeMatch");
+  fout_->cd("TelescopeMatch");
+  new TH1D("nTrackParams","#Tracks Telescope;#tracks;#events",30,0,30);
+  new TH1D("xpos","Xpos of track at FEI4 plane",200,-20.,20.);
+  new TH1D("xtkatDUT0","Xpos of extrapolated track at DUT0 plane",200,-20.,20.);
+  new TH1D("xtkatDUT1","Xpos of extrapolated track at DUT1 plane",200,-20.,20.);
+  new TH1D("residualDUT0","Residual at DUT0 plane",20000,-20.,20.);
+  new TH1D("residualDUT1","Residual at DUT1 plane",20000,-20.,20.);
+
+}
+
 void Histogrammer::closeFile() { 
   fout_->cd();
   fout_->Write();

@@ -23,6 +23,9 @@ using std::vector;
 using std::map;
 using std::cerr;
 
+static const double z_DUT0 = 435.0;
+static const double z_DUT1 = 437.5;  
+static const double z_FEI4 = 529.0;
 class BeamAnaBase {
   public :
     BeamAnaBase();
@@ -58,6 +61,7 @@ class BeamAnaBase {
     virtual void bookHistograms() = 0;
     virtual void clearEvent();
     void getCbcConfig(uint32_t cwdWord, uint32_t windowWord);
+    void getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vector<double>& xTkdut1);
   private :
     TFile* fin_;
     TTree *analysisTree_; 
