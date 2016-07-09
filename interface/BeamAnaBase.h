@@ -26,6 +26,11 @@ using std::cerr;
 static const double z_DUT0 = 435.0;
 static const double z_DUT1 = 437.5;  
 static const double z_FEI4 = 529.0;
+static const double meanResDet0=-4.51;
+static const double sigResDet0=0.30;
+static const double meanResDet1=-4.53;
+static const double sigResDet1=0.0310;
+
 class BeamAnaBase {
   public :
     BeamAnaBase();
@@ -62,6 +67,11 @@ class BeamAnaBase {
     virtual void clearEvent();
     void getCbcConfig(uint32_t cwdWord, uint32_t windowWord);
     void getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vector<double>& xTkdut1);
+    void readChannelMaskData(const std::string cmaskF);
+    void setTelMatching(const bool mtel);
+    void setChannelMasking(const bool mch, const std::string cFile);
+    bool doTelMatching() const { return doTelMatching_;}
+    bool doChannelMasking() const { return doChannelMasking_;}
   private :
     TFile* fin_;
     TTree *analysisTree_; 
@@ -71,6 +81,8 @@ class BeamAnaBase {
     bool periodcictyF_;
     bool isGood_;
     bool hasTelescope_;
+    bool doTelMatching_;
+    bool doChannelMasking_;
     int sw_;
     int offset1_;
     int offset2_;
@@ -83,6 +95,8 @@ class BeamAnaBase {
     std::map<std::string,std::vector<tbeam::stub> >* dutRecoStubmap_;
     std::map<std::string,std::vector<unsigned int>>* recostubChipids_;
     std::map<std::string,std::vector<unsigned int>>* cbcstubChipids_;
+    std::map<int,std::vector<int>>  cbcMaskedChannelsMap_;
+    std::map<std::string,std::vector<int> >* dut_maskedChannels_;
     int nStubsrecoSword_;
     int nStubscbcSword_;
     //std::map<std::string,std::vector<unsigned int>>* dutCbcStubmap_;

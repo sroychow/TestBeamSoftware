@@ -9,6 +9,7 @@
 #include "TInterpreter.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TF1.h"
 #include "TKey.h"
 #include "TClass.h"
 #include "TDirectory.h"
@@ -17,6 +18,7 @@
 #include <utility>
 #include <vector>
 #include <sstream>
+
 #include "BaselineAnalysis.h"
 using std::vector;
 using std::map;
@@ -147,7 +149,7 @@ void BaselineAnalysis::eventLoop()
       hist_->fillHist1D("StubInfo","nstubsdiffSword",nstubrecoSword - nstubscbcSword);      
       hist_->fillHist1D("StubInfo","nstubsdiff",totStubReco - nstubscbcSword);  
       //Telescope Matching
-      if(hasTelescope()) {
+      if(doTelMatching() && hasTelescope()) {
         hist_->fillHist1D("TelescopeMatch","nTrackParams",telEv()->nTrackParams);
         //for residual calculation use only events with 1 track and 1 cluster in both sensor
         if(telEv()->nTrackParams == 1 
@@ -161,10 +163,20 @@ void BaselineAnalysis::eventLoop()
             hist_->fillHist1D("TelescopeMatch","xtkatDUT0",x);
           for(const auto& x : xtkdut1)        
             hist_->fillHist1D("TelescopeMatch","xtkatDUT1",x);
-           
-          hist_->fillHist1D("TelescopeMatch","residualDUT0",xtkdut0[0] - (dutRecoClmap()->at("det0C0").at(0).x-127)*0.09);
-          hist_->fillHist1D("TelescopeMatch","residualDUT1",xtkdut1[0] - (dutRecoClmap()->at("det1C0").at(0).x-127)*0.09);
-        }
+          
+          double delX_CluD0= xtkdut0[0] - (dutRecoClmap()->at("det0C0").at(0).x-127)*0.09;
+          double delX_CluD1= xtkdut1[0] - (dutRecoClmap()->at("det1C0").at(0).x-127)*0.09;
+          hist_->fillHist1D("TelescopeMatch","residualDUT0",delX_CluD0);
+          if(std::fabs(delX_CluD0 - meanResDet0) <= 3*sigResDet0){
+            hist_->fillHist1D("TelescopeMatch","clusterWidthD0C0",dutRecoClmap()->at("det0C0").at(0).size);
+          }
+          hist_->fillHist1D("TelescopeMatch","residualDUT1",delX_CluD1);
+          if(std::fabs(delX_CluD1 - meanResDet1) <= 3*sigResDet1){
+            hist_->fillHist1D("TelescopeMatch","clusterWidthD1C0",dutRecoClmap()->at("det1C0").at(0).size);
+          }
+          //Now find matched hits and clusters
+          
+        } 
       }   
    }
 }
@@ -173,8 +185,27 @@ void BaselineAnalysis::clearEvent() {
   BeamAnaBase::clearEvent();
 }
 void BaselineAnalysis::fitResidualHistograms() {
+  hist_->hfile()->cd("TelescopeMatch");
+  TH1D* resDut0 = dynamic_cast<TH1D*>(Utility::getHist1D("residualDUT0"));
+  if(resDut0) {  
+    std::cout << "Fitting dut0 residual" << std::endl;
+    int maxbin = resDut0->GetMaximumBin();
+    double rlow = resDut0->GetBinCenter(maxbin - 20);
+    double rmax = resDut0->GetBinCenter(maxbin + 20);
+    resDut0->Fit("gaus", "","", rlow, rmax );
+  }
+  TH1D* resDut1 = dynamic_cast<TH1D*>(Utility::getHist1D("residualDUT1"));
+  if(resDut1) {  
+    std::cout << "Fitting dut1 residual" << std::endl;
+    int maxbin = resDut1->GetMaximumBin();
+    double rlow = resDut1->GetBinCenter(maxbin - 20);
+    double rmax = resDut1->GetBinCenter(maxbin + 20);
+    resDut1->Fit("gaus", "","", rlow, rmax );
+  }
+
 }
 void BaselineAnalysis::endJob() {
+  if(doTelMatching() && hasTelescope())  fitResidualHistograms();
   BeamAnaBase::endJob();
   hist_->closeFile();
 }
