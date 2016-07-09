@@ -110,9 +110,9 @@ void Histogrammer::bookTelescopeMatchedHistograms() {
   new TH1D("residualDUT0","Residual at DUT0 plane",4000,-20.,20.);
   new TH1D("residualDUT1","Residual at DUT1 plane",4000,-20.,20.);
 
-  //new TH1I("chsizeD0C0","dutC0 channel occupancy per event;#Channels;#Events",51,-0.5,50.5);
+  new TH1I("chsizeD0C0","dutC0 channel occupancy per event;#Channels;#Events",51,-0.5,50.5);
   new TH1I("hitmapD0C0","dut0C0 hitmap;strip no.;#Events",1016,-0.5,1015.5);
-  //new TH1I("chsizeD1C0" ,"dut1C0 channel occupancy per event;#Channels;#Events",51,-0.5,50.5);
+  new TH1I("chsizeD1C0" ,"dut1C0 channel occupancy per event;#Channels;#Events",51,-0.5,50.5);
   new TH1I("hitmapD1C0","dut1C0 hitmap ;strip no.;#Events",1016,-0.5,1015.5);
 
   //new TH1D("nclusterD0C0" ,"#cluster dut0C0;#Clusters;#Events",51,-0.5,50.5);
