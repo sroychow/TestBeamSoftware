@@ -168,36 +168,74 @@ void BaselineAnalysis::eventLoop()
           double delX_CluD1= xtkdut1[0] - (dutRecoClmap()->at("det1C0").at(0).x-127)*0.09;
           hist_->fillHist1D("TelescopeMatch","residualDUT0",delX_CluD0);
           hist_->fillHist1D("TelescopeMatch","residualDUT1",delX_CluD1);
-          //Now find matched hits and clusters
-          int mhitsdet0C0 = 0;
-          for(const auto& h : *det0C0()) {
-            double delXh= xtkdut0[0] - (h-127)*0.09;
-            if(std::fabs(delXh - meanResDet0) <= 3*sigResDet0){
-              mhitsdet0C0++;
-              hist_->fillHist1D("TelescopeMatch","hitmapD0C0",h);
-            }
-          }
-          hist_->fillHist1D("TelescopeMatch","chsizeD0C0",mhitsdet0C0);
-
-          int mhitsdet1C0 = 0;
-          for(const auto& h : *det1C0()) {
-            double delXh= xtkdut1[0] - (h-127)*0.09;
-            if(std::fabs(delXh - meanResDet1) <= 3*sigResDet1){
-              mhitsdet1C0++;
-              hist_->fillHist1D("TelescopeMatch","hitmapD1C0",h);
-            }
-          }
-          hist_->fillHist1D("TelescopeMatch","chsizeD1C0",mhitsdet1C0);
-  
-          if(std::fabs(delX_CluD0 - meanResDet0) <= 3*sigResDet0){
-            hist_->fillHist1D("TelescopeMatch","clusterWidthD0C0",dutRecoClmap()->at("det0C0").at(0).size);
-          }
-          if(std::fabs(delX_CluD1 - meanResDet1) <= 3*sigResDet1){
-            hist_->fillHist1D("TelescopeMatch","clusterWidthD1C0",dutRecoClmap()->at("det1C0").at(0).size);
-          }
         } 
       }   
-   }
+   }//event loop
+   if(doTelMatching() && hasTelescope())  {
+     fitResidualHistograms();
+     for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
+       clearEvent();
+       Long64_t ientry = analysisTree()->GetEntry(jentry);
+       if(ientry < 0) break;
+       if(jentry%1000 == 0) 
+         cout << " Events processed. " << std::setw(8) << jentry 
+	    << endl;
+       if(!isGoodEvent())   continue;
+       setDetChannelVectors();
+       if(telEv()->nTrackParams != 1)    continue;
+       double xtkdut0 = (z_DUT0-z_FEI4)*telEv()->dxdz->at(0) + telEv()->xPos->at(0);
+       double xtkdut1 = (z_DUT1-z_FEI4)*telEv()->dxdz->at(0) + telEv()->xPos->at(0);
+ 
+       const auto& d0c0 = *det0C0();
+       const auto& d0c1 = *det0C1();
+       const auto& d1c0 = *det1C0();
+       const auto& d1c1 = *det1C1();  
+       //Now find matched hits and clusters
+       int mhitsdet0C0 = 0;
+       for(const auto& h : *det0C0()) {
+         double delXh= xtkdut0 - (h-127)*0.09;
+         if(std::fabs(delXh - meanResDet0) <= 3*sigResDet0){
+           mhitsdet0C0++;
+           hist_->fillHist1D("TelescopeMatch","hitmapD0C0",h);
+         }
+       }
+       hist_->fillHist1D("TelescopeMatch","chsizeD0C0",mhitsdet0C0);
+       int mhitsdet1C0 = 0;
+       for(const auto& h : *det1C0()) {
+         double delXh= xtkdut1 - (h-127)*0.09;
+         if(std::fabs(delXh - meanResDet1) <= 3*sigResDet1){
+           mhitsdet1C0++;
+           hist_->fillHist1D("TelescopeMatch","hitmapD1C0",h);
+         }
+       }
+       hist_->fillHist1D("TelescopeMatch","chsizeD1C0",mhitsdet1C0);
+       int mcldet0C0 = 0;
+       for(const auto& cl : dutRecoClmap()->at("det0C0") ) {
+         double delX_CluD0 = xtkdut0 - (cl.x-127)*0.09;
+         if(std::fabs(delX_CluD0 - meanResDet0) <= 3*sigResDet0){
+           hist_->fillHist1D("TelescopeMatch","clusterWidthD0C0",cl.size);
+           mcldet0C0++;
+         }
+       }
+       hist_->fillHist1D("TelescopeMatch","nclusterD0C0",mcldet0C0);
+       int mcldet1C0 = 0;
+       for(const auto& cl : dutRecoClmap()->at("det1C0") ) {
+         double delX_CluD1 = xtkdut1 - (cl.x-127)*0.09;
+         if(std::fabs(delX_CluD1 - meanResDet1) <= 3*sigResDet1){
+           hist_->fillHist1D("TelescopeMatch","clusterWidthD1C0",cl.size);
+           mcldet1C0++;
+         }
+       }
+       hist_->fillHist1D("TelescopeMatch","nclusterD1C0",mcldet1C0);
+       int mstubsC0 = 0;
+       for(const auto& stub:dutRecoStubmap()->at("C0")) {
+         double delXstub = xtkdut1 - (stub.seeding->x-127)*0.09;
+         if(std::fabs(delXstub - meanResDet1) <= 3*sigResDet1)
+            mstubsC0++;  
+       }
+       hist_->fillHist1D("TelescopeMatch","nstubRecoC0",mstubsC0);
+     }//telmatch event loop
+   }  
 }
 
 void BaselineAnalysis::clearEvent() {
@@ -212,6 +250,9 @@ void BaselineAnalysis::fitResidualHistograms() {
     double rlow = resDut0->GetBinCenter(maxbin - 20);
     double rmax = resDut0->GetBinCenter(maxbin + 20);
     resDut0->Fit("gaus", "","", rlow, rmax );
+    TF1* hfit = resDut0->GetFunction("gaus");
+    meanResDet0 = hfit->GetParameter("Mean"); 
+    sigResDet0 = hfit->GetParameter("Sigma");
   }
   TH1D* resDut1 = dynamic_cast<TH1D*>(Utility::getHist1D("residualDUT1"));
   if(resDut1) {  
@@ -220,11 +261,14 @@ void BaselineAnalysis::fitResidualHistograms() {
     double rlow = resDut1->GetBinCenter(maxbin - 20);
     double rmax = resDut1->GetBinCenter(maxbin + 20);
     resDut1->Fit("gaus", "","", rlow, rmax );
+    resDut0->Fit("gaus", "","", rlow, rmax );
+    TF1* hfit = resDut1->GetFunction("gaus");
+    meanResDet1 = hfit->GetParameter("Mean"); 
+    sigResDet1 = hfit->GetParameter("Sigma");
   }
 
 }
 void BaselineAnalysis::endJob() {
-  if(doTelMatching() && hasTelescope())  fitResidualHistograms();
   BeamAnaBase::endJob();
   hist_->closeFile();
 }

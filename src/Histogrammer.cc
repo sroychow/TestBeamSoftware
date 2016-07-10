@@ -115,10 +115,12 @@ void Histogrammer::bookTelescopeMatchedHistograms() {
   new TH1I("chsizeD1C0" ,"dut1C0 channel occupancy per event;#Channels;#Events",51,-0.5,50.5);
   new TH1I("hitmapD1C0","dut1C0 hitmap ;strip no.;#Events",1016,-0.5,1015.5);
 
-  //new TH1D("nclusterD0C0" ,"#cluster dut0C0;#Clusters;#Events",51,-0.5,50.5);
+  new TH1D("nclusterD0C0" ,"#cluster dut0C0;#Clusters;#Events",51,-0.5,50.5);
   new TH1I("clusterWidthD0C0" ,"dut0C0 clusterWidth ;#ClusterWidth;#Events",128,-0.5,127.5);
-  //new TH1D("nclusterD1C0","#cluster dut1C0;#Clusters;#Events",51,-0.5,50.5);
+  new TH1D("nclusterD1C0","#cluster dut1C0;#Clusters;#Events",51,-0.5,50.5);
   new TH1I("clusterWidthD1C0" ,"dut0C0 clusterWidth;#ClusterWidth;#Events",128,-0.5,127.5);
+
+  new TH1I("nstubRecoC0","Number of stubs for from offline reconstruction with tel match;#stubs;Events",20,-0.5,19.5);
 }
 
 void Histogrammer::closeFile() { 
