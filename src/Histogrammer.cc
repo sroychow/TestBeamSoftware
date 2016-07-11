@@ -109,6 +109,18 @@ void Histogrammer::bookTelescopeMatchedHistograms() {
   new TH1D("xtkatDUT1","Xpos of extrapolated track at DUT1 plane",200,-20.,20.);
   new TH1D("residualDUT0","Residual at DUT0 plane",4000,-20.,20.);
   new TH1D("residualDUT1","Residual at DUT1 plane",4000,-20.,20.);
+  new TH1D("stubresidualDUT1","Residual(stub) at DUT1 plane",4000,-20.,20.);
+
+  new TH1D("residualDUT0fit","Residual at DUT0 plane after fit",4000,-20.,20.);
+  new TH1D("residualDUT1fit","Residual at DUT1 plane after fit",4000,-20.,20.);
+
+
+  new TH1I("hitmapXtkdet0","Extrpolated track hitmap for events with #track=1;strip no.;#Events",1016,-0.5,1015.5);
+  new TH1I("hitmapXtkdet1","Extrpolated track hitmap for events with #track=1;#Events",1016,-0.5,1015.5);
+
+  new TH1I("hitmapXtkdet0Fid","Extrpolated track hitmap(fiducial) for events with #track=1;strip no.;#Events",1016,-0.5,1015.5);
+  new TH1I("hitmapXtkdet1Fid","Extrpolated track hitmap(fiducial) for events with #track=1;#Events",1016,-0.5,1015.5);
+
 
   new TH1I("chsizeD0C0_A","dutC0 channel occupancy per event,#track=1;#Channels;#Events",51,-0.5,50.5);
   new TH1I("hitmapD0C0_A","dut0C0 hitmap, #track=1;strip no.;#Events",1016,-0.5,1015.5);
@@ -132,6 +144,10 @@ void Histogrammer::bookTelescopeMatchedHistograms() {
 
   new TH1I("nstubRecoC0_A","Number of stubs for from offline reconstruction with tel match,#track=1;#stubs;Events",20,-0.5,19.5);
   new TH1I("nstubRecoC0_B","Number of stubs for from offline reconstruction with tel match,#track=1 & Res match;#stubs;Events",20,-0.5,19.5);
+  new TH1I("hitmapstubC0_A","C0 stub hitmap,#track=1 & Res match;strip no.;#Events",1016,-0.5,1015.5);
+  new TH1I("hitmapstubC0_B","C0 stub hitmap,#track=1 & Res match;strip no.;#Events",1016,-0.5,1015.5);
+  new TH1D("residualStubDUT1fit","Stub Residuals at DUT1 plane after fit, #track=1",4000,-20.,20.);
+  new TH1I("nstubRecoC0_C","Number of stubs for from offline reconstruction with tel match,#track=1 & Strip match;#stubs;Events",200,-0.5,199.5);
 }
 
 void Histogrammer::closeFile() { 

@@ -168,6 +168,10 @@ void BaselineAnalysis::eventLoop()
           double delX_CluD1= xtkdut1[0] - (dutRecoClmap()->at("det1C0").at(0).x-127)*0.09;
           hist_->fillHist1D("TelescopeMatch","residualDUT0",delX_CluD0);
           hist_->fillHist1D("TelescopeMatch","residualDUT1",delX_CluD1);
+          if(!dutRecoStubmap()->at("C0").empty()) {
+            double delX_StubD1= xtkdut1[0] - (dutRecoStubmap()->at("C0").at(0).x-127)*0.09;
+            hist_->fillHist1D("TelescopeMatch","stubresidualDUT1",delX_StubD1);
+          }
         } 
       }   
    }//event loop
@@ -176,6 +180,11 @@ void BaselineAnalysis::eventLoop()
      std::cout << "Residual Calculation Results>>>>>>>\n";
      std::cout << "meanResDet0=" << meanResDet0 << "\tsigResDet0=" << sigResDet0 << std::endl;
      std::cout << "meanResDet1=" << meanResDet1 << "\tsigResDet1=" << sigResDet1 << std::endl;
+     int sigResDet0Strips = 4*sigResDet0/0.09 + 1;
+     int sigResDet1Strips = 4*sigResDet1/0.09 + 1;
+     std::cout << "meanResDet0=" << meanResDet0 << "\tsigResDet0=" << sigResDet0 << "\t#StripDiff(4sig)=" << sigResDet0Strips << std::endl;
+     std::cout << "meanResDet1=" << meanResDet1 << "\tsigResDet1=" << sigResDet1 << "\t#StripDiff(4sig)=" << sigResDet1Strips <<std::endl;
+     
      for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
        clearEvent();
        Long64_t ientry = analysisTree()->GetEntry(jentry);
@@ -185,11 +194,35 @@ void BaselineAnalysis::eventLoop()
 	    << endl;
        if(!isGoodEvent())   continue;
        setDetChannelVectors();
-       if(telEv()->nTrackParams != 1)    continue;
+       if(telEv()->nTrackParams != 1 )    continue;
+       //|| dutRecoClmap()->at("det0C0").size() != 1 
+       //|| dutRecoClmap()->at("det1C0").size() != 1
        //get extrapolated track
        double xtkdut0 = (z_DUT0-z_FEI4)*telEv()->dxdz->at(0) + telEv()->xPos->at(0);
        double xtkdut1 = (z_DUT1-z_FEI4)*telEv()->dxdz->at(0) + telEv()->xPos->at(0);
- 
+       if(dutRecoClmap()->at("det0C0").size() == 1 && dutRecoClmap()->at("det1C0").size() == 1) {
+          double delX_CluD0=  xtkdut0 - (dutRecoClmap()->at("det0C0").at(0).x-127)*0.09 - meanResDet0;
+          double delX_CluD1=  xtkdut1 - (dutRecoClmap()->at("det1C0").at(0).x-127)*0.09 - meanResDet1;
+          hist_->fillHist1D("TelescopeMatch","residualDUT0fit",delX_CluD0);
+          hist_->fillHist1D("TelescopeMatch","residualDUT1fit",delX_CluD1);
+       }
+       
+       int xtkdut0Strip = (xtkdut0/0.09) + 127;
+       int xtkdut1Strip = (xtkdut1/0.09) + 127; 
+       hist_->fillHist1D("TelescopeMatch","hitmapXtkdet0",xtkdut0Strip);
+       hist_->fillHist1D("TelescopeMatch","hitmapXtkdet1",xtkdut1Strip);
+       bool xtkdet0StripGood =  xtkdut0Strip > 127 && std::find(getMaskedChannelMap()->at("det0").begin(), 
+                                                                getMaskedChannelMap()->at("det0").end(), 
+                                                                xtkdut0Strip) == getMaskedChannelMap()->at("det0").end();
+
+       bool xtkdet1StripGood =  xtkdut1Strip > 127 && std::find(getMaskedChannelMap()->at("det1").begin(), 
+                                                                getMaskedChannelMap()->at("det1").end(), 
+                                                                xtkdut0Strip) == getMaskedChannelMap()->at("det1").end();
+       bool tkOk = xtkdet0StripGood && xtkdet1StripGood;   
+       if(!tkOk)     continue;
+       hist_->fillHist1D("TelescopeMatch","hitmapXtkdet0Fid",xtkdut0Strip);
+       hist_->fillHist1D("TelescopeMatch","hitmapXtkdet1Fid",xtkdut1Strip);
+
        const auto& d0c0 = *det0C0();
        const auto& d0c1 = *det0C1();
        const auto& d1c0 = *det1C0();
@@ -199,7 +232,7 @@ void BaselineAnalysis::eventLoop()
        for(const auto& h : *det0C0()) {
          hist_->fillHist1D("TelescopeMatch","hitmapD0C0_A",h);
          double delXh= xtkdut0 - (h-127)*0.09;
-         if(std::fabs(delXh - meanResDet0) <= 3*sigResDet0){
+         if(std::fabs(delXh - meanResDet0) <= 4*sigResDet0){
            mhitsdet0C0++;
            hist_->fillHist1D("TelescopeMatch","hitmapD0C0_B",h);
          }
@@ -210,7 +243,7 @@ void BaselineAnalysis::eventLoop()
        for(const auto& h : *det1C0()) {
          hist_->fillHist1D("TelescopeMatch","hitmapD1C0_A",h);
          double delXh= xtkdut1 - (h-127)*0.09;
-         if(std::fabs(delXh - meanResDet1) <= 3*sigResDet1){
+         if(std::fabs(delXh - meanResDet1) <= 4*sigResDet1){
            mhitsdet1C0++;
            hist_->fillHist1D("TelescopeMatch","hitmapD1C0_B",h);
          }
@@ -239,14 +272,20 @@ void BaselineAnalysis::eventLoop()
        }
        hist_->fillHist1D("TelescopeMatch","nclusterD1C0_A",dutRecoClmap()->at("det1C0").size());
        hist_->fillHist1D("TelescopeMatch","nclusterD1C0_B",mcldet1C0);
-       int mstubsC0 = 0;
+       int mstubsC0 = 0, mstubsSMC0=0;
        for(const auto& stub:dutRecoStubmap()->at("C0")) {
-         double delXstub = xtkdut1 - (stub.seeding->x-127)*0.09;
-         if(std::fabs(delXstub - meanResDet1) <= 3*sigResDet1)
-            mstubsC0++;  
+         double delXstub = xtkdut1 - (stub.x-127)*0.09;
+         hist_->fillHist1D("TelescopeMatch","hitmapstubC0_A",stub.x);
+         hist_->fillHist1D("TelescopeMatch","residualStubDUT1fit", delXstub - meanResDet1);
+         if(std::fabs(delXstub - meanResDet1) <= 3*sigResDet1) {
+            mstubsC0++;
+            hist_->fillHist1D("TelescopeMatch","hitmapstubC0_B",stub.x);
+         }
+         hist_->fillHist1D("TelescopeMatch","nstubRecoC0_C", std::abs(xtkdet1StripGood - stub.x));  
        }
        hist_->fillHist1D("TelescopeMatch","nstubRecoC0_A",dutRecoStubmap()->at("C0").size());
        hist_->fillHist1D("TelescopeMatch","nstubRecoC0_B",mstubsC0);
+
      }//telmatch event loop
    }  
    printEfficiency();
@@ -258,6 +297,7 @@ void BaselineAnalysis::clearEvent() {
 void BaselineAnalysis::fitResidualHistograms() {
   hist_->hfile()->cd("TelescopeMatch");
   TH1D* resDut0 = dynamic_cast<TH1D*>(Utility::getHist1D("residualDUT0"));
+  std::cout << "Det0 residual entries=" << resDut0->GetEntries() << std::endl;
   if(resDut0) {  
     std::cout << "Fitting dut0 residual" << std::endl;
     int maxbin = resDut0->GetMaximumBin();

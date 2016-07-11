@@ -24,8 +24,8 @@ using std::map;
 using std::cerr;
 
 static const double z_DUT0 = 435.0;
-static const double z_DUT1 = 437.5;  
-static const double z_FEI4 = 529.0;
+static const double z_DUT1 = 438.1;  
+static const double z_FEI4 = 724.0;
 static const double meanResDet0=-4.51;
 static const double sigResDet0=0.30;
 static const double meanResDet1=-4.53;
@@ -72,6 +72,7 @@ class BeamAnaBase {
     void setChannelMasking(const bool mch, const std::string cFile);
     bool doTelMatching() const { return doTelMatching_;}
     bool doChannelMasking() const { return doChannelMasking_;}
+    std::map<std::string,std::vector<int> >* getMaskedChannelMap() const {return dut_maskedChannels_;}
     double meanResDet0=-4.51;
     double sigResDet0=0.30;
     double meanResDet1=-4.53;
