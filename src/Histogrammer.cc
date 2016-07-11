@@ -110,17 +110,28 @@ void Histogrammer::bookTelescopeMatchedHistograms() {
   new TH1D("residualDUT0","Residual at DUT0 plane",4000,-20.,20.);
   new TH1D("residualDUT1","Residual at DUT1 plane",4000,-20.,20.);
 
-  new TH1I("chsizeD0C0","dutC0 channel occupancy per event;#Channels;#Events",51,-0.5,50.5);
-  new TH1I("hitmapD0C0","dut0C0 hitmap;strip no.;#Events",1016,-0.5,1015.5);
-  new TH1I("chsizeD1C0" ,"dut1C0 channel occupancy per event;#Channels;#Events",51,-0.5,50.5);
-  new TH1I("hitmapD1C0","dut1C0 hitmap ;strip no.;#Events",1016,-0.5,1015.5);
+  new TH1I("chsizeD0C0_A","dutC0 channel occupancy per event,#track=1;#Channels;#Events",51,-0.5,50.5);
+  new TH1I("hitmapD0C0_A","dut0C0 hitmap, #track=1;strip no.;#Events",1016,-0.5,1015.5);
+  new TH1I("chsizeD1C0_A" ,"dut1C0 channel occupancy per event,#track=1;#Channels;#Events",51,-0.5,50.5);
+  new TH1I("hitmapD1C0_A","dut1C0 hitmap,#track=1 ;strip no.;#Events",1016,-0.5,1015.5);
+ 
+  new TH1I("chsizeD0C0_B","dutC0 channel occupancy per eventm,#track=1 & Res match;#Channels;#Events",51,-0.5,50.5);
+  new TH1I("hitmapD0C0_B","dut0C0 hitmap,#track=1 & Res match;strip no.;#Events",1016,-0.5,1015.5);
+  new TH1I("chsizeD1C0_B" ,"dut1C0 channel occupancy per event,#track=1 & Res match;#Channels;#Events",51,-0.5,50.5);
+  new TH1I("hitmapD1C0_B","dut1C0 hitmap,#track=1 & Res match;strip no.;#Events",1016,-0.5,1015.5);
 
-  new TH1D("nclusterD0C0" ,"#cluster dut0C0;#Clusters;#Events",51,-0.5,50.5);
-  new TH1I("clusterWidthD0C0" ,"dut0C0 clusterWidth ;#ClusterWidth;#Events",128,-0.5,127.5);
-  new TH1D("nclusterD1C0","#cluster dut1C0;#Clusters;#Events",51,-0.5,50.5);
-  new TH1I("clusterWidthD1C0" ,"dut0C0 clusterWidth;#ClusterWidth;#Events",128,-0.5,127.5);
+  new TH1D("nclusterD0C0_A" ,"#cluster dut0C0,#track=1;#Clusters;#Events",51,-0.5,50.5);
+  new TH1I("clusterWidthD0C0_A" ,"dut0C0 clusterWidth,#track=1;#ClusterWidth;#Events",128,-0.5,127.5);
+  new TH1D("nclusterD1C0_A","#cluster dut1C0,#track=1;#Clusters;#Events",51,-0.5,50.5);
+  new TH1I("clusterWidthD1C0_A" ,"dut0C0 clusterWidth,#track=1;#ClusterWidth;#Events",128,-0.5,127.5);
 
-  new TH1I("nstubRecoC0","Number of stubs for from offline reconstruction with tel match;#stubs;Events",20,-0.5,19.5);
+  new TH1D("nclusterD0C0_B" ,"#cluster dut0C0,#track=1 & Res match;#Clusters;#Events",51,-0.5,50.5);
+  new TH1I("clusterWidthD0C0_B" ,"dut0C0 clusterWidth,#track=1 & Res match;#ClusterWidth;#Events",128,-0.5,127.5);
+  new TH1D("nclusterD1C0_B","#cluster dut1C0,#track=1 & Res match;#Clusters;#Events",51,-0.5,50.5);
+  new TH1I("clusterWidthD1C0_B" ,"dut0C0 clusterWidth,#track=1 & Res match;#ClusterWidth;#Events",128,-0.5,127.5);
+
+  new TH1I("nstubRecoC0_A","Number of stubs for from offline reconstruction with tel match,#track=1;#stubs;Events",20,-0.5,19.5);
+  new TH1I("nstubRecoC0_B","Number of stubs for from offline reconstruction with tel match,#track=1 & Res match;#stubs;Events",20,-0.5,19.5);
 }
 
 void Histogrammer::closeFile() { 
