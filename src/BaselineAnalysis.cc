@@ -173,6 +173,9 @@ void BaselineAnalysis::eventLoop()
    }//event loop
    if(doTelMatching() && hasTelescope())  {
      fitResidualHistograms();
+     std::cout << "Residual Calculation Results>>>>>>>\n";
+     std::cout << "meanResDet0=" << meanResDet0 << "\tsigResDet0=" << sigResDet0 << std::endl;
+     std::cout << "meanResDet1=" << meanResDet1 << "\tsigResDet1=" << sigResDet1 << std::endl;
      for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
        clearEvent();
        Long64_t ientry = analysisTree()->GetEntry(jentry);
@@ -183,6 +186,7 @@ void BaselineAnalysis::eventLoop()
        if(!isGoodEvent())   continue;
        setDetChannelVectors();
        if(telEv()->nTrackParams != 1)    continue;
+       //get extrapolated track
        double xtkdut0 = (z_DUT0-z_FEI4)*telEv()->dxdz->at(0) + telEv()->xPos->at(0);
        double xtkdut1 = (z_DUT1-z_FEI4)*telEv()->dxdz->at(0) + telEv()->xPos->at(0);
  
@@ -245,6 +249,7 @@ void BaselineAnalysis::eventLoop()
        hist_->fillHist1D("TelescopeMatch","nstubRecoC0_B",mstubsC0);
      }//telmatch event loop
    }  
+   printEfficiency();
 }
 
 void BaselineAnalysis::clearEvent() {
@@ -270,10 +275,24 @@ void BaselineAnalysis::fitResidualHistograms() {
     double rlow = resDut1->GetBinCenter(maxbin - 20);
     double rmax = resDut1->GetBinCenter(maxbin + 20);
     resDut1->Fit("gaus", "","", rlow, rmax );
-    resDut0->Fit("gaus", "","", rlow, rmax );
     TF1* hfit = resDut1->GetFunction("gaus");
     meanResDet1 = hfit->GetParameter("Mean"); 
     sigResDet1 = hfit->GetParameter("Sigma");
+  }
+
+}
+
+void BaselineAnalysis::printEfficiency() {
+  std::cout << "Entering Print\n";
+  hist_->hfile()->cd("StubInfo");
+  TH1I* h1 = dynamic_cast<TH1I*>(Utility::getHist1D("nstubsFromReco"));
+  std::cout << "Stub Efficiency for good Events=" << (h1->GetEntries() - h1->GetBinContent(1))/h1->GetEntries() << std::endl;
+  if(doTelMatching() && hasTelescope()) {
+    hist_->hfile()->cd("TelescopeMatch");
+    TH1I* h2 = dynamic_cast<TH1I*>(Utility::getHist1D("nstubRecoC0_A"));
+    if(h2) std::cout << "Stub Efficiency for good Events & 1 track=" << (h2->GetEntries() - h2->GetBinContent(1))/h2->GetEntries() << std::endl;
+    TH1I* h3 = dynamic_cast<TH1I*>(Utility::getHist1D("nstubRecoC0_B"));
+    if(h3) std::cout << "Stub Efficiency for good Events & 1track & residual match=" << (h3->GetEntries() - h3->GetBinContent(1))/h3->GetEntries() << std::endl;
   }
 
 }
