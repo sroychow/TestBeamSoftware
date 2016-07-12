@@ -19,6 +19,7 @@ class Histogrammer {
     void bookStubHistoForColumn(TString c);
     void bookCorrelationHistograms();
     void bookCorrelationHistoForColumn(TString c);
+    void bookTelescopeFitHistograms();
     template <class T>
     void fillHist1D(const char* dir, const char* histo, T val) {
       fout_->cd(dir);

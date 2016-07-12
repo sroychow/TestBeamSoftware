@@ -13,13 +13,16 @@
 #include "TH2.h"
 #include "TProfile.h"
 #include "stdint.h"
+#include "DataFormats.h"
 class TFile;
 using std::string;
 
 namespace Utility {
   
   void tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiter);
-  //void getChannelMaskedHit( std::vector<int>& vec, const unsigned int chLow, const unsigned int chHigh );
+  void getChannelMaskedHits( std::vector<int>& vec, const std::vector<int>& mch );
+  void getChannelMaskedClusters( std::vector<tbeam::cluster*>& vec, const std::vector<int>& mch );
+  void getChannelMaskedStubs( std::vector<tbeam::stub*>& vec, const std::vector<int>& mch );
  
   int readStubWord( std::map<std::string,std::vector<unsigned int> >& stubids, const uint32_t sWord );
   TH1* getHist1D(const char* hname);

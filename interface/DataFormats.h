@@ -82,8 +82,8 @@ namespace tbeam {
 
   class TelescopeEvent : public TObject {
     public :
-      Int_t           nTrackParams;
-      Int_t           euEvt;
+     Int_t           nTrackParams;
+     Int_t           euEvt;
      std::vector<double>  *xPos;
      std::vector<double>  *yPos;
      std::vector<double>  *dxdz;

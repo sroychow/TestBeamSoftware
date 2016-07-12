@@ -99,6 +99,24 @@ void Histogrammer::bookCorrelationHistoForColumn(TString c) {
   //new TH1D("nhitdiff" + c,"#Hits det0 - #Hits det1 " + c,100,-.5,99.5);
 }
 
+
+void Histogrammer::bookTelescopeFitHistograms() {
+  fout_->mkdir("TelescopeFit");
+  fout_->cd("TelescopeFit");
+  new TH1D("nTrackParams","#Tracks Telescope;#tracks;#events",30,0,30);
+  new TH1D("xpos","Xpos of track at FEI4 plane",200,-20.,20.);
+  new TH1D("xtkatDUT0","Xpos of extrapolated track at DUT0 plane",200,-20.,20.);
+  new TH1D("xtkatDUT1","Xpos of extrapolated track at DUT1 plane",200,-20.,20.);
+  new TH1D("residualDUT0","Residual at DUT0 plane",4000,-20.,20.);
+  new TH1D("residualDUT1","Residual at DUT1 plane",4000,-20.,20.);
+  new TH1I("isTrkFiducial","Is Track in the Fiducial Region",4,-0.5,3.5);
+  TH1I* h = dynamic_cast<TH1I*>(Utility::getHist1D("isTrkFiducial"));
+  h->GetXaxis()->SetBinLabel(1,"1TrkEvt");
+  h->GetXaxis()->SetBinLabel(2,"xtkDut1");
+  h->GetXaxis()->SetBinLabel(3,"xtkDut0");
+  h->GetXaxis()->SetBinLabel(4,"xtkDut0 && xtkDut1");
+}
+
 void Histogrammer::closeFile() { 
   fout_->cd();
   fout_->Write();

@@ -20,7 +20,11 @@ int main( int argc,char* argv[] ){
   cmd.addErrorCode( 0, "Success" );
   cmd.addErrorCode( 1, "Error" );
   cmd.defineOption( "iFile", "Input Tree name", ArgvParser::OptionRequiresValue);
-  cmd.defineOption( "oFile", "Output file name", ArgvParser::OptionRequiresValue);  
+  cmd.defineOption( "oFile", "Output file name", ArgvParser::OptionRequiresValue); 
+  cmd.defineOption( "telM", "Do telescope matching. Default=false", ArgvParser::NoOptionAttribute);  
+  cmd.defineOption( "chMaskF", "Channel Mask file;Ch masking off by default", ArgvParser::OptionRequiresValue);
+    
+  
   int result = cmd.parse( argc, argv );
   if (result != ArgvParser::NoParserError)
   {
@@ -41,10 +45,16 @@ int main( int argc,char* argv[] ){
     exit( 1 );
   }
   
+  bool telmatch = ( cmd.foundOption( "telM" ) ) ? true : false;
+  bool dochMask = ( cmd.foundOption( "chMaskF" ) ) ? true : false;
+  std::string cMaskFilename = ( cmd.foundOption( "chMaskF" ) ) ? cmd.optionValue( "chMaskF" ) : "";
+
   //Let's roll
   TStopwatch timer;
   timer.Start();
   BaselineAnalysis r(inFilename,outFilename);
+  r.setTelMatching(telmatch);
+  r.setChannelMasking(dochMask, cMaskFilename);
   std::cout << "Event Loop start" << std::endl;
   r.eventLoop();
   r.endJob();
