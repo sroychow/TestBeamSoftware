@@ -38,6 +38,7 @@ BeamAnaBase::BeamAnaBase() :
   dutRecoStubmap_(new std::map<std::string,std::vector<tbeam::stub>>),
   recostubChipids_(new std::map<std::string,std::vector<unsigned int>>()),
   cbcstubChipids_(new std::map<std::string,std::vector<unsigned int>>()),
+  dut_maskedChannels_(new std::map<std::string,std::vector<int>>()),
   nStubsrecoSword_(0),
   nStubscbcSword_(0)
 {
@@ -199,7 +200,6 @@ void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
   fin.close();  
    
   std::cout << "Masked Channels List" << std::endl;
-  dut_maskedChannels_ = new std::map<std::string,std::vector<int>>();
   dut_maskedChannels_->insert({("det0"),std::vector<int>()});
   dut_maskedChannels_->insert({("det1"),std::vector<int>()});
   for(auto& cbc : cbcMaskedChannelsMap_) {

@@ -73,10 +73,10 @@ class BeamAnaBase {
     bool doTelMatching() const { return doTelMatching_;}
     bool doChannelMasking() const { return doChannelMasking_;}
     std::map<std::string,std::vector<int> >* getMaskedChannelMap() const {return dut_maskedChannels_;}
-    double meanResDet0=-4.51;
-    double sigResDet0=0.30;
-    double meanResDet1=-4.53;
-    double sigResDet1=0.0310;
+    double meanResDet0=0.;
+    double sigResDet0=0.;
+    double meanResDet1=0.;
+    double sigResDet1=0.;
   private :
     TFile* fin_;
     TTree *analysisTree_; 

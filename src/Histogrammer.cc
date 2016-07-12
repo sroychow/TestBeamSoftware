@@ -100,54 +100,21 @@ void Histogrammer::bookCorrelationHistoForColumn(TString c) {
 }
 
 
-void Histogrammer::bookTelescopeMatchedHistograms() {
-  fout_->mkdir("TelescopeMatch");
-  fout_->cd("TelescopeMatch");
+void Histogrammer::bookTelescopeFitHistograms() {
+  fout_->mkdir("TelescopeFit");
+  fout_->cd("TelescopeFit");
   new TH1D("nTrackParams","#Tracks Telescope;#tracks;#events",30,0,30);
   new TH1D("xpos","Xpos of track at FEI4 plane",200,-20.,20.);
   new TH1D("xtkatDUT0","Xpos of extrapolated track at DUT0 plane",200,-20.,20.);
   new TH1D("xtkatDUT1","Xpos of extrapolated track at DUT1 plane",200,-20.,20.);
   new TH1D("residualDUT0","Residual at DUT0 plane",4000,-20.,20.);
   new TH1D("residualDUT1","Residual at DUT1 plane",4000,-20.,20.);
-  new TH1D("stubresidualDUT1","Residual(stub) at DUT1 plane",4000,-20.,20.);
-
-  new TH1D("residualDUT0fit","Residual at DUT0 plane after fit",4000,-20.,20.);
-  new TH1D("residualDUT1fit","Residual at DUT1 plane after fit",4000,-20.,20.);
-
-
-  new TH1I("hitmapXtkdet0","Extrpolated track hitmap for events with #track=1;strip no.;#Events",1016,-0.5,1015.5);
-  new TH1I("hitmapXtkdet1","Extrpolated track hitmap for events with #track=1;#Events",1016,-0.5,1015.5);
-
-  new TH1I("hitmapXtkdet0Fid","Extrpolated track hitmap(fiducial) for events with #track=1;strip no.;#Events",1016,-0.5,1015.5);
-  new TH1I("hitmapXtkdet1Fid","Extrpolated track hitmap(fiducial) for events with #track=1;#Events",1016,-0.5,1015.5);
-
-
-  new TH1I("chsizeD0C0_A","dutC0 channel occupancy per event,#track=1;#Channels;#Events",51,-0.5,50.5);
-  new TH1I("hitmapD0C0_A","dut0C0 hitmap, #track=1;strip no.;#Events",1016,-0.5,1015.5);
-  new TH1I("chsizeD1C0_A" ,"dut1C0 channel occupancy per event,#track=1;#Channels;#Events",51,-0.5,50.5);
-  new TH1I("hitmapD1C0_A","dut1C0 hitmap,#track=1 ;strip no.;#Events",1016,-0.5,1015.5);
- 
-  new TH1I("chsizeD0C0_B","dutC0 channel occupancy per eventm,#track=1 & Res match;#Channels;#Events",51,-0.5,50.5);
-  new TH1I("hitmapD0C0_B","dut0C0 hitmap,#track=1 & Res match;strip no.;#Events",1016,-0.5,1015.5);
-  new TH1I("chsizeD1C0_B" ,"dut1C0 channel occupancy per event,#track=1 & Res match;#Channels;#Events",51,-0.5,50.5);
-  new TH1I("hitmapD1C0_B","dut1C0 hitmap,#track=1 & Res match;strip no.;#Events",1016,-0.5,1015.5);
-
-  new TH1D("nclusterD0C0_A" ,"#cluster dut0C0,#track=1;#Clusters;#Events",51,-0.5,50.5);
-  new TH1I("clusterWidthD0C0_A" ,"dut0C0 clusterWidth,#track=1;#ClusterWidth;#Events",128,-0.5,127.5);
-  new TH1D("nclusterD1C0_A","#cluster dut1C0,#track=1;#Clusters;#Events",51,-0.5,50.5);
-  new TH1I("clusterWidthD1C0_A" ,"dut0C0 clusterWidth,#track=1;#ClusterWidth;#Events",128,-0.5,127.5);
-
-  new TH1D("nclusterD0C0_B" ,"#cluster dut0C0,#track=1 & Res match;#Clusters;#Events",51,-0.5,50.5);
-  new TH1I("clusterWidthD0C0_B" ,"dut0C0 clusterWidth,#track=1 & Res match;#ClusterWidth;#Events",128,-0.5,127.5);
-  new TH1D("nclusterD1C0_B","#cluster dut1C0,#track=1 & Res match;#Clusters;#Events",51,-0.5,50.5);
-  new TH1I("clusterWidthD1C0_B" ,"dut0C0 clusterWidth,#track=1 & Res match;#ClusterWidth;#Events",128,-0.5,127.5);
-
-  new TH1I("nstubRecoC0_A","Number of stubs for from offline reconstruction with tel match,#track=1;#stubs;Events",20,-0.5,19.5);
-  new TH1I("nstubRecoC0_B","Number of stubs for from offline reconstruction with tel match,#track=1 & Res match;#stubs;Events",20,-0.5,19.5);
-  new TH1I("hitmapstubC0_A","C0 stub hitmap,#track=1 & Res match;strip no.;#Events",1016,-0.5,1015.5);
-  new TH1I("hitmapstubC0_B","C0 stub hitmap,#track=1 & Res match;strip no.;#Events",1016,-0.5,1015.5);
-  new TH1D("residualStubDUT1fit","Stub Residuals at DUT1 plane after fit, #track=1",4000,-20.,20.);
-  new TH1I("nstubRecoC0_C","Number of stubs for from offline reconstruction with tel match,#track=1 & Strip match;#stubs;Events",200,-0.5,199.5);
+  new TH1I("isTrkFiducial","Is Track in the Fiducial Region",4,-0.5,3.5);
+  TH1I* h = dynamic_cast<TH1I*>(Utility::getHist1D("isTrkFiducial"));
+  h->GetXaxis()->SetBinLabel(1,"1TrkEvt");
+  h->GetXaxis()->SetBinLabel(2,"xtkDut1");
+  h->GetXaxis()->SetBinLabel(3,"xtkDut0");
+  h->GetXaxis()->SetBinLabel(4,"xtkDut0 && xtkDut1");
 }
 
 void Histogrammer::closeFile() { 
