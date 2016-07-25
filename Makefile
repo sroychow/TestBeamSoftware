@@ -1,5 +1,5 @@
 UNAME    = $(shell uname)
-EXE      = baselineReco deltaClusAnalysis
+EXE      = baselineReco deltaClusAnalysis alignmentReco
  
 VPATH  = .:./interface
 vpath %.h ./interface
@@ -13,17 +13,17 @@ SRCS   = src/argvparser.cc src/DataFormats.cc src/BeamAnaBase.cc src/Utility.cc 
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
 
-LDFLAGS  = -g
+LDFLAGS  = -g 
 SOFLAGS  = -shared 
 CXXFLAGS = -I./interface -I./  
 
 CXX       = g++
-CXXFLAGS += -g -std=c++11
+CXXFLAGS += -g -std=c++11 -fpermissive
 
 
 HDRS_DICT = interface/DataFormats.h interface/LinkDef.h
 
-bin: baselineReco deltaClusAnalysis
+bin: baselineReco deltaClusAnalysis alignmentReco
 all: 
 	gmake cint 
 	gmake bin 
@@ -41,11 +41,18 @@ BaselineAnalysis.o : src/BaselineAnalysis.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
 
+AlignmentAnalysis.o : src/AlignmentAnalysis.cc
+	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+	mv $@ ../src/
+
 DeltaClusterAnalysis.o : src/DeltaClusterAnalysis.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
 
 baselineReco:   src/baselineReco.cc $(OBJS) src/BaselineAnalysis.o src/Dict.o
+	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
+
+alignmentReco:   src/alignmentReco.cc $(OBJS) src/AlignmentAnalysis.o src/Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 deltaClusAnalysis: src/dclusAnalysis.cc $(OBJS) src/DeltaClusterAnalysis.o src/Dict.o

@@ -117,6 +117,52 @@ void Histogrammer::bookTelescopeFitHistograms() {
   h->GetXaxis()->SetBinLabel(4,"xtkDut0 && xtkDut1");
 }
 
+void Histogrammer::bookTrackMatchingHisto(){
+  fout_->cd();
+  fout_->mkdir("TrackMatching");
+  fout_->cd("TrackMatching");
+
+  new TH1I("d0_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
+  new TH1I("d1_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d1",10000,-10,10);
+
+  for (int iz=0; iz<50; iz++){
+    new TH1I(Form("d0_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
+    new TH1I(Form("d1_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
+  }
+
+  new TH1F("d0_offsetVsZ", "x_{DUT} offset vs injected z_{DUT}, d0", 50, 200-5, 700-5);
+  new TH1F("d1_offsetVsZ", "x_{DUT} offset vs injected z_{DUT},d1", 50, 200-5, 700-5);
+
+  new TH1F("d0_chi2VsZ","chi2 vs injected z_{DUT}, d0", 50, 200-5, 700-5);
+  new TH1F("d1_chi2VsZ","chi2 vs injected z_{DUT}, d1", 50, 200-5, 700-5);
+
+  new TH1I("d0_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
+  new TH1I("d1_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d1",10000,-10,10);
+
+
+}
+
+TH1* Histogrammer::GetHistoByName(const char* det, const char* Name){
+
+  char histname[50];
+  strcpy( histname, det );
+  strcat( histname, Name );
+  fout_->cd("TrackMatching");
+  TH1* h = (TH1*) gDirectory->Get(histname);
+  return h;
+}
+
+void Histogrammer::FillAlignmentOffsetVsZ(const char* det, const char* histo, int iz, float z, float x, float x_err){
+
+  fout_->cd("TrackMatching");
+  char histname[50];
+  strcpy( histname, det );
+  strcat( histname, histo );
+  TH1* h = (TH1*) gDirectory->Get(histname);
+  h->Fill(z, x);
+  h->SetBinError(iz+1, x_err);
+}
+
 void Histogrammer::closeFile() { 
   fout_->cd();
   fout_->Write();
