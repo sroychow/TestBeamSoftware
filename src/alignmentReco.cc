@@ -21,8 +21,8 @@ int main( int argc,char* argv[] ){
   cmd.addErrorCode( 1, "Error" );
   cmd.defineOption( "iFile", "Input Tree name", ArgvParser::OptionRequiresValue);
   cmd.defineOption( "oFile", "Output file name", ArgvParser::OptionRequiresValue); 
-  cmd.defineOption( "telM", "Do telescope matching. Default=false", ArgvParser::NoOptionAttribute);  
   cmd.defineOption( "chMaskF", "Channel Mask file;Ch masking off by default", ArgvParser::OptionRequiresValue);
+  cmd.defineOption( "prod", "Append constants to central alignment file. Default=false", ArgvParser::NoOptionAttribute);  
     
   
   int result = cmd.parse( argc, argv );
@@ -46,16 +46,18 @@ int main( int argc,char* argv[] ){
   }
 
   bool telmatch = true;  
-  //bool telmatch = ( cmd.foundOption( "telM" ) ) ? true : false;
   bool dochMask = ( cmd.foundOption( "chMaskF" ) ) ? true : false;
   std::string cMaskFilename = ( cmd.foundOption( "chMaskF" ) ) ? cmd.optionValue( "chMaskF" ) : "";
-
+  
+  bool isProduction = ( cmd.foundOption( "prod" ) ) ? true : false;;
+  
   //Let's roll
   TStopwatch timer;
   timer.Start();
   AlignmentAnalysis r(inFilename,outFilename);
   r.setTelMatching(telmatch);
   r.setChannelMasking(dochMask, cMaskFilename);
+  r.setRunMode(isProduction);
   std::cout << "Event Loop start" << std::endl;
   r.eventLoop();
   r.endJob();

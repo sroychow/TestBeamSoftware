@@ -138,18 +138,17 @@ void Histogrammer::bookTrackMatchingHisto(){
 
   new TH1I("d0_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
   new TH1I("d1_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d1",10000,-10,10);
-
-
 }
 
-TH1* Histogrammer::GetHistoByName(const char* det, const char* Name){
+TH1* Histogrammer::GetHistoByName(const char* dir, const char* hname){
+  fout_->cd(dir);
+  return Utility::getHist1D(hname);
+}
 
-  char histname[50];
-  strcpy( histname, det );
-  strcat( histname, Name );
-  fout_->cd("TrackMatching");
-  TH1* h = (TH1*) gDirectory->Get(histname);
-  return h;
+TH1* Histogrammer::GetHistoByName(const std::string& dir, const std::string& hname) {
+  fout_->cd(dir.c_str());
+  return Utility::getHist1D(hname);
+
 }
 
 void Histogrammer::FillAlignmentOffsetVsZ(const char* det, const char* histo, int iz, float z, float x, float x_err){
