@@ -20,6 +20,12 @@ class Histogrammer {
     void bookCorrelationHistograms();
     void bookCorrelationHistoForColumn(TString c);
     void bookTelescopeFitHistograms();
+    void bookTrackMatchingHisto();
+    TH1* GetHistoByName(const char*, const char* );
+    TH1* GetHistoByName(const std::string& dir, const std::string& hname);
+    void FillAlignmentOffsetVsZ(const char*, const char*, int, float, float, float);
+
+
     template <class T>
     void fillHist1D(const char* dir, const char* histo, T val) {
       fout_->cd(dir);
