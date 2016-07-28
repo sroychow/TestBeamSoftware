@@ -11,6 +11,13 @@ using std::vector;
 using std::map;
 using std::string;
 namespace tbeam {
+  struct alignmentPars {
+    double d0_chi2_min_z;
+    double d1_chi2_min_z;
+    double d0_Offset_aligned;
+    double d1_Offset_aligned;
+  };
+
   class cluster;
   class stub;
   class cluster : public TObject {

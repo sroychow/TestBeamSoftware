@@ -19,8 +19,8 @@ class Histogrammer {
     void bookStubHistoForColumn(TString c);
     void bookCorrelationHistograms();
     void bookCorrelationHistoForColumn(TString c);
-    void bookTelescopeFitHistograms();
-    void bookTrackMatchingHisto();
+    void bookTrackMatchHistograms();
+    void bookTrackFitHistograms();
     TH1* GetHistoByName(const char*, const char* );
     TH1* GetHistoByName(const std::string& dir, const std::string& hname);
     void FillAlignmentOffsetVsZ(const char*, const char*, int, float, float, float);

@@ -26,10 +26,6 @@ using std::cerr;
 static const double z_DUT0 = 435.0;
 static const double z_DUT1 = 438.1;  
 static const double z_FEI4 = 724.0;
-static const double meanResDet0=-4.51;
-static const double sigResDet0=0.30;
-static const double meanResDet1=-4.53;
-static const double sigResDet1=0.0310;
 
 class BeamAnaBase {
   public :
@@ -73,10 +69,9 @@ class BeamAnaBase {
     bool doTelMatching() const { return doTelMatching_;}
     bool doChannelMasking() const { return doChannelMasking_;}
     std::map<std::string,std::vector<int> >* getMaskedChannelMap() const {return dut_maskedChannels_;}
-    double meanResDet0=0.;
-    double sigResDet0=0.;
-    double meanResDet1=0.;
-    double sigResDet1=0.;
+    void readAlignmentConstant(const std::string& aFname);
+    tbeam::alignmentPars aLparameteres() const { return alPars_; }
+    bool isTrkfiducial(const double xtrkPos, const std::string det);
   private :
     TFile* fin_;
     TTree *analysisTree_; 
@@ -104,6 +99,7 @@ class BeamAnaBase {
     std::map<std::string,std::vector<int> >* dut_maskedChannels_;
     int nStubsrecoSword_;
     int nStubscbcSword_;
+    tbeam::alignmentPars  alPars_;
     //std::map<std::string,std::vector<unsigned int>>* dutCbcStubmap_;
 };
 #endif

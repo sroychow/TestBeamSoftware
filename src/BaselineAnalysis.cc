@@ -45,7 +45,7 @@ void BaselineAnalysis::bookHistograms() {
   hist_->bookDUTHistograms("det1");
   hist_->bookStubHistograms();
   hist_->bookCorrelationHistograms();
-  hist_->bookTelescopeFitHistograms();
+  hist_->bookTrackMatchHistograms();
 }
 
 void BaselineAnalysis::beginJob() {
@@ -150,89 +150,55 @@ void BaselineAnalysis::eventLoop()
       hist_->fillHist1D("StubInfo","nstubsdiff",totStubReco - nstubscbcSword);  
       //Telescope Matching
       if(doTelMatching() && hasTelescope()) {
-        hist_->fillHist1D("TelescopeFit","nTrackParams",telEv()->nTrackParams);
-        //for residual calculation use only events with 1 track and 1 cluster in both sensor
-        //
-        if(telEv()->nTrackParams == 1 
-           && dutRecoClmap()->at("det0C0").size() == 1 
-           && dutRecoClmap()->at("det1C0").size() == 1 ) {
-          /* If you want to calculate the residuals with multi-track events, use the following
-             The function will fill the vectors with extrapolated track psoitions on the dut plane
-             std::vector<double> xtkdut0, xtkdut1;      
-             getExtrapolatedTracks(xtkdut0, xtkdut1);
-          */
-          double xtkdut0 = (z_DUT0-z_FEI4)*(telEv()->dxdz->at(0)) + telEv()->xPos->at(0);
-          double xtkdut1 = (z_DUT1-z_FEI4)*(telEv()->dxdz->at(0)) + telEv()->xPos->at(0);
-          
-          hist_->fillHist1D("TelescopeFit", "xpos",telEv()->xPos->at(0));
-          hist_->fillHist1D("TelescopeFit", "xtkatDUT0", xtkdut0);
-          hist_->fillHist1D("TelescopeFit", "xtkatDUT1", xtkdut1);
-          //convert extrapolated track position to strip number of dut and check if it falls in fiducial region
-          bool xtkdet0StripGood = true;
-          bool xtkdet1StripGood = true;
-          int xtkdut0Strip = (xtkdut0/0.09) + 127;
-          int xtkdut1Strip = (xtkdut1/0.09) + 127; 
-          //Masking is not done for non-irradiated module, Hence no need for fiducial cut
-          if(doChannelMasking()) {
-            xtkdet0StripGood =  xtkdut0Strip > 127 && std::find(getMaskedChannelMap()->at("det0").begin(), 
-                                                                   getMaskedChannelMap()->at("det0").end(), 
-                                                                   xtkdut0Strip) == getMaskedChannelMap()->at("det0").end();
-
-            xtkdet1StripGood =  xtkdut1Strip > 127 && std::find(getMaskedChannelMap()->at("det1").begin(), 
-                                                                   getMaskedChannelMap()->at("det1").end(), 
-                                                                   xtkdut0Strip) == getMaskedChannelMap()->at("det1").end();
+        hist_->fillHist1D("TrackMatch","nTrackParams",telEv()->nTrackParams);
+        //Residual Calculation Now moved to AlignmentAnalysis
+        std::vector<double>  xtkDet0, xtkDet1;
+        getExtrapolatedTracks(xtkDet0, xtkDet1);
+        hist_->fillHist1D("TrackMatch", "nTrackParamsNodupl", xtkDet0.size());
+        if(xtkDet0.size() != 1)     continue;
+        hist_->fillHist1D("TrackMatch", "isTrkFiducial", 0);
+        bool isXtkfidDUT0 = false;
+        bool isXtkfidDUT1 = false;
+        for(auto &x0 : xtkDet0) { 
+          if(isTrkfiducial(x0,"det0")) {
+            isXtkfidDUT0 = true;
+            hist_->fillHist1D("TrackMatch","hposxTkDUT0",x0);    
+            for(auto& cl : dutRecoClmap()->at("det0C0") ) {
+              hist_->fillHist1D("TrackMatch","residualDUT0multitrkfidNodupl",x0 - (cl.x-127)*0.09);
+            }
           }
-          hist_->fillHist1D("TelescopeFit", "isTrkFiducial", 0);
-          if(xtkdet0StripGood)  hist_->fillHist1D("TelescopeFit", "isTrkFiducial", 1);
-          if(xtkdet1StripGood)  hist_->fillHist1D("TelescopeFit", "isTrkFiducial", 2);
-          if(xtkdet0StripGood && xtkdet1StripGood)  hist_->fillHist1D("TelescopeFit", "isTrkFiducial", 3);
-          double delX_CluD0= xtkdut0 - (dutRecoClmap()->at("det0C0").at(0).x-127)*0.09;
-          double delX_CluD1= xtkdut1 - (dutRecoClmap()->at("det1C0").at(0).x-127)*0.09;
-          hist_->fillHist1D("TelescopeFit","residualDUT0",delX_CluD0);
-          hist_->fillHist1D("TelescopeFit","residualDUT1",delX_CluD1);
-        } 
+        }
+        for(auto &x1 : xtkDet1) { 
+          if(isTrkfiducial(x1,"det1")) {
+            isXtkfidDUT1 = true;
+            hist_->fillHist1D("TrackMatch","hposxTkDUT1",x1);
+            for(auto& cl : dutRecoClmap()->at("det1C0") ) {
+              hist_->fillHist1D("TrackMatch","residualDUT1multitrkfidNodupl",x1 - (cl.x-127)*0.09);
+            }
+          }
+        }
+        if(isXtkfidDUT0) {
+          hist_->fillHist1D("TrackMatch", "isTrkFiducial", 1);
+          for(auto& cl : dutRecoClmap()->at("det0C0") ) {
+            hist_->fillHist1D("TrackMatch","hposClsDUT0", (cl.x-127)*0.09);
+          }
+        }
+        if(isXtkfidDUT1) {
+          hist_->fillHist1D("TrackMatch", "isTrkFiducial", 2);
+          for(auto& cl : dutRecoClmap()->at("det1C0") ) {
+            hist_->fillHist1D("TrackMatch","hposClsDUT1", (cl.x-127)*0.09);
+          }
+        }
+        if(isXtkfidDUT0 && isXtkfidDUT1)   hist_->fillHist1D("TrackMatch", "isTrkFiducial", 3);
       }   
    }//event loop
-   if(doTelMatching() && hasTelescope())    fitResidualHistograms();
 }
 
 void BaselineAnalysis::clearEvent() {
   BeamAnaBase::clearEvent();
 }
-void BaselineAnalysis::fitResidualHistograms() {
-  hist_->hfile()->cd("TelescopeFit");
-  TH1D* resDut0 = dynamic_cast<TH1D*>(Utility::getHist1D("residualDUT0"));
-  if(resDut0 && resDut0->GetEntries() > 500 ) {  
-    std::cout << "Fitting dut0 residual" << std::endl;
-    int maxbin = resDut0->GetMaximumBin();
-    double rlow = resDut0->GetBinCenter(maxbin - 20);
-    double rmax = resDut0->GetBinCenter(maxbin + 20);
-    resDut0->Fit("gaus", "","", rlow, rmax );
-    TF1* hfit = resDut0->GetFunction("gaus");
-    meanResDet0 = hfit->GetParameter("Mean"); 
-    sigResDet0 = hfit->GetParameter("Sigma");
-  }
-  else std::cout << "Det0 residual Fit not done;#entries=" << resDut0->GetEntries() << std::endl;
-
-  TH1D* resDut1 = dynamic_cast<TH1D*>(Utility::getHist1D("residualDUT1"));
-  if(resDut1 && resDut0->GetEntries() > 500 ) {  
-    std::cout << "Fitting dut1 residual" << std::endl;
-    int maxbin = resDut1->GetMaximumBin();
-    double rlow = resDut1->GetBinCenter(maxbin - 20);
-    double rmax = resDut1->GetBinCenter(maxbin + 20);
-    resDut1->Fit("gaus", "","", rlow, rmax );
-    TF1* hfit = resDut1->GetFunction("gaus");
-    meanResDet1 = hfit->GetParameter("Mean"); 
-    sigResDet1 = hfit->GetParameter("Sigma");
-  }
-  else std::cout << "Det1 residual Fit not done;#entries=" << resDut1->GetEntries() << std::endl;
-}
 
 void BaselineAnalysis::endJob() {
-  std::cout << "meanResDet0=" << meanResDet0 << "\tsigResDet0=" << sigResDet0 
-            << "\t#StripDiff(4sig)=" << 4*sigResDet0/0.09 << std::endl;
-  std::cout << "meanResDet1=" << meanResDet1 << "\tsigResDet1=" << sigResDet1 
-            << "\t#StripDiff(4sig)=" << 4*sigResDet0/0.09 <<std::endl;
   BeamAnaBase::endJob();
   hist_->closeFile();
 }

@@ -54,7 +54,7 @@ AlignmentAnalysis::AlignmentAnalysis(const std::string inFilename,const std::str
 }
 void AlignmentAnalysis::bookHistograms() {
   hist_->bookEventHistograms();
-  hist_->bookTrackMatchingHisto();
+  hist_->bookTrackFitHistograms();
 }
 
 void AlignmentAnalysis::beginJob() {
@@ -122,25 +122,25 @@ void AlignmentAnalysis::eventLoop()
       if (d0c0.size()==1){
 	float xTkAtDUT = telEv()->xPos->at(0) + (DUT_z-FEI4_z)*telEv()->dxdz->at(0);
 	float xDUT = (d0c0.at(0) - nMaxChannels/2) * pitch / 1000.;
-	hist_->fillHist1D("TrackMatching","d0_1tk1Hit_diffX", xDUT-xTkAtDUT);
+	hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX", xDUT-xTkAtDUT);
 	DUT_z_try = 200; //300
 	for (int iz=0; iz<50; iz++){
 	  DUT_z_try += 10.;
 	  //DUT_z_try += (float)(iz*5);
 	  xTkAtDUT = telEv()->xPos->at(0) + (DUT_z_try-FEI4_z)*telEv()->dxdz->at(0);
-	  hist_->fillHist1D("TrackMatching",Form("d0_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
+	  hist_->fillHist1D("TrackFit",Form("d0_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
 	}
       }
       if (d1c0.size()==1){
 	float xTkAtDUT = telEv()->xPos->at(0) + (DUT_z-FEI4_z)*telEv()->dxdz->at(0);
 	float xDUT = (d1c0.at(0) - nMaxChannels/2) * pitch / 1000.;
-	hist_->fillHist1D("TrackMatching","d1_1tk1Hit_diffX", xDUT-xTkAtDUT);
+	hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX", xDUT-xTkAtDUT);
 	DUT_z_try = 200;//300;
 	for (int iz=0; iz<50; iz++){
 	  //DUT_z_try += (float)(iz*5);
 	  DUT_z_try += 10.;
 	  xTkAtDUT = telEv()->xPos->at(0) + (DUT_z_try-FEI4_z)*telEv()->dxdz->at(0);
-	  hist_->fillHist1D("TrackMatching",Form("d1_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
+	  hist_->fillHist1D("TrackFit",Form("d1_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
 	}
       }
     }
@@ -229,14 +229,14 @@ void AlignmentAnalysis::eventLoop()
   }
   
   TF1* fParabolaChi2VsZ = new TF1("fParabolaChi2VsZ", "[0]*x*x+[1]*x+[2]", 200, 690);
-  TH1* htmp = dynamic_cast<TH1F*>(hist_->GetHistoByName("TrackMatching","d0_chi2VsZ"));
+  TH1* htmp = dynamic_cast<TH1F*>(hist_->GetHistoByName("TrackFit","d0_chi2VsZ"));
   //TH1* htmp = (TH1F*) hist_->GetHistoByName("d0", "_chi2VsZ");
   htmp->Fit("fParabolaChi2VsZ");
   float d0_chi2_min = fParabolaChi2VsZ->GetMinimum();
   float d0_chi2_min_z = fParabolaChi2VsZ->GetMinimumX(); 
   cout << "d0 chi2 z="<<d0_chi2_min_z<<" chi2="<<d0_chi2_min<<endl;
   
-  htmp = dynamic_cast<TH1F*>(hist_->GetHistoByName("TrackMatching","d1_chi2VsZ"));
+  htmp = dynamic_cast<TH1F*>(hist_->GetHistoByName("TrackFit","d1_chi2VsZ"));
   //htmp = (TH1F*) hist_->GetHistoByName("d1", "_chi2VsZ");
   htmp->Fit("fParabolaChi2VsZ");
   float d1_chi2_min = fParabolaChi2VsZ->GetMinimum();
@@ -283,18 +283,18 @@ void AlignmentAnalysis::eventLoop()
     if (d0c0.size()==1){
       float xDUT = (d0c0.at(0) - nMaxChannels/2) * pitch / 1000.;
       float xTkAtDUT = telEv()->xPos->at(0) + (d0_chi2_min_z-FEI4_z)*telEv()->dxdz->at(0) + d0_Offset_aligned;
-      hist_->fillHist1D("TrackMatching","d0_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);
+      hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);
     }
     if (d1c0.size()==1){
       float xDUT = (d1c0.at(0) - nMaxChannels/2) * pitch / 1000.;
       float xTkAtDUT = telEv()->xPos->at(0) + (d1_chi2_min_z-FEI4_z)*telEv()->dxdz->at(0) + d1_Offset_aligned;
-      hist_->fillHist1D("TrackMatching","d1_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);
+      hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);
     }
   }//end of 3rd loop over events
 
   //Fit Residuals Gaussian convulated with Step Function
   TF1* fGausResiduals = new TF1("fGausResiduals", "gaus", -10, 10);
-  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackMatching","d0_1tk1Hit_diffX_aligned"));   
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d0_1tk1Hit_diffX_aligned"));   
   //htmp = (TH1I*) hist_->GetHistoByName("d0", "_1tk1Hit_diffX_aligned");
   float center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
@@ -321,7 +321,7 @@ void AlignmentAnalysis::eventLoop()
   fStepGaus->SetParameter(3, 0);
   
   htmp->Fit(fStepGaus);
-  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackMatching","d1_1tk1Hit_diffX_aligned"));   
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d1_1tk1Hit_diffX_aligned"));   
   //htmp = (TH1I*) hist_->GetHistoByName("d1", "_1tk1Hit_diffX_aligned");
   center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
@@ -354,7 +354,7 @@ std::pair<float, float> AlignmentAnalysis::GetOffsetVsZ(const char* det, float**
   
   for (int iz=0; iz<50; iz++){
     std::string hn = det + std::string("_1tk1Hit_diffX_iz") + std::to_string((iz));
-    htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackMatching", hn));   
+    htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", hn));   
     //htmp = (TH1I*) hist_->GetHistoByName(det, Form("_1tk1Hit_diffX_iz%i",iz));
     center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
     htmp->SetAxisRange(center-0.2, center+0.2, "X");
@@ -387,7 +387,7 @@ std::pair<float, float> AlignmentAnalysis::GetOffsetVsZ(const char* det, float**
   
   TF1* fOffsetVsZ = new TF1("fOffsetVsZ","[0]*x+[1]", injectedZ[0], injectedZ[49]);
   std::string hn = det + std::string("_offsetVsZ");
-  htmp = dynamic_cast<TH1F*>(hist_->GetHistoByName("TrackMatching", hn));  
+  htmp = dynamic_cast<TH1F*>(hist_->GetHistoByName("TrackFit", hn));  
   //htmp = (TH1I*) hist_->GetHistoByName(det, "_offsetVsZ");
   htmp->Fit(fOffsetVsZ);
   htmp->SetAxisRange(htmp->GetMinimum(), htmp->GetMaximum(),"Y");

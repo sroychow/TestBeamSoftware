@@ -52,6 +52,10 @@ BeamAnaBase::BeamAnaBase() :
   recostubChipids_->insert({("C1"),std::vector<unsigned int>()});
   cbcstubChipids_->insert({("C0"),std::vector<unsigned int>()});
   cbcstubChipids_->insert({("C1"),std::vector<unsigned int>()});
+  alPars_.d0_chi2_min_z = 435.552;
+  alPars_.d1_chi2_min_z = 432.649;
+  alPars_.d0_Offset_aligned = 4.59247;
+  alPars_.d1_Offset_aligned = 4.61966;
 }
 
 bool BeamAnaBase::setInputFile(const std::string& fname) {
@@ -160,16 +164,46 @@ void BeamAnaBase::getCbcConfig(uint32_t cwdWord, uint32_t windowWord){
   cwd_ = (cwdWord>>6)%4;
 }
 
+bool BeamAnaBase::isTrkfiducial(const double xtrkPos, const std::string det) {
+  int xtkdutStrip = (xtrkPos/0.09) + 127;
+  if(doChannelMasking_) {
+    return xtkdutStrip > 127 && std::find(dut_maskedChannels_->at(det).begin(), 
+                                          dut_maskedChannels_->at(det).end(), 
+                                          xtkdutStrip) == dut_maskedChannels_->at(det).end();
+    
+  }
+  return true;
+}
+
 void BeamAnaBase::getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vector<double>& xTkdut1) {
   for(unsigned int itrk = 0; itrk<telEv_->nTrackParams;itrk++) {
-    double XTkatDUT0_itrk = (z_DUT0-z_FEI4)*telEv_->dxdz->at(itrk) + telEv_->xPos->at(itrk);
-    double XTkatDUT1_itrk = (z_DUT1-z_FEI4)*telEv_->dxdz->at(itrk) + telEv_->xPos->at(itrk);
-    //check for duplicate tracks
+    double XTkatDUT0_itrk = telEv_->xPos->at(itrk) + (alPars_.d0_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d0_Offset_aligned;
+    double XTkatDUT1_itrk = telEv_->xPos->at(itrk) + (alPars_.d1_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d1_Offset_aligned;
+    //check for duplicate tracks LOOSE MATCHING--We start with this.Then move to TIGHT CUT
+    bool duplD0 = false, duplD1 = false;
+    for(const auto& x0 : xTkdut0) {
+      if(std::fabs(XTkatDUT0_itrk-x0) < 2*0.09) {
+        duplD0=true;
+        break;
+      }
+    }
+    for(const auto& x1 : xTkdut1) {
+      if(std::fabs(XTkatDUT1_itrk-x1) < 2*0.09) {
+        duplD1=true;
+        break;
+      }
+    }
+    if(!duplD0 && !duplD1) {     
+      xTkdut0.push_back(XTkatDUT0_itrk);
+      xTkdut1.push_back(XTkatDUT1_itrk);
+    }
+
+    /*check for duplicate tracks TIGHT MATCHING
     if(std::find(xTkdut0.begin(), xTkdut0.end(), XTkatDUT0_itrk) == xTkdut0.end() 
        && std::find(xTkdut1.begin(), xTkdut1.end(), XTkatDUT1_itrk) == xTkdut1.end() ) {
       xTkdut0.push_back(XTkatDUT0_itrk);
       xTkdut1.push_back(XTkatDUT1_itrk);
-    }
+    }*/
   }
 }
 
@@ -232,6 +266,16 @@ void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
     std::cout << std::endl;
   } 
 }
+
+void readAlignmentConstant(const std::string& aFname) {
+  std::ifstream fin(aFname.c_str(),std::ios::in);
+  if(!fin) {
+    std::cout << "Channel Mask File could not be opened!!" << std::endl;
+    return;
+  }
+  fin.close();
+}
+
 void BeamAnaBase::endJob() {
   
 }

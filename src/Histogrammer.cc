@@ -100,27 +100,32 @@ void Histogrammer::bookCorrelationHistoForColumn(TString c) {
 }
 
 
-void Histogrammer::bookTelescopeFitHistograms() {
-  fout_->mkdir("TelescopeFit");
-  fout_->cd("TelescopeFit");
-  new TH1D("nTrackParams","#Tracks Telescope;#tracks;#events",30,0,30);
-  new TH1D("xpos","Xpos of track at FEI4 plane",200,-20.,20.);
-  new TH1D("xtkatDUT0","Xpos of extrapolated track at DUT0 plane",200,-20.,20.);
-  new TH1D("xtkatDUT1","Xpos of extrapolated track at DUT1 plane",200,-20.,20.);
-  new TH1D("residualDUT0","Residual at DUT0 plane",4000,-20.,20.);
-  new TH1D("residualDUT1","Residual at DUT1 plane",4000,-20.,20.);
+void Histogrammer::bookTrackMatchHistograms() {
+  fout_->mkdir("TrackMatch");
+  fout_->cd("TrackMatch");
+  new TH1D("nTrackParams","#Tracks Telescope;#tracks;#events",30,-0.5,29.5);
+  new TH1D("nTrackParamsNodupl","#Tracks Telescope after duplicate removal;#tracks;#events",30,-0.5,29.5);
   new TH1I("isTrkFiducial","Is Track in the Fiducial Region",4,-0.5,3.5);
   TH1I* h = dynamic_cast<TH1I*>(Utility::getHist1D("isTrkFiducial"));
-  h->GetXaxis()->SetBinLabel(1,"1TrkEvt");
+  h->GetXaxis()->SetBinLabel(1,"xtkNodupl(>=1)");
   h->GetXaxis()->SetBinLabel(2,"xtkDut1");
   h->GetXaxis()->SetBinLabel(3,"xtkDut0");
   h->GetXaxis()->SetBinLabel(4,"xtkDut0 && xtkDut1");
+  new TH1D("hposClsDUT0","Xpos of cluster hit at DUT0 plane(#fid trk>=1)",400,-20.,20.);
+  new TH1D("hposClsDUT1","Xpos of cluster hit at DUT1 plane(#fid trk>=1)",400,-20.,20.);
+  new TH1D("hposxTkDUT0","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk>=1)",400,-20.,20.);
+  new TH1D("hposxTkDUT1","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk>=1)",400,-20.,20.);
+
+  new TH1D("residualDUT0multitrkfidNodupl","Residual at DUT0 plane(fiducial)(#trk>1, no duplicate tracks)",20000,-20.,20.);
+  new TH1D("residualDUT1multitrkfidNodupl","Residual at DUT1 plane(fiducial)(#trk>1, no duplicate tracks)",20000,-20.,20.);
+
+
 }
 
-void Histogrammer::bookTrackMatchingHisto(){
+void Histogrammer::bookTrackFitHistograms(){
   fout_->cd();
-  fout_->mkdir("TrackMatching");
-  fout_->cd("TrackMatching");
+  fout_->mkdir("TrackFit");
+  fout_->cd("TrackFit");
 
   new TH1I("d0_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
   new TH1I("d1_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d1",10000,-10,10);
@@ -153,7 +158,7 @@ TH1* Histogrammer::GetHistoByName(const std::string& dir, const std::string& hna
 
 void Histogrammer::FillAlignmentOffsetVsZ(const char* det, const char* histo, int iz, float z, float x, float x_err){
 
-  fout_->cd("TrackMatching");
+  fout_->cd("TrackFit");
   char histname[50];
   strcpy( histname, det );
   strcat( histname, histo );
