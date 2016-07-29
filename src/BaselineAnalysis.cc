@@ -68,7 +68,15 @@ void BaselineAnalysis::eventLoop()
              << "\tOffset1="<< cbcOffset1() 
              << "\tOffset2" << cbcOffset2()
    << std::endl;
- 
+   long int trkFidbothPlane = 0;
+   long int trkFidany = 0;
+   long int trkFidDet0 = 0;
+   long int trkFidDet1 = 0;
+   long int det0clsMatch = 0;
+   long int det1clsMatch = 0;
+   long int clsMatchboth = 0;
+   long int clsMatchany = 0;
+   long int recostubMatchD1 = 0;
    for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
       clearEvent();
      Long64_t ientry = analysisTree()->GetEntry(jentry);
@@ -159,12 +167,16 @@ void BaselineAnalysis::eventLoop()
         hist_->fillHist1D("TrackMatch", "isTrkFiducial", 0);
         bool isXtkfidDUT0 = false;
         bool isXtkfidDUT1 = false;
+        bool trkClsmatchD0 = false;
+        bool trkClsmatchD1 = false;
+        bool smatchD1 = false;
         for(auto &x0 : xtkDet0) { 
           if(isTrkfiducial(x0,"det0")) {
             isXtkfidDUT0 = true;
             hist_->fillHist1D("TrackMatch","hposxTkDUT0",x0);    
             for(auto& cl : dutRecoClmap()->at("det0C0") ) {
               hist_->fillHist1D("TrackMatch","residualDUT0multitrkfidNodupl",x0 - (cl.x-127)*0.09);
+              if(std::fabs(x0 - (cl.x-127)*0.09) <= 4*0.026)   trkClsmatchD0 = true;
             }
           }
         }
@@ -174,24 +186,49 @@ void BaselineAnalysis::eventLoop()
             hist_->fillHist1D("TrackMatch","hposxTkDUT1",x1);
             for(auto& cl : dutRecoClmap()->at("det1C0") ) {
               hist_->fillHist1D("TrackMatch","residualDUT1multitrkfidNodupl",x1 - (cl.x-127)*0.09);
+              if(std::fabs(x1 - (cl.x-127)*0.09) <= 4*0.026)   trkClsmatchD1 = true;
+            }
+            for(auto& s : dutRecoStubmap()->at("C0"))  {
+              if(std::fabs(x1 - (s.x-127)*0.09) <= 4*0.026)  smatchD1 = true;  
             }
           }
         }
         if(isXtkfidDUT0) {
+          trkFidDet0++;
           hist_->fillHist1D("TrackMatch", "isTrkFiducial", 1);
           for(auto& cl : dutRecoClmap()->at("det0C0") ) {
             hist_->fillHist1D("TrackMatch","hposClsDUT0", (cl.x-127)*0.09);
           }
         }
         if(isXtkfidDUT1) {
+          trkFidDet1++;
           hist_->fillHist1D("TrackMatch", "isTrkFiducial", 2);
           for(auto& cl : dutRecoClmap()->at("det1C0") ) {
             hist_->fillHist1D("TrackMatch","hposClsDUT1", (cl.x-127)*0.09);
           }
         }
-        if(isXtkfidDUT0 && isXtkfidDUT1)   hist_->fillHist1D("TrackMatch", "isTrkFiducial", 3);
+        if(isXtkfidDUT0 || isXtkfidDUT1)  trkFidany++;
+        if(isXtkfidDUT0 && isXtkfidDUT1)  {
+          hist_->fillHist1D("TrackMatch", "isTrkFiducial", 3);
+          trkFidbothPlane++;
+        }
+        if(trkClsmatchD0)   det0clsMatch++;
+        if(trkClsmatchD1)   det1clsMatch++;
+        if(trkClsmatchD0 || trkClsmatchD1)   clsMatchany++;
+        if(trkClsmatchD0 && trkClsmatchD1)   clsMatchboth++;
+        if(smatchD1) recostubMatchD1++;
       }   
    }//event loop
+   std::cout << "#events with 1 fid trk(D0)=" << trkFidDet0
+             << "\n#events with 1 fid trk(D1)=" << trkFidDet1 
+             << "\n#events with 1 fid trk(any)=" << trkFidany
+             << "\n#events with 1 fid trk(both)=" << trkFidbothPlane
+             << "\n#events with atleast 1 matched cluster with 1 fid trk(D0)=" << det0clsMatch
+             << "\n#events with atleast 1 matched cluster with 1 fid trk(D1)=" << det1clsMatch
+             << "\n#events with atleast 1 matched cluster with 1 fid trk(any)=" << clsMatchany
+             << "\n#events with atleast 1 matched cluster with 1 fid trk(both)=" << clsMatchboth
+             << "\n#events with atleast 1 matched reco stub in D1=" << recostubMatchD1
+             << std::endl;
 }
 
 void BaselineAnalysis::clearEvent() {

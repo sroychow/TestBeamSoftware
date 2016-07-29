@@ -167,9 +167,10 @@ void BeamAnaBase::getCbcConfig(uint32_t cwdWord, uint32_t windowWord){
 bool BeamAnaBase::isTrkfiducial(const double xtrkPos, const std::string det) {
   int xtkdutStrip = (xtrkPos/0.09) + 127;
   if(doChannelMasking_) {
-    return xtkdutStrip > 127 && std::find(dut_maskedChannels_->at(det).begin(), 
-                                          dut_maskedChannels_->at(det).end(), 
-                                          xtkdutStrip) == dut_maskedChannels_->at(det).end();
+    return xtkdutStrip > 127 && xtkdutStrip < 255 
+           && std::find(dut_maskedChannels_->at(det).begin(), 
+                        dut_maskedChannels_->at(det).end(), 
+                        xtkdutStrip) == dut_maskedChannels_->at(det).end();
     
   }
   return true;
