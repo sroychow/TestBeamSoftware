@@ -3,10 +3,13 @@
 using std::setw;
 NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string dqmTuple, const std::string runNumber) :
   telFound_(true),
+  fei4Found_(true),
   cbcErrorVal_(new std::vector<unsigned int>()),
   cbcPLAddressVal_(new std::vector<unsigned int>()),
   telOutputEvent_(new tbeam::TelescopeEvent()),//for output
   telEvent_(new tbeam::TelescopeEvent()),//for input
+  fei4Event_(new tbeam::FeIFourEvent()),
+  fei4OutputEvent_(new tbeam::FeIFourEvent()), 
   periodicityFlag_(true),
   pFlag_(true),
   goodEventFlag_(true),
@@ -14,7 +17,8 @@ NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTupl
   dutEvent_(new tbeam::dutEvent()),
   outdutEvent_(new tbeam::dutEvent()),
   outcondEvent_(new tbeam::condEvent()),
-  trigTrackmap_(new std::map<Int_t,tbeam::TelescopeEvent>())
+  trigTrackmap_(new std::map<Int_t,tbeam::TelescopeEvent>()),
+  trigFeI4map_(new std::map<Int_t,tbeam::FeIFourEvent>())
 {
   tdcCounterFromdqm_ = 0;
   dut0C0chData_ = new std::vector<unsigned int>();
@@ -36,13 +40,18 @@ NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTupl
   if(!telF_) {
     std::cout << telTuple << " could not be onened!!" << std::endl;
     telFound_ = false;
+    fei4Found_ = false;
     //exit(1);
   } else {
-    telchain_ =dynamic_cast<TTree*>(telF_->Get("tracks"));
+    telchain_ = dynamic_cast<TTree*>(telF_->Get("tracks"));
+    fei4chain_ = dynamic_cast<TTree*>(telF_->Get("rawdata"));
     if(telchain_)  {
       nTelchainentry_ = static_cast<long int>(telchain_->GetEntries());
       telFound_ = telFound_ && nTelchainentry_;
     } else telFound_ = false;
+    if(fei4chain_) {
+      fei4Found_ = fei4Found_ && static_cast<long int>(fei4chain_->GetEntries());
+    } else fei4Found_ = false; 
   }  
   
   dqmF_ = TFile::Open(dqmTuple.c_str());
@@ -77,6 +86,7 @@ NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTupl
   outTree_->Branch("DUT", &outdutEvent_);
   outTree_->Branch("Condition",&outcondEvent_);
   if(telFound_)  outTree_->Branch("TelescopeEvent",&telOutputEvent_);
+  if(fei4Found_) outTree_->Branch("Fei4Event",&fei4OutputEvent_);
   outTree_->Branch("periodicityFlag",&pFlag_);
   outTree_->Branch("goodEventFlag",&goodEventFlag_);
 }
@@ -98,6 +108,17 @@ void NtupleMerger::setInputBranchAddresses() {
     telchain_->SetBranchAddress("iden", &telEvent_->iden);
     telchain_->SetBranchAddress("chi2", &telEvent_->chi2);
     telchain_->SetBranchAddress("ndof", &telEvent_->ndof);
+  }
+  if(fei4Found_) {
+    fei4chain_->SetBranchAddress("nPixHits", &fei4Event_->nPixHits);
+    fei4chain_->SetBranchAddress("euEvt", &fei4Event_->euEvt);
+    fei4chain_->SetBranchAddress("col", &fei4Event_->col);
+    fei4chain_->SetBranchAddress("row", &fei4Event_->row);
+    fei4chain_->SetBranchAddress("tot", &fei4Event_->tot);
+    fei4chain_->SetBranchAddress("lv1", &fei4Event_->lv1);
+    fei4chain_->SetBranchAddress("iden", &fei4Event_->iden);
+    fei4chain_->SetBranchAddress("hitTime", &fei4Event_->hitTime);
+    fei4chain_->SetBranchAddress("frameTime", &fei4Event_->frameTime);
   }
   //set branches of the input dqm tree
   dqmchain_->SetBranchStatus("*",1);
@@ -147,6 +168,20 @@ void NtupleMerger::filltrigTrackmap() {
       trigTrackmap_->insert({telEvent_->euEvt,telTemp});
     }
   }
+  if(fei4Found_) {
+    std::cout << "Filling Trigger Track Map" << std::endl;
+    for (Long64_t jentry=0; jentry<fei4chain_->GetEntries();jentry++) {
+      Long64_t ientry = fei4chain_->GetEntry(jentry);
+      if (jentry%1000 == 0)  
+        cout << " Events processed. " << std::setw(8) << jentry 
+             << "\t loadTree="<< ientry 
+             << "\t nPixHits=" << fei4Event_->nPixHits << endl;
+      if (ientry < 0) break;
+      tbeam::FeIFourEvent fei4Temp(*fei4Event_);
+      trigFeI4map_->insert({fei4Event_->euEvt,fei4Temp});
+    }
+  }
+
   for (Long64_t jentry=0; jentry<nDqmchainentry_;jentry++) {
     Long64_t dqmentry = dqmchain_->GetEntry(jentry);
     if (jentry%1000 == 0)  
@@ -192,8 +227,8 @@ void NtupleMerger::eventLoop() {
     //std::cout << "EDM Event = " << condEvent_->event << std::endl; 
     //l1A match
     if(cbcCondmap_->find(condEvent_->event) == cbcCondmap_->end())                       continue;
-    if(telFound_ && trigTrackmap_->find(condEvent_->event) == trigTrackmap_->end())     continue;
- 
+    if(telFound_ && trigTrackmap_->find(condEvent_->event) == trigTrackmap_->end())      continue;
+    //if(fei4Found_ && trigFeI4map_->find(condEvent_->event) == trigFeI4map_->end())     continue;
     eventFilter->Fill(1);//l1A matched
     counter[1]++;
 
@@ -211,7 +246,8 @@ void NtupleMerger::eventLoop() {
     
     outdutEvent_ = &dtemp;
     outcondEvent_ = &ctemp;
-    if(telFound_)  telOutputEvent_ = &trigTrackmap_->at(ctemp.event);
+    telOutputEvent_ = &trigTrackmap_->at(ctemp.event);
+    fei4OutputEvent_ = &trigFeI4map_->at(ctemp.event);  
     pFlag_ = cbctemp.eventFlag_;
     bool tdcMatch = (cbctemp.tdcCounter_ == ctemp.tdcPhase);
     goodEventFlag_ = cbcErrflag && pFlag_ && tdcMatch;
@@ -289,6 +325,7 @@ void NtupleMerger::endJob() {
   fout_->Close();
   fval->Write();
   fval->Close();
+  
 }
 
 NtupleMerger::~NtupleMerger() {

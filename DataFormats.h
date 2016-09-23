@@ -82,8 +82,8 @@ namespace tbeam {
 
   class TelescopeEvent : public TObject {
     public :
-      Int_t           nTrackParams;
-      Int_t           euEvt;
+     Int_t           nTrackParams;
+     Int_t           euEvt;
      std::vector<double>  *xPos;
      std::vector<double>  *yPos;
      std::vector<double>  *dxdz;
@@ -96,6 +96,23 @@ namespace tbeam {
      TelescopeEvent(const TelescopeEvent& t);
      virtual ~TelescopeEvent();
      ClassDef(TelescopeEvent,1)
+  };
+  
+  class FeIFourEvent : public TObject {
+    public:
+     Int_t                nPixHits;
+     Int_t                euEvt;
+     std::vector<int>     *col;
+     std::vector<int>     *row;
+     std::vector<int>     *tot;
+     std::vector<int>     *lv1;
+     std::vector<int>     *iden;
+     std::vector<int>     *hitTime;
+     std::vector<double>  *frameTime;
+     FeIFourEvent();
+     FeIFourEvent(const FeIFourEvent& f);
+     virtual ~FeIFourEvent();
+     ClassDef(FeIFourEvent,1)
   };
 }
 #endif

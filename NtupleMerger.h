@@ -64,15 +64,18 @@ class NtupleMerger {
     TFile* dqmF_;
     TTree *dutchain_; 
     TTree *telchain_;
+    TTree *fei4chain_;
     TTree *dqmchain_;
     TTree* outTree_;
     TFile* fout_;
-    bool telFound_; 
+    bool telFound_;
+    bool fei4Found_; 
     //input format
     std::vector<unsigned int>* cbcErrorVal_;
     std::vector<unsigned int>* cbcPLAddressVal_;
     unsigned int tdcCounterFromdqm_;  
     tbeam::TelescopeEvent* telEvent_;
+    tbeam::FeIFourEvent* fei4Event_;
     bool periodicityFlag_;
     bool pFlag_;
     bool goodEventFlag_;
@@ -97,6 +100,7 @@ class NtupleMerger {
     
     //
     tbeam::TelescopeEvent* telOutputEvent_;
+    tbeam::FeIFourEvent* fei4OutputEvent_;
     tbeam::condEvent* condEvent_;
     tbeam::dutEvent* dutEvent_;
     tbeam::dutEvent* outdutEvent_;
@@ -104,6 +108,7 @@ class NtupleMerger {
     //TBranch* condBranch_;
 
     std::map<Int_t,tbeam::TelescopeEvent>* trigTrackmap_;
+    std::map<Int_t,tbeam::FeIFourEvent>* trigFeI4map_;
     std::map<long int,cbcCond>*  cbcCondmap_;
     long int nTelchainentry_;
     long int nDutchainentry_; 
