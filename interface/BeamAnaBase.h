@@ -39,6 +39,7 @@ class BeamAnaBase {
     tbeam::dutEvent* dutEv() const { return dutEv_; }
     tbeam::condEvent* condEv() const {return condEv_;}
     tbeam::TelescopeEvent* telEv() const { return telEv_; }
+    tbeam::FeIFourEvent* fei4Ev() const { return fei4Ev_; }
     bool isPeriodic() const { return periodcictyF_;}
     bool isGoodEvent() const { return isGood_;}
     int stubWindow()  const { return sw_;}
@@ -71,13 +72,14 @@ class BeamAnaBase {
     std::map<std::string,std::vector<int> >* getMaskedChannelMap() const {return dut_maskedChannels_;}
     void readAlignmentConstant(const std::string& aFname);
     tbeam::alignmentPars aLparameteres() const { return alPars_; }
-    bool isTrkfiducial(const double xtrkPos, const std::string det);
+    bool isTrkfiducial(const double xtrkPos, int& xtkdutStrip, const std::string det);
   private :
     TFile* fin_;
     TTree *analysisTree_; 
     tbeam::dutEvent* dutEv_;
     tbeam::condEvent* condEv_;
     tbeam::TelescopeEvent* telEv_;
+    tbeam::FeIFourEvent* fei4Ev_;
     bool periodcictyF_;
     bool isGood_;
     bool hasTelescope_;

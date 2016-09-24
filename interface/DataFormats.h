@@ -10,6 +10,7 @@
 using std::vector;
 using std::map;
 using std::string;
+
 namespace tbeam {
   struct alignmentPars {
     double d0_chi2_min_z;
@@ -17,7 +18,6 @@ namespace tbeam {
     double d0_Offset_aligned;
     double d1_Offset_aligned;
   };
-
   class cluster;
   class stub;
   class cluster : public TObject {
@@ -103,6 +103,23 @@ namespace tbeam {
      TelescopeEvent(const TelescopeEvent& t);
      virtual ~TelescopeEvent();
      ClassDef(TelescopeEvent,1)
+  };
+  
+  class FeIFourEvent : public TObject {
+    public:
+     Int_t                nPixHits;
+     Int_t                euEvt;
+     std::vector<int>     *col;
+     std::vector<int>     *row;
+     std::vector<int>     *tot;
+     std::vector<int>     *lv1;
+     std::vector<int>     *iden;
+     std::vector<int>     *hitTime;
+     std::vector<double>  *frameTime;
+     FeIFourEvent();
+     FeIFourEvent(const FeIFourEvent& f);
+     virtual ~FeIFourEvent();
+     ClassDef(FeIFourEvent,1)
   };
 }
 #endif

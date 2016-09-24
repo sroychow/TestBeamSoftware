@@ -21,6 +21,7 @@ BeamAnaBase::BeamAnaBase() :
   dutEv_(new tbeam::dutEvent()),
   condEv_(new tbeam::condEvent()),
   telEv_(new  tbeam::TelescopeEvent()),
+  fei4Ev_(new tbeam::FeIFourEvent()),
   periodcictyF_(false),
   isGood_(false),
   hasTelescope_(false),
@@ -52,10 +53,16 @@ BeamAnaBase::BeamAnaBase() :
   recostubChipids_->insert({("C1"),std::vector<unsigned int>()});
   cbcstubChipids_->insert({("C0"),std::vector<unsigned int>()});
   cbcstubChipids_->insert({("C1"),std::vector<unsigned int>()});
-  alPars_.d0_chi2_min_z = 435.552;
-  alPars_.d1_chi2_min_z = 432.649;
-  alPars_.d0_Offset_aligned = 4.59247;
-  alPars_.d1_Offset_aligned = 4.61966;
+  //alPars_.d0_chi2_min_z = 435.552;
+  alPars_.d0_chi2_min_z = 428.394;
+  //alPars_.d1_chi2_min_z = 432.649;
+  alPars_.d1_chi2_min_z = 426.867;
+  //alPars_.d0_Offset_aligned = 4.59247;
+  alPars_.d0_Offset_aligned = -1.25329;
+  //alPars_.d1_Offset_aligned = 4.61966;
+  alPars_.d1_Offset_aligned = -1.2398;
+
+  //Run=769:zD0=428.394:offsetD0=-1.25329:zD1=426.868:offsetD1=-1.2398
 }
 
 bool BeamAnaBase::setInputFile(const std::string& fname) {
@@ -95,6 +102,7 @@ void BeamAnaBase::setAddresses() {
   if(branchFound("DUT"))    analysisTree_->SetBranchAddress("DUT", &dutEv_);
   if(branchFound("Condition"))    analysisTree_->SetBranchAddress("Condition", &condEv_);
   if(branchFound("TelescopeEvent"))    analysisTree_->SetBranchAddress("TelescopeEvent",&telEv_);
+  if(branchFound("Fei4Event"))     analysisTree_->SetBranchAddress("Fei4Event",&fei4Ev_);
   if(branchFound("periodicityFlag"))    analysisTree_->SetBranchAddress("periodicityFlag",&periodcictyF_);
   if(branchFound("goodEventFlag"))    analysisTree_->SetBranchAddress("goodEventFlag",&isGood_);
   analysisTree_->SetBranchStatus("*",1);
@@ -164,13 +172,14 @@ void BeamAnaBase::getCbcConfig(uint32_t cwdWord, uint32_t windowWord){
   cwd_ = (cwdWord>>6)%4;
 }
 
-bool BeamAnaBase::isTrkfiducial(const double xtrkPos, const std::string det) {
-  int xtkdutStrip = (xtrkPos/0.09) + 127;
+bool BeamAnaBase::isTrkfiducial(const double xtrkPos, int& xtkdutStrip, const std::string det) {
+  xtkdutStrip = (xtrkPos/0.09) + 127;
+  if(doChannelMasking_ && (xtkdutStrip > 254 ||  xtkdutStrip < 127))   return false; 
+  else if(xtkdutStrip > 183 ||  xtkdutStrip < 85)   return false; 
   if(doChannelMasking_) {
-    return xtkdutStrip > 127 && xtkdutStrip < 255 
-           && std::find(dut_maskedChannels_->at(det).begin(), 
-                        dut_maskedChannels_->at(det).end(), 
-                        xtkdutStrip) == dut_maskedChannels_->at(det).end();
+    return std::find(dut_maskedChannels_->at(det).begin(), 
+                     dut_maskedChannels_->at(det).end(), 
+                     xtkdutStrip) == dut_maskedChannels_->at(det).end();
     
   }
   return true;
@@ -198,14 +207,9 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vecto
       xTkdut0.push_back(XTkatDUT0_itrk);
       xTkdut1.push_back(XTkatDUT1_itrk);
     }
-
-    /*check for duplicate tracks TIGHT MATCHING
-    if(std::find(xTkdut0.begin(), xTkdut0.end(), XTkatDUT0_itrk) == xTkdut0.end() 
-       && std::find(xTkdut1.begin(), xTkdut1.end(), XTkatDUT1_itrk) == xTkdut1.end() ) {
-      xTkdut0.push_back(XTkatDUT0_itrk);
-      xTkdut1.push_back(XTkatDUT1_itrk);
-    }*/
   }
+
+
 }
 
 void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {

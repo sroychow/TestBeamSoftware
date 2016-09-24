@@ -138,3 +138,32 @@ tbeam::TelescopeEvent::~TelescopeEvent() {
    delete ndof;
 }
 
+tbeam::FeIFourEvent::FeIFourEvent() {
+  col = new vector<int>();
+  row =new vector<int>();
+  tot = new vector<int>();
+  lv1 = new vector<int>();
+  iden = new vector<int>();
+  hitTime = new vector<int>();
+  frameTime = new vector<double>();  
+}
+tbeam::FeIFourEvent::FeIFourEvent(const FeIFourEvent& f) {
+  nPixHits = f.nPixHits;
+  euEvt = f.euEvt;
+  col = new vector<int>(*f.col);
+  row =new vector<int>(*f.row);
+  tot = new vector<int>(*f.tot);
+  lv1 = new vector<int>(*f.lv1);
+  iden = new vector<int>(*f.iden);
+  hitTime = new vector<int>(*f.hitTime);
+  frameTime = new vector<double>(*f.frameTime);  
+}
+tbeam::FeIFourEvent::~FeIFourEvent() {
+  delete     col;
+  delete     row;
+  delete     tot;
+  delete     lv1;
+  delete     iden;
+  delete     hitTime;
+  delete     frameTime;
+}

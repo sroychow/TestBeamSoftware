@@ -27,6 +27,7 @@
 #pragma link C++ class std::vector<tbeam::stub* >+;
 #pragma link C++ class tbeam::dutEvent+;
 #pragma link C++ class tbeam::condEvent+;
+#pragma link C++ class tbeam::FeIFourEvent+;
 
 #pragma link C++ class  std::vector<unsigned short>+;
 #pragma link C++ class  std::map< std::string,std::vector<int> >+;
