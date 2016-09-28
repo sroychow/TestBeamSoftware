@@ -168,29 +168,18 @@ void Histogrammer::bookTelescopeAnalysisHistograms() {
   fout_->mkdir("TelescopeAnalysis");
   fout_->cd("TelescopeAnalysis");
   new TH1D("nTrack","#Tracks Telescope;#tracks;#events",30,-0.5,29.5);
-  new TH1D("nTrackfei4_1hit","#Tracks Telescope when #hitFeI4=1;#tracks;#events",30,-0.5,29.5);
   new TH1I("nhitsFei4",";#hitsFEI4;#Events",30,-0.5,29.5);
-  new TH1D("hitposxFei4","Xpos of FeI4 hits",100,-20.,20.);
-  new TH1D("hitposxFei4_1hit","Xpos of FeI4 hits(#hit=1)",100,-20.,20.);
-  new TH1D("xpostrk","Xpos of all traks(#FeI4hit=1)",100,-20.,20.);
-  new TH1D("xposMintrk","Xpos of track min dist from FeI4 hit(#hit=1)",100,-20.,20.);
-  new TH1D("residualFeI4","Residual of trk min dist from FeI4 hit",800,-20.,20.);
 
-  new TH1D("hitposxtrk_D0","Xpos extrapolated track matched to FeI4 hit",100,-20.,20.);
-  new TH1D("hitposxtrk_D1","Xpos extrapolated track matched to FeI4 hit",100,-20.,20.);
-  new TH1D("hitposStriptrk_D0","Strip number extrapolated track matched to FeI4 hit",255,-0.5,254.5);
-  new TH1D("hitposStriptrk_D1","Strip number extrapolated track matched to FeI4 hit",255,-0.5,254.5);
-
-  new TH1D("hitposxCls_D0","Xpos cluster D0",100,-20.,20.);
-  new TH1D("hitposxCls_D1","Xpos cluster D1",100,-20.,20.);
-  new TH1D("hitposCls_D0","Strip number of Cluster",255,-0.5,254.5);
-  new TH1D("hitposCls_D1","Strip number of Cluster",255,-0.5,254.5);
-
-  new TH1D("clstrkresidual_D0","Residual of cluster",400,-20.,20.);
-  new TH1D("clstrkresidual_D1","Residual of cluster",400,-20.,20.);
-  new TH1I("trkmatch_D0","Track Match Counter",5,0.5,5.5);
-  new TH1I("trkmatch_D1","Track Match Counter",5,0.5,5.5);
-  
+  new TH1F("TkXPos", "Track Impact XPos", 96, -12.0, 12.0);
+  new TH1F("TkYPos", "Trach Impact YPos", 240, -12.0, 12.0);
+  new TH1F("HtColumn", "Hit Column", 85, -0.5, 84.5);
+  new TH1F("HtRow", "Hit Row", 340, -0.5, 339.5);
+  new TH1F("HtXPos", "Hit XPos", 96, -12.0, 12.0);
+  new TH1F("HtYPos", "Hit YPos", 240, -12.0, 12.0);
+  new TH1F("deltaXPos", "Difference in Track impact and Hit X Position", 1000, -5.0, 5.0);
+  new TH1F("deltaYPos", "Difference in Track Impact and Hit Y Position", 1000, -5.0, 5.0);
+  new TH2F("tkXPosVsHtXPos", "tkXPosVsHtXPos;Xpos of FeI4-Hit(mm);Xpos of Track Impact(mm)", 96, -12.0, 12.0, 96, -12.0, 12.0);
+  new TH2F("tkYPosVsHtYPos", "tkYPosVsHtYPos;Ypos of FeI4-Hit(mm);Ypos of Track Impact(mm)", 240, -12.0, 12.0, 240, -12.0, 12.0);
 }
 
 void Histogrammer::bookTrackFitHistograms(){
