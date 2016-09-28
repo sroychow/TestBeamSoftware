@@ -107,7 +107,6 @@ void Histogrammer::bookTrackMatchHistograms() {
   fout_->cd("TrackMatch");
   new TH1D("nTrackParams","#Tracks Telescope;#tracks;#events",30,-0.5,29.5);
   new TH1D("nTrackParamsNodupl","#Tracks Telescope after duplicate removal;#tracks;#events",30,-0.5,29.5);
-  new TH1D("nTrackNodupl_fei4_1hit","#Tracks Telescope after duplicate removal when #hitFeI4=1;#tracks;#events",30,-0.5,29.5);
   new TH1I("isTrkFiducial","Is Track in the Fiducial Region",4,-0.5,3.5);
   TH1I* h = dynamic_cast<TH1I*>(Utility::getHist1D("isTrkFiducial"));
   h->GetXaxis()->SetBinLabel(1,"xtkNodupl(>=1)");
@@ -115,30 +114,15 @@ void Histogrammer::bookTrackMatchHistograms() {
   h->GetXaxis()->SetBinLabel(3,"xtkDut0");
   h->GetXaxis()->SetBinLabel(4,"xtkDut0 && xtkDut1");
 
-  new TH1I("hitmapD0_0trk","dut0 hitmap(0trk);strip no.;#Events",1016,-0.5,1015.5);
-  new TH1I("hitmapD0_1trk","dut0 hitmap(1trk);strip no.;#Events",1016,-0.5,1015.5);
-  new TH1I("hitmapD0_mtrk","dut0 hitmap(multitrk);strip no.;#Events",1016,-0.5,1015.5);
-  new TH1I("hitmapD1_0trk","dut0 hitmap(0trk);strip no.;#Events",1016,-0.5,1015.5);
-  new TH1I("hitmapD1_1trk","dut0 hitmap(1trk);strip no.;#Events",1016,-0.5,1015.5);
-  new TH1I("hitmapD1_mtrk","dut0 hitmap(multitrk);strip no.;#Events",1016,-0.5,1015.5);
-
-  new TH1D("hposClsDUT0","Xpos of cluster hit at DUT0 plane(#fid trk>=1)",100,-20.,20.);
-  new TH1D("hposClsDUT1","Xpos of cluster hit at DUT1 plane(#fid trk>=1)",100,-20.,20.);
-  new TH1D("hposStub","Xpos of stub hit(#fid trk>=1)",100,-20.,20.);
-
+  new TH1D("hposxTkDUT0","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk>=1)",100,-20.,20.);
+  new TH1D("hposxTkDUT1","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk>=1)",100,-20.,20.);
   new TH1D("hminposClsDUT0","Xpos of the cluster hit at DUT0 plane with min dist from track(#fid trk>=1)",100,-20.,20.);
   new TH1D("hminposClsDUT1","Xpos of the cluster hit at DUT1 plane with min dist from track(#fid trk>=1)",100,-20.,20.);
   new TH1D("hminposStub","Xpos of the stub hit with min dist from trk(#fid trk>=1)",100,-20.,20.);
-  
-  new TH1D("hminposHitsDUT0","Xpos of the hit at DUT0 plane with min dist from track(#fid trk>=1)",100,-20.,20.);
-  new TH1D("hminposHitsDUT1","Xpos of the hit at DUT1 plane with min dist from track(#fid trk>=1)",100,-20.,20.);
-
   new TH2D("minhitTrkPoscorrD0","Hit xTrk Pos Correlation;trk;cluster",100,-20.,20., 100,-20.,20.);
   new TH2D("minhitTrkPoscorrD1","Hit xTrk Pos Correlation;trk;cluster",100,-20.,20., 100,-20.,20.);
 
 
-  new TH1D("hposxTkDUT0","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk>=1)",100,-20.,20.);
-  new TH1D("hposxTkDUT1","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk>=1)",100,-20.,20.);
 
   new TH1D("residualDUT0multitrkfidNodupl","ClusterResidual at DUT0 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
   new TH1D("residualDUT1multitrkfidNodupl","ClusterResidual at DUT1 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
@@ -146,20 +130,7 @@ void Histogrammer::bookTrackMatchHistograms() {
   new TH1D("minresidualDUT1multitrkfidNodupl","ClusterResidual at DUT1 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
   new TH1D("sresidualC0multitrkfidNodupl","Stub Residual at DUT0 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
   new TH1D("sminresidualC01multitrkfidNodupl","Stub Residual at DUT1 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
-  new TH1D("cor_hit","Sensor Hit Correlation(1=nh1,2=nh0,3=nhAll,4=nhNone)",4,0.5,4.5);
-  new TH2D("clusPoscorr","Cluster Position Correlation;Det0;Det1",400,-20.,20., 400,-20.,20.);
-  new TH2D("clusResidualcorr","Cluster Residual Correlation;Det0;Det1",400,-20.,20., 400,-20.,20.);
-  new TH1D("clusTrkPosDiffD0","Cluster & Xtk Position Difference in strips D0",50,-0.5,49.5);
-  new TH1D("clusTrkPosDiffD1","Cluster & Xtk Position Difference in strips D1",50,-0.5,49.5);
-  new TH1D("clusresD0_nomatch","Cluster(non-matched) residual D0",400,-20.,20.);
-  new TH1D("clusresD1_nomatch","Cluster(non-matched) residual D1",400,-20.,20.);
-  new TH2D("clusTrkPoscorrD0_nomatch","Cluster(non-matched) xTrk Pos Correlation;trk;cluster",400,-20.,20., 400,-20.,20.);
-  new TH2D("clusTrkPoscorrD1_nomatch","Cluster(non-matched) xTrk Pos Correlation;trk;cluster",400,-20.,20., 400,-20.,20.);
-  new TH1D("clusPosDiff","Cluster Position Difference in strips",50,-0.5,49.5);
-  new TH1I("evDiffNomatchedClusWlastbadev","Event number difference between last bad event and event with no matched cluster", 1000, -0.5, 999.5);
-  new TH1I("tdcPhase_fidtrk",";tdc;#Events",17,-0.5,16.5);
-  new TH1I("tdcPhase_clsmatch",";tdc;#Events",17,-0.5,16.5);
-  new TH1I("tdcPhase_noclsmatch",";tdc;#Events",17,-0.5,16.5);
+
   new TH1D("trkcluseff","",8,0.5,8.5);
 }
 
