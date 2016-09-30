@@ -48,6 +48,8 @@ struct cbcCond {
 class NtupleMerger {
   public :
     NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string dqmTuple, const std::string runNumber);
+    NtupleMerger(const std::string telTuple, const std::string runNumber);
+
     virtual ~NtupleMerger();
 
     bool branchFound(TTree* chain,const string& b,std::vector<std::string>& brList_);
@@ -127,5 +129,6 @@ class NtupleMerger {
     TH1D* hitdqm;
     TH1D* hitedm;
     bool  debug_;
+    bool  telOnly_;
 };
 #endif
