@@ -53,14 +53,15 @@ BeamAnaBase::BeamAnaBase() :
   recostubChipids_->insert({("C1"),std::vector<unsigned int>()});
   cbcstubChipids_->insert({("C0"),std::vector<unsigned int>()});
   cbcstubChipids_->insert({("C1"),std::vector<unsigned int>()});
+  //Run=768:zD0=424.113:offsetD0=-1.26247:zD1=426.565:offsetD1=-1.24912
   //alPars_.d0_chi2_min_z = 435.552;
-  alPars_.d0_chi2_min_z = 428.394;
+  alPars_.d0_chi2_min_z = 424.113;
   //alPars_.d1_chi2_min_z = 432.649;
-  alPars_.d1_chi2_min_z = 426.867;
+  alPars_.d1_chi2_min_z = 426.565;
   //alPars_.d0_Offset_aligned = 4.59247;
-  alPars_.d0_Offset_aligned = -1.25329;
+  alPars_.d0_Offset_aligned = -1.26247;
   //alPars_.d1_Offset_aligned = 4.61966;
-  alPars_.d1_Offset_aligned = -1.2398;
+  alPars_.d1_Offset_aligned = -1.24912;
 
   //Run=769:zD0=428.394:offsetD0=-1.25329:zD1=426.868:offsetD1=-1.2398
 }
@@ -175,7 +176,7 @@ void BeamAnaBase::getCbcConfig(uint32_t cwdWord, uint32_t windowWord){
 bool BeamAnaBase::isTrkfiducial(const double xtrkPos, int& xtkdutStrip, const std::string det) {
   xtkdutStrip = (xtrkPos/0.09) + 127;
   if(doChannelMasking_ && (xtkdutStrip > 254 ||  xtkdutStrip < 127))   return false; 
-  else if(xtkdutStrip > 183 ||  xtkdutStrip < 85)   return false; 
+  else if(xtkdutStrip > 185 ||  xtkdutStrip < 83)   return false; 
   if(doChannelMasking_) {
     return std::find(dut_maskedChannels_->at(det).begin(), 
                      dut_maskedChannels_->at(det).end(), 
@@ -187,8 +188,11 @@ bool BeamAnaBase::isTrkfiducial(const double xtrkPos, int& xtkdutStrip, const st
 
 void BeamAnaBase::getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vector<double>& xTkdut1) {
   for(unsigned int itrk = 0; itrk<telEv_->nTrackParams;itrk++) {
-    double XTkatDUT0_itrk = telEv_->xPos->at(itrk) + (alPars_.d0_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d0_Offset_aligned;
-    double XTkatDUT1_itrk = telEv_->xPos->at(itrk) + (alPars_.d1_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d1_Offset_aligned;
+    //double XTkatDUT0_itrk = telEv_->xPos->at(itrk) + (alPars_.d0_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d0_Offset_aligned;
+    //double XTkatDUT1_itrk = telEv_->xPos->at(itrk) + (alPars_.d1_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d1_Offset_aligned;
+    double XTkatDUT0_itrk = telEv_->yPos->at(itrk) + (alPars_.d0_chi2_min_z-z_FEI4)*telEv_->dydz->at(itrk) + alPars_.d0_Offset_aligned;
+    double XTkatDUT1_itrk = telEv_->yPos->at(itrk) + (alPars_.d1_chi2_min_z-z_FEI4)*telEv_->dydz->at(itrk) + alPars_.d1_Offset_aligned;
+
     //check for duplicate tracks LOOSE MATCHING--We start with this.Then move to TIGHT CUT
     bool duplD0 = false, duplD1 = false;
     for(const auto& x0 : xTkdut0) {

@@ -139,7 +139,7 @@ void Histogrammer::bookTelescopeAnalysisHistograms() {
   fout_->mkdir("TelescopeAnalysis");
   fout_->cd("TelescopeAnalysis");
   new TH1D("nTrack","#Tracks Telescope;#tracks;#events",30,-0.5,29.5);
-  new TH1I("nhitsFei4",";#hitsFEI4;#Events",30,-0.5,29.5);
+  new TH1I("nhitsFei4","#Hits in FeI4;#hitsFEI4;#Events",30,-0.5,29.5);
 
   new TH1F("TkXPos", "Track Impact XPos", 96, -12.0, 12.0);
   new TH1F("TkYPos", "Trach Impact YPos", 240, -12.0, 12.0);
@@ -147,10 +147,14 @@ void Histogrammer::bookTelescopeAnalysisHistograms() {
   new TH1F("HtRow", "Hit Row", 340, -0.5, 339.5);
   new TH1F("HtXPos", "Hit XPos", 96, -12.0, 12.0);
   new TH1F("HtYPos", "Hit YPos", 240, -12.0, 12.0);
-  new TH1F("deltaXPos", "Difference in Track impact and Hit X Position", 1000, -5.0, 5.0);
-  new TH1F("deltaYPos", "Difference in Track Impact and Hit Y Position", 1000, -5.0, 5.0);
+  new TH1F("deltaXPos", "Difference in Track impact and Hit X Position", 4000, -20.0, 20.0);
+  new TH1F("deltaYPos", "Difference in Track Impact and Hit Y Position", 4000, -20.0, 20.0);
   new TH2F("tkXPosVsHtXPos", "tkXPosVsHtXPos;Xpos of FeI4-Hit(mm);Xpos of Track Impact(mm)", 96, -12.0, 12.0, 96, -12.0, 12.0);
   new TH2F("tkYPosVsHtYPos", "tkYPosVsHtYPos;Ypos of FeI4-Hit(mm);Ypos of Track Impact(mm)", 240, -12.0, 12.0, 240, -12.0, 12.0);
+  TH2F* h = dynamic_cast<TH2F*>(Utility::getHist2D("tkXPosVsHtXPos"));
+  h->SetOption("colz");
+  h = dynamic_cast<TH2F*>(Utility::getHist2D("tkYPosVsHtYPos"));
+  h->SetOption("colz");
 }
 
 void Histogrammer::bookTrackFitHistograms(){

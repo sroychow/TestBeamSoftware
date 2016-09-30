@@ -68,9 +68,10 @@ void TelescopeAnalysis::eventLoop()
     hist_->fillHist1D("TelescopeAnalysis","nTrack", telEv()->nTrackParams);
     //get residuals for single track events
     if (telEv()->nTrackParams != 1) continue;
-    hist_->fillHist1D("TelescopeAnalysis","nTrack", telEv()->nTrackParams);
-    hist_->fillHist1D("TelescopeAnalysis","TkXPos",telEv()->xPos->at(0));
-    hist_->fillHist1D("TelescopeAnalysis","TkYPos",telEv()->yPos->at(0));
+    double tkX = -1.*telEv()->xPos->at(0);
+    double tkY = telEv()->yPos->at(0);
+    hist_->fillHist1D("TelescopeAnalysis","TkXPos", tkX);
+    hist_->fillHist1D("TelescopeAnalysis","TkYPos", tkY);
     //tkXPosH->Fill(xPos->at(0));
     //tkYPosH->Fill(yPos->at(0));
     double xmin = 999.9;
@@ -84,11 +85,11 @@ void TelescopeAnalysis::eventLoop()
       hist_->fillHist1D("TelescopeAnalysis","HtXPos", xval);
       hist_->fillHist1D("TelescopeAnalysis","HtYPos", yval);
       
-      hist_->fillHist2D("TelescopeAnalysis","tkXPosVsHtXPos", xval, telEv()->xPos->at(0));
-      hist_->fillHist2D("TelescopeAnalysis","tkYPosVsHtYPos", yval, telEv()->yPos->at(0));
+      hist_->fillHist2D("TelescopeAnalysis","tkXPosVsHtXPos", xval, tkX);
+      hist_->fillHist2D("TelescopeAnalysis","tkYPosVsHtYPos", yval, tkY);
       
-      if (std::fabs(xval - telEv()->xPos->at(0)) < xmin) xmin = xval - telEv()->xPos->at(0);
-      if (std::fabs(yval - telEv()->yPos->at(0)) < ymin) ymin = yval - telEv()->yPos->at(0);
+      if (std::fabs(xval - tkX) < xmin) xmin = xval - tkX;
+      if (std::fabs(yval - tkY) < ymin) ymin = yval - tkY;
      }
     hist_->fillHist1D("TelescopeAnalysis","deltaXPos", xmin);
     hist_->fillHist1D("TelescopeAnalysis","deltaYPos", ymin);
