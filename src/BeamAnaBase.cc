@@ -53,25 +53,11 @@ BeamAnaBase::BeamAnaBase() :
   recostubChipids_->insert({("C1"),std::vector<unsigned int>()});
   cbcstubChipids_->insert({("C0"),std::vector<unsigned int>()});
   cbcstubChipids_->insert({("C1"),std::vector<unsigned int>()});
-  //MayRun=768:zD0=424.113:offsetD0=-1.26247:zD1=426.565:offsetD1=-1.24912
-  //alPars_.d0_chi2_min_z = 435.552;
-  //alPars_.d0_chi2_min_z = 424.113;
-  
-  //alPars_.d1_chi2_min_z = 432.649;
-  //alPars_.d1_chi2_min_z = 426.565;
-  
-  //alPars_.d0_Offset_aligned = 4.59247;
-  //alPars_.d0_Offset_aligned = -1.26247;
-            
-  //alPars_.d1_Offset_aligned = 4.61966;
-  //alPars_.d1_Offset_aligned = -1.24912;
-            
   //Run=926:zD0=656.948:offsetD0=2.42386:zD1=660.879:offsetD1=2.40341//OCT0BER
   alPars_.d0_chi2_min_z = 656.948;//541.259;
   alPars_.d1_chi2_min_z = 660.879;//639.635;
-  alPars_.d0_Offset_aligned = 2.40341;//-2.05444;
-  alPars_.d1_Offset_aligned = 2.40341;//-2.36105;
-  //Run=769:zD0=428.394:offsetD0=-1.25329:zD1=426.868:offsetD1=-1.2398
+  alPars_.d0_Offset_aligned = -3.46207;//2.40341
+  alPars_.d1_Offset_aligned = -3.46207;//2.40341;
 }
 
 bool BeamAnaBase::setInputFile(const std::string& fname) {
@@ -199,9 +185,9 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vecto
     //double XTkatDUT0_itrk = telEv_->xPos->at(itrk) + (alPars_.d0_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d0_Offset_aligned;
     //double XTkatDUT1_itrk = telEv_->xPos->at(itrk) + (alPars_.d1_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d1_Offset_aligned;
     double XTkatDUT0_itrk = telEv_->yPos->at(itrk) + (alPars_.d0_chi2_min_z-z_FEI4)*telEv_->dydz->at(itrk);// + alPars_.d0_Offset_aligned;
-    XTkatDUT0_itrk = -1*XTkatDUT0_itrk + alPars_.d0_Offset_aligned;
+    XTkatDUT0_itrk = XTkatDUT0_itrk + alPars_.d0_Offset_aligned;
     double XTkatDUT1_itrk = telEv_->yPos->at(itrk) + (alPars_.d1_chi2_min_z-z_FEI4)*telEv_->dydz->at(itrk);// + alPars_.d1_Offset_aligned;
-    XTkatDUT1_itrk = -1*XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
+    XTkatDUT1_itrk = XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
     //check for duplicate tracks LOOSE MATCHING--We start with this.Then move to TIGHT CUT
     bool duplD0 = false, duplD1 = false;
     for(const auto& x0 : xTkdut0) {
