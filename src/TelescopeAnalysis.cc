@@ -55,9 +55,9 @@ void TelescopeAnalysis::eventLoop()
   
   Long64_t nbytes = 0, nb = 0;
   cout << "#Events=" << nEntries_ << endl;
-  hist_->fillHist1D("TelescopeAnalysis","nevents", nEntries_);
-  
-  for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
+  //hist_->fillHist1D("TelescopeAnalysis","nevents", nEntries_);
+  //nEntries_
+  for (Long64_t jentry=0; jentry<10;jentry++) {
     clearEvent();
     Long64_t ientry = analysisTree()->GetEntry(jentry);
     if (ientry < 0) break;
@@ -67,6 +67,7 @@ void TelescopeAnalysis::eventLoop()
     hist_->fillHist1D("TelescopeAnalysis","nhitsFei4", fei4Ev()->nPixHits);
     hist_->fillHist1D("TelescopeAnalysis","nTrack", telEv()->nTrackParams);
     //get residuals for single track events
+    /*
     if (telEv()->nTrackParams != 1) continue;
     double tkX = -1.*telEv()->xPos->at(0);
     double tkY = telEv()->yPos->at(0);
@@ -93,6 +94,44 @@ void TelescopeAnalysis::eventLoop()
      }
     hist_->fillHist1D("TelescopeAnalysis","deltaXPos", xmin);
     hist_->fillHist1D("TelescopeAnalysis","deltaYPos", ymin);
+    */
+    //**************
+    if(fei4Ev()->nPixHits > 2)    continue;
+    if(telEv()->xPos->empty())    continue;
+    std::cout << telEv()->xPos->size() << std::endl;
+    for(unsigned int i = 0; i<telEv()->xPos->size(); i++) {
+      std::cout << i<< std::endl;
+      //double tkX = -1.*telEv()->xPos->at(i);
+      //double tkY = telEv()->yPos->at(i);
+      //hist_->fillHist1D("TelescopeAnalysis","TkXPos", tkX);
+      //hist_->fillHist1D("TelescopeAnalysis","TkYPos", tkY);
+    }
+    //get residuals
+    /*for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
+      hist_->fillHist1D("TelescopeAnalysis","HtColumn", fei4Ev()->col->at(i));
+      hist_->fillHist1D("TelescopeAnalysis","HtRow", fei4Ev()->row->at(i));
+      //default pitch and dimensions of fei4 plane
+      double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
+      double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
+      hist_->fillHist1D("TelescopeAnalysis","HtXPos", xval);
+      hist_->fillHist1D("TelescopeAnalysis","HtYPos", yval);
+      //now loop over tracks
+      double xmin = 999.9;
+      double ymin = 999.9;
+      
+      for(unsigned int itk = 0; telEv()->xPos->size(); itk++) {
+        double tkX = -1.*telEv()->xPos->at(itk);
+        double tkY = telEv()->yPos->at(itk);
+        hist_->fillHist2D("TelescopeAnalysis","tkXPosVsHtXPos", xval, tkX);
+        hist_->fillHist2D("TelescopeAnalysis","tkYPosVsHtYPos", yval, tkY);
+        if (std::fabs(xval - tkX) < xmin) xmin = xval - tkX;
+        if (std::fabs(yval - tkY) < ymin) ymin = yval - tkY;
+      }
+      hist_->fillHist1D("TelescopeAnalysis","deltaXPos", xmin);
+      hist_->fillHist1D("TelescopeAnalysis","deltaYPos", ymin);
+    }*/
+
+
   }//event loop
 }
 

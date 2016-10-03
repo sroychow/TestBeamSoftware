@@ -46,7 +46,7 @@ void BaselineAnalysis::bookHistograms() {
   hist_->bookStubHistograms();
   hist_->bookCorrelationHistograms();
   hist_->bookTrackMatchHistograms();
-  hist_->bookTelescopeAnalysisHistograms();
+  //hist_->bookTelescopeAnalysisHistograms();
 }
 
 void BaselineAnalysis::beginJob() {
@@ -184,11 +184,12 @@ void BaselineAnalysis::eventLoop()
       //Telescope Matching
       if(doTelMatching() && hasTelescope()) {
         hist_->fillHist1D("TrackMatch","nTrackParams",telEv()->nTrackParams);
+        if(telEv()->nTrackParams!=1)   continue;
+        hist_->fillHist1D("TrackMatch", "trkcluseff", 0);
         //Residual Calculation Now moved to AlignmentAnalysis
         std::vector<double>  xtkDet0, xtkDet1;
         getExtrapolatedTracks(xtkDet0, xtkDet1);
         hist_->fillHist1D("TrackMatch", "nTrackParamsNodupl", xtkDet0.size());
-        hist_->fillHist1D("TrackMatch", "isTrkFiducial", 0);
         bool isXtkfidDUT0 = false;
         bool isXtkfidDUT1 = false;
         bool trkClsmatchD0 = false;
@@ -200,6 +201,7 @@ void BaselineAnalysis::eventLoop()
         double minclsposD1 = 9999.;
         double minStubresC0 = 9999.;
         double minStubposC0 = 9999.;
+        int minStubStripC0 = 999.;
         int minClusStripD0 = 999.;
         int minClusStripD1 = 999.;
  
@@ -234,8 +236,8 @@ void BaselineAnalysis::eventLoop()
               }
             }
             hist_->fillHist1D("TrackMatch","hminposClsDUT0",minclsposD0);
-            hist_->fillHist1D("TrackMatch","minresidualDUT0multitrkfidNodupl", minclsresD0);
-            hist_->fillHist2D("TrackMatch","minhitTrkPoscorrD0", xtkStripDet0, minHitStripD0);
+            hist_->fillHist1D("TrackMatch","minresidualDUT0_1trkfid", minclsresD0);
+            hist_->fillHist2D("TrackMatch","minclsTrkPoscorrD0", xtkStripDet0, minClusStripD0);
           }
         }
         for(auto &x1 : xtkDet1) { 
@@ -265,23 +267,25 @@ void BaselineAnalysis::eventLoop()
             for(auto& s : dutRecoStubmap()->at("C0"))  {
               if(s.x < 71 || s.x > 183 )   continue;
               double sposres = x1 - (s.x-127)*0.09;
-              hist_->fillHist1D("TrackMatch","sresidualC0multitrkfidNodupl", sposres);
+              //hist_->fillHist1D("TrackMatch","sresidualC0multitrkfidNodupl", sposres);
               if(std::fabs(sposres) <= 4*0.026)  smatchD1 = true;  
               if(std::fabs(sposres) < std::fabs(minStubresC0)) {
                 minStubresC0 = sposres;
                 minStubposC0 = (s.x-127)*0.09;
+                minStubStripC0 = s.x;
               }
             }
-            hist_->fillHist1D("TrackMatch","minresidualDUT1multitrkfidNodupl", minclsresD1);
-            hist_->fillHist2D("TrackMatch","minhitTrkPoscorrD1", xtkStripDet0, minHitStripD0);
-            hist_->fillHist1D("TrackMatch","sminresidualC01multitrkfidNodupl", minStubresC0);
             hist_->fillHist1D("TrackMatch","hminposClsDUT1",minclsposD1);
+            hist_->fillHist1D("TrackMatch","minresidualDUT1_1trkfid", minclsresD1);
+            hist_->fillHist2D("TrackMatch","minclsTrkPoscorrD1", xtkStripDet1, minClusStripD1);
+            //for stub
+            hist_->fillHist1D("TrackMatch","sminresidualC0_1trkfid", minStubresC0);
             hist_->fillHist1D("TrackMatch","hminposStub",minStubposC0);
+            hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1", xtkStripDet1, minStubStripC0);           
           }
         }
         if(isXtkfidDUT0) {
           trkFidDet0++;
-          hist_->fillHist1D("TrackMatch", "isTrkFiducial", 1);
           hist_->fillHist1D("TrackMatch", "trkcluseff", 1);
           for(auto& cl : dutRecoClmap()->at("det0C0") ) {
             if(cl.x < 71 || cl.x > 183 )   continue;
@@ -289,7 +293,6 @@ void BaselineAnalysis::eventLoop()
         }
         if(isXtkfidDUT1) {
           trkFidDet1++;
-          hist_->fillHist1D("TrackMatch", "isTrkFiducial", 2);
           hist_->fillHist1D("TrackMatch", "trkcluseff", 2);
           for(auto& cl : dutRecoClmap()->at("det1C0") ) {
             if(cl.x < 71 || cl.x > 183 )   continue;
@@ -300,7 +303,6 @@ void BaselineAnalysis::eventLoop()
         }
         if(isXtkfidDUT0 || isXtkfidDUT1)  trkFidany++;
         if(isXtkfidDUT0 && isXtkfidDUT1)  {
-          hist_->fillHist1D("TrackMatch", "isTrkFiducial", 3);
           hist_->fillHist1D("TrackMatch", "trkcluseff", 3);
           trkFidbothPlane++;
         }

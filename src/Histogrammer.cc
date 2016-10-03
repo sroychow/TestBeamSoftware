@@ -107,31 +107,41 @@ void Histogrammer::bookTrackMatchHistograms() {
   fout_->cd("TrackMatch");
   new TH1D("nTrackParams","#Tracks Telescope;#tracks;#events",30,-0.5,29.5);
   new TH1D("nTrackParamsNodupl","#Tracks Telescope after duplicate removal;#tracks;#events",30,-0.5,29.5);
-  new TH1I("isTrkFiducial","Is Track in the Fiducial Region",4,-0.5,3.5);
-  TH1I* h = dynamic_cast<TH1I*>(Utility::getHist1D("isTrkFiducial"));
-  h->GetXaxis()->SetBinLabel(1,"xtkNodupl(>=1)");
-  h->GetXaxis()->SetBinLabel(2,"xtkDut1");
-  h->GetXaxis()->SetBinLabel(3,"xtkDut0");
-  h->GetXaxis()->SetBinLabel(4,"xtkDut0 && xtkDut1");
-
-  new TH1D("hposxTkDUT0","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk>=1)",100,-20.,20.);
-  new TH1D("hposxTkDUT1","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk>=1)",100,-20.,20.);
-  new TH1D("hminposClsDUT0","Xpos of the cluster hit at DUT0 plane with min dist from track(#fid trk>=1)",100,-20.,20.);
-  new TH1D("hminposClsDUT1","Xpos of the cluster hit at DUT1 plane with min dist from track(#fid trk>=1)",100,-20.,20.);
-  new TH1D("hminposStub","Xpos of the stub hit with min dist from trk(#fid trk>=1)",100,-20.,20.);
-  new TH2D("minhitTrkPoscorrD0","Hit xTrk Pos Correlation;trk;cluster",100,-20.,20., 100,-20.,20.);
-  new TH2D("minhitTrkPoscorrD1","Hit xTrk Pos Correlation;trk;cluster",100,-20.,20., 100,-20.,20.);
+  new TH1D("hposxTkDUT0","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk=1)",100,-20.,20.);
+  new TH1D("hposxTkDUT1","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk=1)",100,-20.,20.);
+  new TH1D("hminposClsDUT0","Xpos of the cluster hit at DUT0 plane with min dist from track(#fid trk=1)",100,-20.,20.);
+  new TH1D("hminposClsDUT1","Xpos of the cluster hit at DUT1 plane with min dist from track(#fid trk=1)",100,-20.,20.);
+  new TH1D("hminposStub","Xpos of the stub hit with min dist from trk(#fid trk=1)",100,-20.,20.);
+  new TH2D("minclsTrkPoscorrD0","Cluster xTrk Pos Correlation;trk;cluster",255,-0.5,254.5, 255,-0.5,254.5);
+  new TH2D("minclsTrkPoscorrD1","Cluster xTrk Pos Correlation;trk;cluster",255,-0.5,254.5, 255,-0.5,254.5);
+  TH2D* h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minclsTrkPoscorrD0"));
+  h2d->SetOption("colz");
+  h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minclsTrkPoscorrD1"));
+  h2d->SetOption("colz");
 
 
+  //new TH1D("residualDUT0multitrkfidNodupl","ClusterResidual at DUT0 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
+  //new TH1D("residualDUT1multitrkfidNodupl","ClusterResidual at DUT1 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
+  new TH1D("minresidualDUT0_1trkfid","ClusterResidual at DUT0 plane(fiducial)(#trk=1)",1000,-10.,10.);
+  new TH1D("minresidualDUT1_1trkfid","ClusterResidual at DUT1 plane(fiducial)(#trk=1)",1000,-10.,10.);
+  //new TH1D("sresidualC0multitrkfidNodupl","Stub Residual at DUT0 plane(fiducial)(#trk>1, no duplicate tracks)",800,-20.,20.);
+  new TH2D("minstubTrkPoscorrD1","Cluster xTrk Pos Correlation;trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
+  h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1"));
+  h2d->SetOption("colz");
 
-  new TH1D("residualDUT0multitrkfidNodupl","ClusterResidual at DUT0 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
-  new TH1D("residualDUT1multitrkfidNodupl","ClusterResidual at DUT1 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
-  new TH1D("minresidualDUT0multitrkfidNodupl","ClusterResidual at DUT0 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
-  new TH1D("minresidualDUT1multitrkfidNodupl","ClusterResidual at DUT1 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
-  new TH1D("sresidualC0multitrkfidNodupl","Stub Residual at DUT0 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
-  new TH1D("sminresidualC01multitrkfidNodupl","Stub Residual at DUT1 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
+  new TH1D("sminresidualC0_1trkfid","Stub Residual at DUT1 plane(fiducial)(#trk=1)",1000,-10.,10.);
 
-  new TH1D("trkcluseff","",8,0.5,8.5);
+  new TH1I("trkcluseff","",9,-0.5,8.5);
+  TH1I* h = dynamic_cast<TH1I*>(Utility::getHist1D("trkcluseff"));
+  h->GetXaxis()->SetBinLabel(1,"xtkNodupl(=1)");
+  h->GetXaxis()->SetBinLabel(2,"xtkFidD0");
+  h->GetXaxis()->SetBinLabel(3,"xtkFidD1");
+  h->GetXaxis()->SetBinLabel(4,"xtkFidD0 && xtkFidD1");
+  h->GetXaxis()->SetBinLabel(5,"xtkClsMatchD0");
+  h->GetXaxis()->SetBinLabel(6,"xtkClsMatchD1");
+  h->GetXaxis()->SetBinLabel(7,"xtkClsMatchD0_&&_D1");
+  h->GetXaxis()->SetBinLabel(8,"no-match_D0&&_D1");
+  h->GetXaxis()->SetBinLabel(9,"xtkStubMatchC0");
 }
 
 void Histogrammer::bookTelescopeAnalysisHistograms() {
@@ -165,16 +175,16 @@ void Histogrammer::bookTrackFitHistograms(){
   new TH1I("d0_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
   new TH1I("d1_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d1",10000,-10,10);
 
-  for (int iz=0; iz<50; iz++){
+  for (int iz=0; iz<100; iz++){
     new TH1I(Form("d0_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
     new TH1I(Form("d1_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
   }
 
-  new TH1F("d0_offsetVsZ", "x_{DUT} offset vs injected z_{DUT}, d0", 50, 200-5, 700-5);
-  new TH1F("d1_offsetVsZ", "x_{DUT} offset vs injected z_{DUT},d1", 50, 200-5, 700-5);
+  new TH1F("d0_offsetVsZ", "x_{DUT} offset vs injected z_{DUT}, d0", 100, 200-5, 1200-5);
+  new TH1F("d1_offsetVsZ", "x_{DUT} offset vs injected z_{DUT},d1", 100, 200-5, 1200-5);
 
-  new TH1F("d0_chi2VsZ","chi2 vs injected z_{DUT}, d0", 50, 200-5, 700-5);
-  new TH1F("d1_chi2VsZ","chi2 vs injected z_{DUT}, d1", 50, 200-5, 700-5);
+  new TH1F("d0_chi2VsZ","chi2 vs injected z_{DUT}, d0", 100, 200-5, 1200-5);
+  new TH1F("d1_chi2VsZ","chi2 vs injected z_{DUT}, d1", 100, 200-5, 1200-5);
 
   new TH1I("d0_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
   new TH1I("d1_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d1",10000,-10,10);
