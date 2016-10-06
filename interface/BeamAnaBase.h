@@ -23,8 +23,8 @@ using std::vector;
 using std::map;
 using std::cerr;
 
-static const double z_DUT0 = 435.0;
-static const double z_DUT1 = 438.1;  
+//static const double z_DUT0 = 435.0;
+//static const double z_DUT1 = 438.1;  
 static const double z_FEI4 = 688.0;//oct16;688.0;//may2016;724.0;
 
 class BeamAnaBase {

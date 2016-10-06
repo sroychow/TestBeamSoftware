@@ -124,6 +124,9 @@ void Histogrammer::bookTrackMatchHistograms() {
   //new TH1D("residualDUT1multitrkfidNodupl","ClusterResidual at DUT1 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
   new TH1D("minresidualDUT0_1trkfid","ClusterResidual at DUT0 plane(fiducial)(#trk=1)",1000,-10.,10.);
   new TH1D("minresidualDUT1_1trkfid","ClusterResidual at DUT1 plane(fiducial)(#trk=1)",1000,-10.,10.);
+  new TH1D("clswidthDUT0_1trkfid","ClusterWidth(cluster matched to track) at DUT0 plane(fiducial)(#trk=1)",50,-0.5,49.5);
+  new TH1D("clswidthDUT1_1trkfid","ClusterWidth(cluster matched to track) at DUT1 plane(fiducial)(#trk=1)",50,-0.5,49.5);
+
   //new TH1D("sresidualC0multitrkfidNodupl","Stub Residual at DUT0 plane(fiducial)(#trk>1, no duplicate tracks)",800,-20.,20.);
   new TH2D("minstubTrkPoscorrD1","Cluster xTrk Pos Correlation;trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
   h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1"));
@@ -142,6 +145,9 @@ void Histogrammer::bookTrackMatchHistograms() {
   h->GetXaxis()->SetBinLabel(7,"xtkClsMatchD0_&&_D1");
   h->GetXaxis()->SetBinLabel(8,"no-match_D0&&_D1");
   h->GetXaxis()->SetBinLabel(9,"xtkStubMatchC0");
+  
+  new TH1I("effVtdc_num",";TDC;#Events",17,-0.5,16.5);
+  new TH1I("effVtdc_den",";TDC;#Events",17,-0.5,16.5);
 }
 
 void Histogrammer::bookTelescopeAnalysisHistograms() {
@@ -157,8 +163,8 @@ void Histogrammer::bookTelescopeAnalysisHistograms() {
   new TH1F("HtRow", "Hit Row", 340, -0.5, 339.5);
   new TH1F("HtXPos", "Hit XPos", 96, -12.0, 12.0);
   new TH1F("HtYPos", "Hit YPos", 240, -12.0, 12.0);
-  new TH1F("deltaXPos", "Difference in Track impact and Hit X Position", 4000, -20.0, 20.0);
-  new TH1F("deltaYPos", "Difference in Track Impact and Hit Y Position", 4000, -20.0, 20.0);
+  new TH1F("deltaXPos", "Difference in Track impact and Hit X Position", 8000, -20.0, 20.0);
+  new TH1F("deltaYPos", "Difference in Track Impact and Hit Y Position", 8000, -20.0, 20.0);
   new TH2F("tkXPosVsHtXPos", "tkXPosVsHtXPos;Xpos of FeI4-Hit(mm);Xpos of Track Impact(mm)", 96, -12.0, 12.0, 96, -12.0, 12.0);
   new TH2F("tkYPosVsHtYPos", "tkYPosVsHtYPos;Ypos of FeI4-Hit(mm);Ypos of Track Impact(mm)", 240, -12.0, 12.0, 240, -12.0, 12.0);
   TH2F* h = dynamic_cast<TH2F*>(Utility::getHist2D("tkXPosVsHtXPos"));

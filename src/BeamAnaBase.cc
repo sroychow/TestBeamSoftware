@@ -56,8 +56,8 @@ BeamAnaBase::BeamAnaBase() :
   //Run=926:zD0=656.948:offsetD0=2.42386:zD1=660.879:offsetD1=2.40341//OCT0BER
   alPars_.d0_chi2_min_z = 656.948;//541.259;
   alPars_.d1_chi2_min_z = 660.879;//639.635;
-  alPars_.d0_Offset_aligned = -3.46207;//2.40341
-  alPars_.d1_Offset_aligned = -3.46207;//2.40341;
+  alPars_.d0_Offset_aligned = 2.42386;
+  alPars_.d1_Offset_aligned = 2.40341;
 }
 
 bool BeamAnaBase::setInputFile(const std::string& fname) {
@@ -185,9 +185,9 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vecto
     //double XTkatDUT0_itrk = telEv_->xPos->at(itrk) + (alPars_.d0_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d0_Offset_aligned;
     //double XTkatDUT1_itrk = telEv_->xPos->at(itrk) + (alPars_.d1_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d1_Offset_aligned;
     double XTkatDUT0_itrk = telEv_->yPos->at(itrk) + (alPars_.d0_chi2_min_z-z_FEI4)*telEv_->dydz->at(itrk);// + alPars_.d0_Offset_aligned;
-    XTkatDUT0_itrk = XTkatDUT0_itrk + alPars_.d0_Offset_aligned;
+    XTkatDUT0_itrk = -1.*XTkatDUT0_itrk + alPars_.d0_Offset_aligned;
     double XTkatDUT1_itrk = telEv_->yPos->at(itrk) + (alPars_.d1_chi2_min_z-z_FEI4)*telEv_->dydz->at(itrk);// + alPars_.d1_Offset_aligned;
-    XTkatDUT1_itrk = XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
+    XTkatDUT1_itrk = -1.*XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
     //check for duplicate tracks LOOSE MATCHING--We start with this.Then move to TIGHT CUT
     bool duplD0 = false, duplD1 = false;
     for(const auto& x0 : xTkdut0) {

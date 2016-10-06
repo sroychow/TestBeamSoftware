@@ -56,8 +56,18 @@ class Histogrammer {
                              const char* dir, const char* h) {
       fout_->cd(dir);
       Utility::fill2DHistofromVec( vecC0, vecC1,h);
-     }
-    
+    }
+     
+    template <class T1, class T2>
+    bool fillHistProfile(const char* dir, const char* hname, T1 xvalue, T2 yvalue) {
+      fout_->cd(dir);
+      Utility::fillHistProfile(hname,xvalue,yvalue);
+    }
+    template <class T1, class T2>
+    bool fillHistProfile(const std::string& dir, const std::string& hname, T1 xvalue, T2 yvalue) {
+      fillHistProfile(dir.c_str(),hname.c_str(), xvalue, yvalue);
+    }
+
     void fillClusterHistograms( const char* det, std::vector<tbeam::cluster>& cvec, const char* col);
     void closeFile();
     
