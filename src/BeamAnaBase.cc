@@ -336,7 +336,7 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vecto
       hout_->fillHist1D("TrackMatch","deltaYPos_trkfei4", minresy);
       match = true;
     }
-
+    if(!match)   continue;
     double XTkatDUT0_itrk = telEv_->yPos->at(itrk) + 
                             (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*telEv_->dydz->at(itrk);
     XTkatDUT0_itrk = -1.*XTkatDUT0_itrk + alPars_.d0_Offset_aligned;
