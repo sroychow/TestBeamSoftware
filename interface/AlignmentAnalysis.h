@@ -11,13 +11,12 @@
 class TH1;
 class AlignmentAnalysis : public BeamAnaBase {
  public:
-  AlignmentAnalysis(const string inFilename,const string outFilename);
+  AlignmentAnalysis();
   ~AlignmentAnalysis();
   void beginJob();
   void eventLoop(); 
   std::pair<float, float>  GetOffsetVsZ(const char*, float **, float**);
   void bookHistograms();
-  bool setRunMode(const bool rMode);
   void clearEvent();
   void endJob();
   static double FuncStepGaus(Double_t * x, Double_t * par){
@@ -33,10 +32,11 @@ class AlignmentAnalysis : public BeamAnaBase {
     return f;
   }
  private:
-  std::string runNumber;
+  std::string runNumber_;
   std::string outFile_;
   Histogrammer* hist_;
   unsigned long int nEntries_;
-  bool isProduction_; 
+  bool isProduction_;
+  std::string alignparFile_; 
 };
 #endif

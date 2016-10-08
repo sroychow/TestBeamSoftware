@@ -1,0 +1,26 @@
+#START
+Run=926
+inputFile=AnalysisTree_926.root
+outputFile=baselineOutput_926.root
+//Run=926:zD0=656.948:offsetD0=2.42386:zD1=660.879:offsetD1=2.40341
+fei4Z=688
+d0minZ=656.948
+d1minZ=660.879
+d0Offsetaligned=2.42386
+d1Offsetaligned=2.40341
+doTelescopeMatching=1
+doChannelMasking_=0
+channelMaskFile=chmask.txt
+residualSigmaDUT=0.026
+#Residual X>>>Mean=-0.498534>>>Sigma=0.0557367
+#Residual Y>>>Mean=-0.051529>>>Sigma=0.0150043
+residualSigmaFEI4X=0.0557367
+residualSigmaFEI4Y=0.0150043
+offsetFEI4X=0.498534
+offsetFEI4Y=0.051529
+nStrips=254
+pitchDUT=0.09
+#only needed by Alignment Analysis
+isProductionmode=0
+alignmentOutputFile=alignmentparOutput_926.txt
+#END

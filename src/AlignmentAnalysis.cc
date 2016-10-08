@@ -27,55 +27,47 @@ using std::vector;
 using std::map;
 using namespace std;
 
-AlignmentAnalysis::AlignmentAnalysis(const std::string inFilename,const std::string outFilename) :
+AlignmentAnalysis::AlignmentAnalysis() :
   BeamAnaBase::BeamAnaBase(),
-  outFile_(outFilename),
-  isProduction_(false)
+  isProduction_(false),
+  alignparFile_("alignmentParameters.txt")
 {
-  std::cout << "EDM Tuple Analyzer initialized with the following options\n" 
-            << "Infile: " << inFilename
-            << "\nOutFile: " << outFile_
-            << std::endl; 
-  if( setInputFile(inFilename) == 0 ) {
-    std::cout << "Empty Chain!!";
-    exit(1);
-  }
-  
-  int pos1 = inFilename.find ("AnalysisTree_");
-  pos1 += 13;
-  int pos2 = inFilename.find (".root");
-  runNumber = inFilename.substr(pos1, pos2-pos1);
-  std::cout << "Run Number="<<runNumber<<endl;
-  
-  nEntries_ = analysisTree()->GetEntries();
-  hist_ = new Histogrammer(outFile_);
-  beginJob();
-  
 }
+
+void AlignmentAnalysis::beginJob() {
+  BeamAnaBase::beginJob();
+  hist_ = outFile();
+  setAddresses();
+  nEntries_ = analysisTree()->GetEntries();
+  bookHistograms();
+  analysisTree()->GetEntry(0);
+  getCbcConfig(condEv()->cwd, condEv()->window);
+  
+  if(jobCardmap().find("isProductionmode") != jobCardmap().end())
+    isProduction_ = (atoi(jobCardmap().at("isProductionmode").c_str()) > 0) ? true : false;
+  if(jobCardmap().find("alignmentOutputFile") != jobCardmap().end())
+    alignparFile_ = jobCardmap().at("alignmentOutputFile");
+  if(jobCardmap().find("Run") != jobCardmap().end())
+    runNumber_ = jobCardmap().at("Run");
+  
+  std::cout << "Additional Parameter specific to AlignmentReco>>" 
+            << "\nisProductionMode:" << isProduction_
+            << "\nalignparameterOutputFile:" << alignparFile_
+            << std::endl;
+
+}
+
 void AlignmentAnalysis::bookHistograms() {
   hist_->bookEventHistograms();
   hist_->bookTrackFitHistograms();
 }
 
-void AlignmentAnalysis::beginJob() {
-  setAddresses();
-  bookHistograms();
-  analysisTree()->GetEntry(0);
-  getCbcConfig(condEv()->cwd, condEv()->window);
-}
-
-bool AlignmentAnalysis::setRunMode(const bool rMode) {
-  isProduction_ = rMode;
-}
 void AlignmentAnalysis::eventLoop()
 {
   if (!doTelMatching() || !hasTelescope()) return;
   
   float DUT_z = 460.0;//oct16=460;//may16=435
   float DUT_z_try = 400;
-  float FEI4_z = 688.;//oct16;688.0;//may2016;724.0;
-  float pitch = 90.;
-  int nMaxChannels = 254;
   
   Long64_t nbytes = 0, nb = 0;
   cout << "#Events=" << nEntries_ << endl;
@@ -120,29 +112,29 @@ void AlignmentAnalysis::eventLoop()
     const auto& d1c1 = *det1C1();      
     if (telEv()->nTrackParams==1){
       if (d0c0.size()==1){
-	float xTkAtDUT = telEv()->yPos->at(0) + (DUT_z-FEI4_z)*telEv()->dydz->at(0);
-	float xDUT = (d0c0.at(0) - nMaxChannels/2) * pitch / 1000.;
+	float xTkAtDUT = telEv()->yPos->at(0) + (DUT_z-aLparameteres().FEI4_z)*telEv()->dydz->at(0);
+	float xDUT = (d0c0.at(0) - nstrips()/2) * dutpitch();
         xTkAtDUT = -1.*xTkAtDUT;
 	hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX", xDUT-xTkAtDUT);
 	DUT_z_try = 200; //300
 	for (int iz=0; iz<100; iz++){
 	  DUT_z_try += 10.;
 	  //DUT_z_try += (float)(iz*5);
-	  xTkAtDUT = telEv()->yPos->at(0) + (DUT_z_try-FEI4_z)*telEv()->dydz->at(0);
+	  xTkAtDUT = telEv()->yPos->at(0) + (DUT_z_try-aLparameteres().FEI4_z)*telEv()->dydz->at(0);
           xTkAtDUT = -1.*xTkAtDUT;
 	  hist_->fillHist1D("TrackFit",Form("d0_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
 	}
       }
       if (d1c0.size()==1){
-	float xTkAtDUT = telEv()->yPos->at(0) + (DUT_z-FEI4_z)*telEv()->dydz->at(0);
+	float xTkAtDUT = telEv()->yPos->at(0) + (DUT_z-aLparameteres().FEI4_z)*telEv()->dydz->at(0);
         //xTkAtDUT = -1.*xTkAtDUT;
-	float xDUT = (d1c0.at(0) - nMaxChannels/2) * pitch / 1000.;
+	float xDUT = (d1c0.at(0) - nstrips()/2) * dutpitch();
 	hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX", xDUT-xTkAtDUT);
 	DUT_z_try = 200;//300;
 	for (int iz=0; iz<100; iz++){
 	  //DUT_z_try += (float)(iz*5);
 	  DUT_z_try += 10.;
-	  xTkAtDUT = telEv()->yPos->at(0) + (DUT_z_try-FEI4_z)*telEv()->dydz->at(0);
+	  xTkAtDUT = telEv()->yPos->at(0) + (DUT_z_try-aLparameteres().FEI4_z)*telEv()->dydz->at(0);
           xTkAtDUT = -1.*xTkAtDUT;
 	  hist_->fillHist1D("TrackFit",Form("d1_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
 	}
@@ -196,11 +188,11 @@ void AlignmentAnalysis::eventLoop()
     const auto& d1c1 = *det1C1();
     if (d0c0.size()==1){
       nEv1tk1hit_d0++;
-      float xDUT = (d0c0.at(0) - nMaxChannels/2) * pitch / 1000.;
+      float xDUT = (d0c0.at(0) - nstrips()/2) * dutpitch();
       for (int iz=0; iz<100; iz++){
 	DUT_z_try = 200 + (float)(iz*10);
 	float offset = line_d0.first * DUT_z_try + line_d0.second;
-	float xTkAtDUT = telEv()->yPos->at(0) + (DUT_z_try-FEI4_z)*telEv()->dydz->at(0);// + offset;
+	float xTkAtDUT = telEv()->yPos->at(0) + (DUT_z_try-aLparameteres().FEI4_z)*telEv()->dydz->at(0);// + offset;
         xTkAtDUT = -1.*xTkAtDUT + offset;
         //xTkAtDUT = xTkAtDUT + offset;
 	if (fabs(xTkAtDUT-xDUT) < 3*sigma_d0[iz]) {
@@ -211,11 +203,11 @@ void AlignmentAnalysis::eventLoop()
     }
     if (d1c0.size()==1){
       nEv1tk1hit_d1++;
-      float xDUT = (d1c0.at(0) - nMaxChannels/2) * pitch / 1000.;
+      float xDUT = (d1c0.at(0) - nstrips()/2) * dutpitch();
       for (int iz=0; iz<100; iz++){
 	DUT_z_try = 200 + (float)(iz*10);
 	float offset = line_d1.first * DUT_z_try + line_d1.second;
-	float xTkAtDUT = telEv()->yPos->at(0) + (DUT_z_try-FEI4_z)*telEv()->dydz->at(0);// + offset;
+	float xTkAtDUT = telEv()->yPos->at(0) + (DUT_z_try-aLparameteres().FEI4_z)*telEv()->dydz->at(0);// + offset;
         xTkAtDUT = -1.*xTkAtDUT + offset;
         //xTkAtDUT = xTkAtDUT + offset;
 	if (fabs(xTkAtDUT-xDUT) < 3*sigma_d1[iz]) {
@@ -255,15 +247,14 @@ void AlignmentAnalysis::eventLoop()
   float d0_Offset_aligned = line_d0.first * d0_chi2_min_z + line_d0.second;
   float d1_Offset_aligned = line_d1.first * d1_chi2_min_z + line_d1.second;
   
-  ofstream fileAlignment;
+  std::ofstream fileAlignment;
   if(isProduction_) {
-    fileAlignment.open("interface/alignmentMay16.txt", ios::out | ios::app);
+    fileAlignment.open(alignparFile_.c_str(), ios::out | ios::app);
   } else {
-    std::string dumpFname = "alignmentMay16_" + runNumber + ".txt";
-    fileAlignment.open(dumpFname.c_str(), ios::out);
+    fileAlignment.open(alignparFile_.c_str(), ios::out);
   }
   if(fileAlignment) {
-    fileAlignment << "Run="<< runNumber 
+    fileAlignment << "Run="<< runNumber_
                   << ":zD0="<< d0_chi2_min_z 
                   << ":offsetD0=" << d0_Offset_aligned 
                   << ":zD1="<< d1_chi2_min_z 
@@ -289,15 +280,15 @@ void AlignmentAnalysis::eventLoop()
     const auto& d1c1 = *det1C1();
     
     if (d0c0.size()==1){
-      float xDUT = (d0c0.at(0) - nMaxChannels/2) * pitch / 1000.;
-      float xTkAtDUT = telEv()->yPos->at(0) + (d0_chi2_min_z-FEI4_z)*telEv()->dydz->at(0);// + d0_Offset_aligned;
+      float xDUT = (d0c0.at(0) - nstrips()/2) * dutpitch();
+      float xTkAtDUT = telEv()->yPos->at(0) + (d0_chi2_min_z-aLparameteres().FEI4_z)*telEv()->dydz->at(0);// + d0_Offset_aligned;
       xTkAtDUT = -1.*xTkAtDUT + d0_Offset_aligned;
       //xTkAtDUT = xTkAtDUT + d0_Offset_aligned;
       hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);
     }
     if (d1c0.size()==1){
-      float xDUT = (d1c0.at(0) - nMaxChannels/2) * pitch / 1000.;
-      float xTkAtDUT = telEv()->yPos->at(0) + (d1_chi2_min_z-FEI4_z)*telEv()->dydz->at(0);// + d1_Offset_aligned;
+      float xDUT = (d1c0.at(0) - nstrips()/2) * dutpitch();
+      float xTkAtDUT = telEv()->yPos->at(0) + (d1_chi2_min_z-aLparameteres().FEI4_z)*telEv()->dydz->at(0);// + d1_Offset_aligned;
       xTkAtDUT = -1.*xTkAtDUT + d1_Offset_aligned;
       //xTkAtDUT = xTkAtDUT + d1_Offset_aligned;
       hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);

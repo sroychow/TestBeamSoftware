@@ -16,16 +16,13 @@
 #include <string>
 
 #include "DataFormats.h"
+#include "Histogrammer.h"
 using std::cout;
 using std::endl;
 using std::string;
 using std::vector;
 using std::map;
 using std::cerr;
-
-//static const double z_DUT0 = 435.0;
-//static const double z_DUT1 = 438.1;  
-static const double z_FEI4 = 688.0;//oct16;688.0;//may2016;724.0;
 
 class BeamAnaBase {
   public :
@@ -57,23 +54,35 @@ class BeamAnaBase {
     int nStubsrecoSword() const { return nStubsrecoSword_;}
     int nStubscbcSword() const { return nStubscbcSword_;}
     bool hasTelescope() const { return hasTelescope_;}
-    virtual void beginJob(){}
+    double resDUT() const {return residualSigmaDUT_;}
+    double resfei4y() const {return residualSigmaFEI4y_;}
+    double nstrips() const {return nStrips_;}
+    double dutpitch() const {return pitchDUT_;}
+    virtual void beginJob();
     virtual void endJob();
     virtual void eventLoop() = 0; 
-    virtual void bookHistograms() = 0;
+    virtual void bookHistograms();
     virtual void clearEvent();
+    virtual bool readJob(const std::string jfile);
     void getCbcConfig(uint32_t cwdWord, uint32_t windowWord);
     void getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vector<double>& xTkdut1);
     void readChannelMaskData(const std::string cmaskF);
     void setTelMatching(const bool mtel);
-    void setChannelMasking(const bool mch, const std::string cFile);
+    void setChannelMasking(const std::string cFile);
     bool doTelMatching() const { return doTelMatching_;}
     bool doChannelMasking() const { return doChannelMasking_;}
     std::map<std::string,std::vector<int> >* getMaskedChannelMap() const {return dut_maskedChannels_;}
     void readAlignmentConstant(const std::string& aFname);
     tbeam::alignmentPars aLparameteres() const { return alPars_; }
     bool isTrkfiducial(const double xtrkPos, int& xtkdutStrip, const std::string det);
+    Histogrammer* outFile() { return hout_; }
+    void fillCommonHistograms();
+    std::map<std::string,std::string> jobCardmap() const { return jobCardmap_;}
+    
   private :
+    std::string iFilename_;
+    std::string outFilename_;
+    std::string chmaskFilename_;
     TFile* fin_;
     TTree *analysisTree_; 
     tbeam::dutEvent* dutEv_;
@@ -102,6 +111,15 @@ class BeamAnaBase {
     int nStubsrecoSword_;
     int nStubscbcSword_;
     tbeam::alignmentPars  alPars_;
-    //std::map<std::string,std::vector<unsigned int>>* dutCbcStubmap_;
+    std::map<std::string,std::string> jobCardmap_;
+    Histogrammer* hout_;
+    double residualSigmaDUT_;
+    double residualSigmaFEI4x_;
+    double residualSigmaFEI4y_;
+    double offsetFEI4x_;
+    double offsetFEI4y_;
+
+    int nStrips_;
+    double pitchDUT_;
 };
 #endif

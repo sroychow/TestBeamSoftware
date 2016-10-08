@@ -11,7 +11,7 @@
 class TH1;
 class TelescopeAnalysis : public BeamAnaBase {
  public:
-  TelescopeAnalysis(const string inFilename,const string outFilename);
+  TelescopeAnalysis();
   ~TelescopeAnalysis();
   void beginJob();
   void eventLoop(); 
@@ -20,7 +20,6 @@ class TelescopeAnalysis : public BeamAnaBase {
   void endJob();
 
  private:
-  std::string outFile_;
   Histogrammer* hist_;
   unsigned long int nEntries_; 
 };

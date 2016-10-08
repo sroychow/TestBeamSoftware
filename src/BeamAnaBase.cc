@@ -53,13 +53,73 @@ BeamAnaBase::BeamAnaBase() :
   recostubChipids_->insert({("C1"),std::vector<unsigned int>()});
   cbcstubChipids_->insert({("C0"),std::vector<unsigned int>()});
   cbcstubChipids_->insert({("C1"),std::vector<unsigned int>()});
-  //Run=926:zD0=656.948:offsetD0=2.42386:zD1=660.879:offsetD1=2.40341//OCT0BER
-  alPars_.d0_chi2_min_z = 656.948;//541.259;
-  alPars_.d1_chi2_min_z = 660.879;//639.635;
-  alPars_.d0_Offset_aligned = 2.42386;
-  alPars_.d1_Offset_aligned = 2.40341;
 }
 
+bool BeamAnaBase::readJob(const std::string jfile) {
+  std::ifstream jobcardFile(jfile.c_str());
+  if (!jobcardFile) {
+    std::cerr << "Input File: " << " could not be opened!" << std::endl;
+    return false;
+  }
+  std::string line;
+  if(jobcardFile.is_open()) {
+    while(std::getline(jobcardFile,line)) {
+      // enable '#' and '//' style comments
+      if (line.substr(0,1) == "#" || line.substr(0,2) == "//") continue;
+      std::vector<std::string> tokens;
+      Utility::tokenize(line,tokens,"=");
+      std::cout << tokens[0] << ":" << tokens[1] << std::endl;
+      std::string key   = tokens.at(0);
+      std::string value = tokens.at(1);
+      jobCardmap_[key] = value;
+      if(key=="inputFile")  iFilename_ = value;
+      else if(key=="outputFile")  outFilename_ = value;
+      else if(key=="fei4Z")  alPars_.FEI4_z = std::atof(value.c_str());
+      else if(key=="d0minZ") alPars_.d0_chi2_min_z = std::atof(value.c_str());
+      else if(key=="d1minZ") alPars_.d1_chi2_min_z = std::atof(value.c_str());
+      else if(key=="d0Offsetaligned") alPars_.d0_Offset_aligned = std::atof(value.c_str()); 
+      else if(key=="d1Offsetaligned") alPars_.d1_Offset_aligned = std::atof(value.c_str());
+      else if(key=="doTelescopeMatching") doTelMatching_ = (atoi(value.c_str()) > 0) ? true : false;
+      else if(key=="doChannelMasking") doChannelMasking_ = (atoi(value.c_str()) > 0) ? true : false;
+      else if(key=="channelMaskFile")  chmaskFilename_ = value;
+      else if(key=="residualSigmaDUT") residualSigmaDUT_ = std::atof(value.c_str());
+      else if(key=="residualSigmaFEI4X") residualSigmaFEI4x_ = std::atof(value.c_str()); 
+      else if(key=="residualSigmaFEI4Y") residualSigmaFEI4y_ = std::atof(value.c_str()); 
+      else if(key=="offsetFEI4X") offsetFEI4x_ = std::atof(value.c_str()); 
+      else if(key=="offsetFEI4Y") offsetFEI4y_ = std::atof(value.c_str()); 
+      else if(key=="nStrips") nStrips_ = atoi(value.c_str());
+      else if(key=="pitchDUT") pitchDUT_ = std::atof(value.c_str());
+    }
+  }
+  jobcardFile.close();
+  std::cout << "Initialized with the following options::"
+            << "Infile: " << iFilename_
+            << "\nOutFile: " << outFilename_
+            << "\nFEI4Z:" << alPars_.FEI4_z
+            << "\nd0_chi2_min_z:" << alPars_.d0_chi2_min_z
+            << "\nd1_chi2_min_z:" << alPars_.d1_chi2_min_z
+            << "\nd0_Offset_aligned:" << alPars_.d0_Offset_aligned
+            << "\nd1_Offset_aligned:" << alPars_.d1_Offset_aligned
+            << "\ndoTelescopeMatching:" << doTelMatching_
+            << "\ndoChannelMasking:" << doChannelMasking_
+            << "\nchannelMaskFile:" << chmaskFilename_
+            << "\nresidualSigmaDUT:" << residualSigmaDUT_
+            << "\nresidualSigmaFEI4y:" << residualSigmaFEI4y_
+            << "\nresidualSigmaFEI4y:" << residualSigmaFEI4y_
+            << "\nresidualSigmaFEI4y:" << offsetFEI4x_
+            << "\nresidualSigmaFEI4y:" << offsetFEI4y_
+            << "\nnStrips:" << nStrips_
+            << "\npitchDUT:" << pitchDUT_
+            << std::endl;
+}
+
+void BeamAnaBase::beginJob(){
+  if( setInputFile(iFilename_) == 0 ) {
+    std::cout << "Empty Chain!!";
+    exit(1);
+  }
+  hout_ = new Histogrammer(outFilename_);
+}
 bool BeamAnaBase::setInputFile(const std::string& fname) {
   fin_ = TFile::Open(fname.c_str());
   if(!fin_)    {
@@ -75,9 +135,82 @@ void BeamAnaBase::setTelMatching(const bool mtel) {
   doTelMatching_ = mtel;
 }
 
-void BeamAnaBase::setChannelMasking(const bool mch, const std::string cFile) {
-  doChannelMasking_ = mch;
-  if(doChannelMasking_)   readChannelMaskData(cFile);
+void BeamAnaBase::bookHistograms() {
+  hout_->bookEventHistograms();
+  hout_->bookDUTHistograms("det0");
+  hout_->bookDUTHistograms("det1");
+  hout_->bookStubHistograms();
+  hout_->bookCorrelationHistograms();
+}
+
+void BeamAnaBase::fillCommonHistograms() {
+      const auto& d0c1 = *det0C1();
+      const auto& d1c0 = *det1C0();
+      const auto& d1c1 = *det1C1();      
+      //Fill histo for det0
+      hout_->fillHist1D("det0","chsizeC0", dut0_chtempC0_->size());
+      //hout_->fillHist1D("det0","chsizeC1", dut0_chtempC1_->size());
+      hout_->fillHistofromVec(*dut0_chtempC0_,"det0","hitmapC0");
+      //hout_->fillHistofromVec(dut0_chtempC1_,"det0","hitmapC1");
+      hout_->fill2DHistofromVec(*dut0_chtempC0_,*dut0_chtempC1_,"det0","hitmapfull");
+      hout_->fillClusterHistograms("det0",dutRecoClmap_->at("det0C0"),"C0");
+      //hout_->fillClusterHistograms("det0",dutRecoClmap_->at("dut0_chtempC1_"),"C1");
+      hout_->fillHist2D("det0","nhitvsnclusC0", dut0_chtempC0_->size(), dutRecoClmap_->at("det0C0").size());
+      for(const auto& h: *dut0_chtempC0_) {
+        int minposdiff = 255;
+        for(const auto& cl:dutRecoClmap_->at("det0C0")) {
+          if(std::abs(cl.x-h) < minposdiff)   minposdiff = std::abs(cl.x-h);
+        }
+        hout_->fillHist2D("det0","nhitvsHitClusPosDiffC0", dut0_chtempC0_->size(), minposdiff);
+      }
+
+
+      //Fill histo for det1
+      hout_->fillHist1D("det1","chsizeC0", dut1_chtempC0_->size());
+      //hout_->fillHist1D("det1","chsizeC1", dut1_chtempC1_->size());
+      hout_->fillHistofromVec(*dut1_chtempC0_,"det1","hitmapC0");
+      //hout_->fillHistofromVec(*dut1_chtempC1_,"det1","hitmapC1");
+      hout_->fill2DHistofromVec(*dut1_chtempC0_,*dut1_chtempC1_,"det1","hitmapfull");
+      hout_->fillClusterHistograms("det1",dutRecoClmap_->at("det1C0"),"C0");
+      //hout_->fillClusterHistograms("det1",dutRecoClmap_->at("det1C1"),"C1");
+      hout_->fillHist2D("det1","nhitvsnclusC0", dut1_chtempC0_->size(), dutRecoClmap_->at("det1C0").size());
+      for(const auto& h: *dut1_chtempC0_) {
+        int minposdiff = 255;
+        for(const auto& cl:dutRecoClmap_->at("det1C0")) {
+          if(std::abs(cl.x-h) < minposdiff)   minposdiff = std::abs(cl.x-h);
+        }
+        hout_->fillHist2D("det1","nhitvsHitClusPosDiffC0", dut1_chtempC0_->size(), minposdiff);
+      }
+      
+      if(dut0_chtempC0_->size() && !dut1_chtempC0_->size()) hout_->fillHist1D("Correlation","cor_hitC0", 1);
+      if(!dut0_chtempC0_->size() && dut1_chtempC0_->size()) hout_->fillHist1D("Correlation","cor_hitC0", 2);
+      if(dut0_chtempC0_->size() && dut1_chtempC0_->size()) hout_->fillHist1D("Correlation","cor_hitC0", 3);
+      if(!dut0_chtempC0_->size() && !dut1_chtempC0_->size()) hout_->fillHist1D("Correlation","cor_hitC0", 4);
+      hout_->fillHist1D("Correlation","nclusterdiffC0", std::abs(dutRecoClmap_->at("det1C0").size() - 
+                                                        dutRecoClmap_->at("det1C0").size())); 
+
+      int totStubReco = dutEv_->stubs.size();
+      int nstubrecoSword = nStubsrecoSword_;
+      int nstubscbcSword = nStubscbcSword_;
+      hout_->fillHist1D("StubInfo","nstubRecoC0", dutRecoStubmap_->at("C0").size());      
+      hout_->fillHist1D("StubInfo","nstubsFromReco",totStubReco);
+      hout_->fillHist1D("StubInfo","nstubsFromCBCSword",nstubrecoSword);
+      hout_->fillHist1D("StubInfo","nstubsFromRecoSword",nstubscbcSword);
+      for(auto& c : *recostubChipids_)  
+        hout_->fillHistofromVec(c.second,"StubInfo","recoStubWord");
+      for(auto& c : *cbcstubChipids_)  
+        hout_->fillHistofromVec(c.second,"StubInfo","cbcStubWord");
+
+      if (!nstubrecoSword && !nstubscbcSword) hout_->fillHist1D("StubInfo","stubMatch", 1);
+      if (!nstubrecoSword && nstubscbcSword)  hout_->fillHist1D("StubInfo","stubMatch", 2);
+      if (nstubrecoSword && !nstubscbcSword)  hout_->fillHist1D("StubInfo","stubMatch", 3);
+      if (nstubrecoSword && nstubscbcSword)   hout_->fillHist1D("StubInfo","stubMatch", 4);
+      hout_->fillHist1D("StubInfo","nstubsdiffSword",nstubrecoSword - nstubscbcSword);      
+      hout_->fillHist1D("StubInfo","nstubsdiff",totStubReco - nstubscbcSword);  
+}
+
+void BeamAnaBase::setChannelMasking(const std::string cFile) {
+  readChannelMaskData(cFile);
 }
 bool BeamAnaBase::branchFound(const string& b)
 {
@@ -181,12 +314,34 @@ bool BeamAnaBase::isTrkfiducial(const double xtrkPos, int& xtkdutStrip, const st
 }
 
 void BeamAnaBase::getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vector<double>& xTkdut1) {
+
   for(unsigned int itrk = 0; itrk<telEv_->nTrackParams;itrk++) {
-    //double XTkatDUT0_itrk = telEv_->xPos->at(itrk) + (alPars_.d0_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d0_Offset_aligned;
-    //double XTkatDUT1_itrk = telEv_->xPos->at(itrk) + (alPars_.d1_chi2_min_z-z_FEI4)*telEv_->dxdz->at(itrk) + alPars_.d1_Offset_aligned;
-    double XTkatDUT0_itrk = telEv_->yPos->at(itrk) + (alPars_.d0_chi2_min_z-z_FEI4)*telEv_->dydz->at(itrk);// + alPars_.d0_Offset_aligned;
+    //do track fei4 matching
+    double tkX = -1.*telEv()->xPos->at(itrk);
+    double tkY = telEv()->yPos->at(itrk);
+    bool match = false;
+    double minresx = 999.;
+    double minresy = 999.;
+    for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
+      //default pitch and dimensions of fei4 plane
+      double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
+      double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
+      double xres = xval - tkX + offsetFEI4x_;
+      double yres = yval - tkY + offsetFEI4y_;
+      if(std::fabs(xres) < std::fabs(minresx))   minresx = xres;
+      if(std::fabs(yres) < std::fabs(minresy))   minresy = yres;
+    }
+    if(std::fabs(minresx) < 4*residualSigmaFEI4x_ && std::fabs(minresy) < 4*residualSigmaFEI4y_) {
+      hout_->fillHist1D("TrackMatch","deltaXPos_trkfei4", minresx);
+      hout_->fillHist1D("TrackMatch","deltaYPos_trkfei4", minresy);
+      match = true;
+    }
+
+    double XTkatDUT0_itrk = telEv_->yPos->at(itrk) + 
+                            (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*telEv_->dydz->at(itrk);
     XTkatDUT0_itrk = -1.*XTkatDUT0_itrk + alPars_.d0_Offset_aligned;
-    double XTkatDUT1_itrk = telEv_->yPos->at(itrk) + (alPars_.d1_chi2_min_z-z_FEI4)*telEv_->dydz->at(itrk);// + alPars_.d1_Offset_aligned;
+    double XTkatDUT1_itrk = telEv_->yPos->at(itrk) + 
+                            (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*telEv_->dydz->at(itrk);
     XTkatDUT1_itrk = -1.*XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
     //check for duplicate tracks LOOSE MATCHING--We start with this.Then move to TIGHT CUT
     bool duplD0 = false, duplD1 = false;

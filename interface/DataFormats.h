@@ -13,6 +13,7 @@ using std::string;
 
 namespace tbeam {
   struct alignmentPars {
+    double FEI4_z;
     double d0_chi2_min_z;
     double d1_chi2_min_z;
     double d0_Offset_aligned;

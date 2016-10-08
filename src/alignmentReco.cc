@@ -5,59 +5,24 @@
 #include "TStopwatch.h"
 #include "AlignmentAnalysis.h"
 //#include "ReconstructionFromRaw.h"
-#include "argvparser.h"
 using std::cout;
 using std::cerr;
 using std::endl;
 
-using namespace CommandLineProcessing;
 
 int main( int argc,char* argv[] ){
+  if(argc<2)  {
+    std::cout << "Jobcard missing.\n./alignmentReco <jobcardname>" << std::endl;
+    return 1;
+  }
+  std::string jobfile = argv[1];
    
-  ArgvParser cmd;
-  cmd.setIntroductoryDescription( "Offline Analysis Application for beam test data" );
-  cmd.setHelpOption( "h", "help", "Print this help page" );
-  cmd.addErrorCode( 0, "Success" );
-  cmd.addErrorCode( 1, "Error" );
-  cmd.defineOption( "iFile", "Input Tree name", ArgvParser::OptionRequiresValue);
-  cmd.defineOption( "oFile", "Output file name", ArgvParser::OptionRequiresValue); 
-  cmd.defineOption( "chMaskF", "Channel Mask file;Ch masking off by default", ArgvParser::OptionRequiresValue);
-  cmd.defineOption( "prod", "Append constants to central alignment file. Default=false", ArgvParser::NoOptionAttribute);  
-    
-  
-  int result = cmd.parse( argc, argv );
-  if (result != ArgvParser::NoParserError)
-  {
-    cout << cmd.parseErrorDescription(result);
-    exit(1);
-  }
-
-  std::string inFilename = ( cmd.foundOption( "iFile" ) ) ? cmd.optionValue( "iFile" ) : "";
-  
-  if ( inFilename.empty() ) {
-    std::cerr << "Error, no input file provided. Quitting" << std::endl;
-    exit( 1 );
-  }
-
-  std::string outFilename = ( cmd.foundOption( "oFile" ) ) ? cmd.optionValue( "oFile" ) : "";
-  if ( outFilename.empty() ) {
-    std::cerr << "Error, no output filename provided. Quitting" << std::endl;
-    exit( 1 );
-  }
-
-  bool telmatch = true;  
-  bool dochMask = ( cmd.foundOption( "chMaskF" ) ) ? true : false;
-  std::string cMaskFilename = ( cmd.foundOption( "chMaskF" ) ) ? cmd.optionValue( "chMaskF" ) : "";
-  
-  bool isProduction = ( cmd.foundOption( "prod" ) ) ? true : false;;
-  
   //Let's roll
   TStopwatch timer;
   timer.Start();
-  AlignmentAnalysis r(inFilename,outFilename);
-  r.setTelMatching(telmatch);
-  r.setChannelMasking(dochMask, cMaskFilename);
-  r.setRunMode(isProduction);
+  AlignmentAnalysis r;
+  r.readJob(jobfile);
+  r.beginJob();
   std::cout << "Event Loop start" << std::endl;
   r.eventLoop();
   r.endJob();

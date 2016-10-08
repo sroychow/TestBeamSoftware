@@ -11,6 +11,7 @@
 #include "TDirectory.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TF1.h"
 #include "TProfile.h"
 #include "stdint.h"
 #include "DataFormats.h"
@@ -80,6 +81,19 @@ namespace Utility {
   template <class T1, class T2>
   bool fillHistProfile(const std::string& hname, T1 xvalue, T2 yvalue) {
     return fillHistProfile(hname.c_str(), xvalue, yvalue);
+  }
+  //
+  static double funcStepGaus(Double_t * x, Double_t * par){
+    double xx = x[0];
+    double pitch = par[0];
+    double sigma = par[1];
+    double norm = par[2];
+    double cte = par[3];
+    double f =0;
+    if (xx<0) f = norm*(1+TMath::Erf((xx+pitch/2.)/(sqrt(2)*sigma)));
+    if (xx>0) f = norm*(1-TMath::Erf((xx-pitch/2.)/(sqrt(2)*sigma)));
+    f += cte;
+    return f;
   }
 }
 #endif
