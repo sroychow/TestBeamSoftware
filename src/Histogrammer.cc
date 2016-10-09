@@ -64,6 +64,7 @@ void Histogrammer::bookDUTHistoForColumn(TString& d, TString c) {
   new TH2D("clusterWidthVsPos2D" + c ,"dut0 clusterWidthVsPos " + c + ";Strip Number;Cluster Width",1016,-0.5,1015.5, 20,-0.5,19.5);
    new TH2D("nhitvsnclus" + c,"#Clusters vs #Hits;#Hits;#Clusters",50,-0.5,49.5, 50,-0.5,49.5);
    new TH2D("nhitvsHitClusPosDiff" + c,"Cluster-Hit MinPosDiff vs #Hits;#Hits;#Pos Diff",50,-0.5,49.5, 256,-0.5,255.5);
+   new TH2D("propertyVsTDC2D" + c, "Hit Property vs TDC " + d + c + ";TDC;",17,-0.5,16.5, 10, 0.5, 10.5);
 }
 
 void Histogrammer::bookStubHistograms() {

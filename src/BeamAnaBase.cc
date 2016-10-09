@@ -189,6 +189,34 @@ void BeamAnaBase::fillCommonHistograms() {
       hout_->fillHist1D("Correlation","nclusterdiffC0", std::abs(dutRecoClmap_->at("det1C0").size() - 
                                                         dutRecoClmap_->at("det1C0").size())); 
 
+      unsigned int tdc_phase = static_cast<unsigned int>(condEv()->tdcPhase);
+      hout_->fillHist2D("det0", "propertyVsTDC2DC0",tdc_phase, 1.0);
+      hout_->fillHist2D("det0", "propertyVsTDC2DC0",0.0, 1.0);
+      hout_->fillHist2D("det1", "propertyVsTDC2DC0",tdc_phase, 1.0);
+      hout_->fillHist2D("det1", "propertyVsTDC2DC0",0.0, 1.0);
+      if (dut0_chtempC0_->size()) {
+        hout_->fillHist2D("det0", "propertyVsTDC2DC0",tdc_phase, 3.0);
+        hout_->fillHist2D("det0", "propertyVsTDC2DC0",0.0, 3.0);
+      }
+      if (dut1_chtempC0_->size()) {
+        hout_->fillHist2D("det1", "propertyVsTDC2DC0",tdc_phase, 3.0);
+        hout_->fillHist2D("det1", "propertyVsTDC2DC0",0.0, 3.0);
+      }
+      if (dutRecoClmap_->at("det0C0").size()) {
+        hout_->fillHist2D("det0", "propertyVsTDC2DC0",tdc_phase, 5.0);
+        hout_->fillHist2D("det0", "propertyVsTDC2DC0",0.0, 5.0);
+      }
+      if (dutRecoClmap_->at("det1C0").size()) {
+        hout_->fillHist2D("det1", "propertyVsTDC2DC0",tdc_phase, 5.0);
+        hout_->fillHist2D("det1", "propertyVsTDC2DC0",0.0, 5.0);
+      }
+      if (dutRecoStubmap_->at("C0").size()) {
+        hout_->fillHist2D("det0", "propertyVsTDC2DC0",tdc_phase, 7.0);
+        hout_->fillHist2D("det0", "propertyVsTDC2DC0",0.0, 7.0);
+        hout_->fillHist2D("det1", "propertyVsTDC2DC0",tdc_phase, 7.0);
+        hout_->fillHist2D("det1", "propertyVsTDC2DC0",0.0, 7.0);
+      }
+
       int totStubReco = dutEv_->stubs.size();
       int nstubrecoSword = nStubsrecoSword_;
       int nstubscbcSword = nStubscbcSword_;
