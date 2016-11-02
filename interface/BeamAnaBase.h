@@ -55,7 +55,10 @@ class BeamAnaBase {
     int nStubscbcSword() const { return nStubscbcSword_;}
     bool hasTelescope() const { return hasTelescope_;}
     double resDUT() const {return residualSigmaDUT_;}
+    double resfei4x() const {return residualSigmaFEI4x_;}
     double resfei4y() const {return residualSigmaFEI4y_;}
+    double offsetfei4x() const {return offsetFEI4x_;}
+    double offsetfei4y() const {return offsetFEI4y_;}
     double nstrips() const {return nStrips_;}
     double dutpitch() const {return pitchDUT_;}
     virtual void beginJob();

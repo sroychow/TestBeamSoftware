@@ -18,6 +18,19 @@ class TelescopeAnalysis : public BeamAnaBase {
   void bookHistograms();
   void clearEvent();
   void endJob();
+  static double FuncStepGausShift(Double_t * x, Double_t * par){
+    double xx = x[0];
+    double pitch = par[0];
+    double sigma = par[1];
+    double norm = par[2];
+    double cte = par[3];
+    double shift = par[4];
+    double f =0;
+    if (xx<shift) f = norm*(1+TMath::Erf((xx+pitch/2.-shift)/(sqrt(2)*sigma)));
+    if (xx>shift) f = norm*(1-TMath::Erf((xx-pitch/2.-shift)/(sqrt(2)*sigma)));
+    f += cte;
+    return f;
+  }
 
  private:
   Histogrammer* hist_;

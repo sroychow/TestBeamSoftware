@@ -104,10 +104,10 @@ bool BeamAnaBase::readJob(const std::string jfile) {
             << "\ndoChannelMasking:" << doChannelMasking_
             << "\nchannelMaskFile:" << chmaskFilename_
             << "\nresidualSigmaDUT:" << residualSigmaDUT_
+            << "\nresidualSigmaFEI4x:" << residualSigmaFEI4x_
             << "\nresidualSigmaFEI4y:" << residualSigmaFEI4y_
-            << "\nresidualSigmaFEI4y:" << residualSigmaFEI4y_
-            << "\nresidualSigmaFEI4y:" << offsetFEI4x_
-            << "\nresidualSigmaFEI4y:" << offsetFEI4y_
+            << "\noffsetFEI4x:" << offsetFEI4x_
+            << "\noffsetFEI4y:" << offsetFEI4y_
             << "\nnStrips:" << nStrips_
             << "\npitchDUT:" << pitchDUT_
             << std::endl;
