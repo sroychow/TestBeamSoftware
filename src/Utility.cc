@@ -184,4 +184,107 @@ namespace Utility {
     return getHistProfile(hname.c_str());
   }
 
+  // ---------------------------------------------
+  // Convenience routine for track cleaning
+  // ---------------------------------------------
+
+
+  void removeTrackDuplicates(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<double> *xTkNoOverlap, std::vector<double> *yTkNoOverlap){
+
+    for(unsigned int i = 0; i<xTk->size(); i++) {
+      double tkX = xTk->at(i);
+      double tkY = yTk->at(i);
+      bool isduplicate = false;
+      for (unsigned int j = i+1; j<xTk->size(); j++) {
+        double tkX_j = xTk->at(j);
+        double tkY_j = yTk->at(j);
+        if (fabs(tkY-tkY_j)<0.015*4 && fabs(tkX-tkX_j)<0.072*4) isduplicate = true;
+      }
+      if (!isduplicate){
+        (*xTkNoOverlap).push_back(tkX);
+        (*yTkNoOverlap).push_back(tkY);
+      }
+    }
+
+    return;
+  }
+
+  void removeTrackDuplicates(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<double> *slopeTk, std::vector<double> *xTkNoOverlap, std::vector<double> *yTkNoOverlap, std::vector<double> *slopeTkNoOverlap){
+
+    for(unsigned int i = 0; i<xTk->size(); i++) {
+      double tkX = xTk->at(i);
+      double tkY = yTk->at(i);
+      double tkSlope = slopeTk->at(i);
+      bool isduplicate = false;
+      for (unsigned int j = i+1; j<xTk->size(); j++) {
+        double tkX_j = xTk->at(j);
+        double tkY_j = yTk->at(j);
+        if (fabs(tkY-tkY_j)<0.015*4 && fabs(tkX-tkX_j)<0.072*4) isduplicate = true;
+      }
+      if (!isduplicate){
+        (*xTkNoOverlap).push_back(tkX);
+        (*yTkNoOverlap).push_back(tkY);
+	(*slopeTkNoOverlap).push_back(tkSlope);
+      }
+    }
+
+    return;
+  }
+
+  void cutTrackFei4Residuals(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<int> *colFei4, std::vector<int> *rowFei4, std::vector<double> *xSelectedTk, std::vector<double> *ySelectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch){
+
+    for(unsigned int itk = 0; itk < xTk->size(); itk++) {
+      double tkX = -1.*xTk->at(itk);//-1.*telEv()->xPos->at(itk);
+      double tkY = yTk->at(itk);//telEv()->yPos->at(itk);
+      double minresx = 999.;
+      double minresy = 999.;
+      for (unsigned int i = 0; i < colFei4->size(); i++) {
+        double xval = -9.875 + (colFei4->at(i)-1)*0.250;
+        double yval = -8.375 + (rowFei4->at(i)-1)*0.05;
+        double xres = xval - tkX - xResMean;//fStepGaus_x->GetParameter(4);//fGausResiduals_x->GetParameter("Mean");
+        double yres = yval - tkY - yResMean;//fStepGaus_y->GetParameter(4);//fGausResiduals_y->GetParameter("Mean");
+        if(std::fabs(xres) < std::fabs(minresx))   minresx = xres;
+        if(std::fabs(yres) < std::fabs(minresy))   minresy = yres;
+      }
+      //cout << "FEI4 minresx="<<minresx <<" minresy="<<minresy<< endl;
+      if(std::fabs(minresx) < 1*xResPitch/2. &&
+        std::fabs(minresy) < 1*yResPitch/2.) {
+        //cout << "Selected track !"<<endl;
+	(*xSelectedTk).push_back(xTk->at(itk));
+        (*ySelectedTk).push_back(yTk->at(itk));
+      }
+    }
+
+    return;
+  }
+
+  void cutTrackFei4Residuals(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<double> *slopeTk, std::vector<int> *colFei4, std::vector<int> *rowFei4, std::vector<double> *xSelectedTk, std::vector<double> *ySelectedTk, std::vector<double> *slopeSelectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch){
+
+    for(unsigned int itk = 0; itk < xTk->size(); itk++) {
+      double tkX = -1.*xTk->at(itk);//-1.*telEv()->xPos->at(itk);
+      double tkY = yTk->at(itk);//telEv()->yPos->at(itk);
+      double minresx = 999.;
+      double minresy = 999.;
+      for (unsigned int i = 0; i < colFei4->size(); i++) {
+        double xval = -9.875 + (colFei4->at(i)-1)*0.250;
+        double yval = -8.375 + (rowFei4->at(i)-1)*0.05;
+        double xres = xval - tkX - xResMean;//fStepGaus_x->GetParameter(4);//fGausResiduals_x->GetParameter("Mean");
+        double yres = yval - tkY - yResMean;//fStepGaus_y->GetParameter(4);//fGausResiduals_y->GetParameter("Mean");
+        if(std::fabs(xres) < std::fabs(minresx))   minresx = xres;
+        if(std::fabs(yres) < std::fabs(minresy))   minresy = yres;
+      }
+      //cout << "FEI4 minresx="<<minresx <<" minresy="<<minresy<< endl;
+      if(std::fabs(minresx) < 1*xResPitch/2. &&
+        std::fabs(minresy) < 1*yResPitch/2.) {
+        //cout << "Selected track !"<<endl;
+        (*xSelectedTk).push_back(xTk->at(itk));
+        (*ySelectedTk).push_back(yTk->at(itk));
+        (*slopeSelectedTk).push_back(slopeTk->at(itk));
+      }
+    }
+
+    return;
+  }
+
+
 }

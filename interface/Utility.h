@@ -82,7 +82,11 @@ namespace Utility {
   bool fillHistProfile(const std::string& hname, T1 xvalue, T2 yvalue) {
     return fillHistProfile(hname.c_str(), xvalue, yvalue);
   }
-  //
+  
+  //  ------------------------------------------ //
+  //  Convenience routines for fitting residuals //
+  //  ------------------------------------------ //
+
   static double funcStepGaus(Double_t * x, Double_t * par){
     double xx = x[0];
     double pitch = par[0];
@@ -95,5 +99,26 @@ namespace Utility {
     f += cte;
     return f;
   }
+
+  static double FuncStepGausShift(Double_t * x, Double_t * par){
+    double xx = x[0];
+    double pitch = par[0];
+    double sigma = par[1];
+    double norm = par[2];
+    double cte = par[3];
+    double shift = par[4];
+    double f =0;
+    if (xx<shift) f = norm*(1+TMath::Erf((xx+pitch/2.-shift)/(sqrt(2)*sigma)));
+    if (xx>shift) f = norm*(1-TMath::Erf((xx-pitch/2.-shift)/(sqrt(2)*sigma)));
+    f += cte;
+    return f;
+  }
+
+
+  void removeTrackDuplicates(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<double> *xTkNoOverlap, std::vector<double> *yTkNoOverlap);
+  void removeTrackDuplicates(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<double> *slopeTk, std::vector<double> *xTkNoOverlap, std::vector<double> *yTkNoOverlap, std::vector<double> *slopeTkNoOverlap);
+
+  void cutTrackFei4Residuals(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<int> *colFei4, std::vector<int> *rowFei4, std::vector<double> *xSelectedTk, std::vector<double> *ySelectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch);
+  void cutTrackFei4Residuals(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<double> *slopeTk, std::vector<int> *colFei4, std::vector<int> *rowFei4, std::vector<double> *xSelectedTk, std::vector<double> *ySelectedTk, std::vector<double> *slopeSelectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch);
 }
 #endif

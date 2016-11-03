@@ -42,6 +42,7 @@ void TelescopeAnalysis::eventLoop()
 {
   Long64_t nbytes = 0, nb = 0;
   cout << "#Events=" << nEntries_ << endl;
+
   for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
     clearEvent();
     Long64_t ientry = analysisTree()->GetEntry(jentry);
@@ -54,6 +55,9 @@ void TelescopeAnalysis::eventLoop()
     
     if(fei4Ev()->nPixHits > 2)    continue;
     if(telEv()->xPos->empty())    continue;
+
+    std::vector<double> xTkNoOverlap, yTkNoOverlap;
+
     //std::cout << telEv()->xPos->size() << std::endl;
     for(unsigned int i = 0; i<telEv()->xPos->size(); i++) {
       //std::cout << i<< std::endl;
@@ -62,6 +66,10 @@ void TelescopeAnalysis::eventLoop()
       hist_->fillHist1D("TelescopeAnalysis","TkXPos", tkX);
       hist_->fillHist1D("TelescopeAnalysis","TkYPos", tkY);
     }
+
+    //Remove track duplicates
+    Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, &xTkNoOverlap, &yTkNoOverlap);
+
     //get residuals
     for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
       hist_->fillHist1D("TelescopeAnalysis","HtColumn", fei4Ev()->col->at(i));
@@ -75,9 +83,9 @@ void TelescopeAnalysis::eventLoop()
       double xmin = 999.9;
       double ymin = 999.9;
       
-      for(unsigned int itk = 0; itk < telEv()->xPos->size(); itk++) {
-        double tkX = -1.*telEv()->xPos->at(itk);
-        double tkY = telEv()->yPos->at(itk);
+      for(unsigned int itk = 0; itk < xTkNoOverlap.size(); itk++) {
+        double tkX = -1.*xTkNoOverlap.at(itk); //-1.*telEv()->xPos->at(itk);
+        double tkY = yTkNoOverlap.at(itk); //telEv()->yPos->at(itk);
         hist_->fillHist2D("TelescopeAnalysis","tkXPosVsHtXPos", xval, tkX);
         hist_->fillHist2D("TelescopeAnalysis","tkYPosVsHtYPos", yval, tkY);
         if (std::fabs(xval - tkX) < xmin) xmin = xval - tkX;
@@ -98,24 +106,28 @@ void TelescopeAnalysis::eventLoop()
   //fGausResiduals_y->SetParameter(2, 0.015);
   htmp->Fit("fGausResidualsy");
   
-  /*
+  
   //Fit with Gaussian convoluted with StepFunc  To be Done
+  float height = fGausResiduals_y->GetParameter(0);
   center = fGausResiduals_y->GetParameter(1);
   float rms = 5*fGausResiduals_y->GetParameter(2);
   htmp->SetAxisRange(center-rms, center+rms, "X");
   
-  TF1* fStepGaus_y = new TF1("FuncStepGausy", Utility::funcStepGaus, -1., 1., 4);
+  TF1* fStepGaus_y = new TF1("FuncStepGausy", Utility::FuncStepGausShift, -1., 1., 5);
   fStepGaus_y->SetLineWidth(2);
   fStepGaus_y->SetLineColor(kRed);
-  fStepGaus_y->SetParLimits(0, 0., 0.1);
+  fStepGaus_y->SetParLimits(0, 0., 0.4);
   fStepGaus_y->SetParameter(0, 0.05);
   fStepGaus_y->SetParLimits(1, 0.0, 1.);
-  fStepGaus_y->SetParameter(1, 0.03);
+  fStepGaus_y->SetParameter(1, 0.003);
+  fStepGaus_y->SetParLimits(2, 0., height);
   fStepGaus_y->SetParameter(2, htmp->GetMaximum());
-  fStepGaus_y->SetParLimits(3, 0, 10);
+  fStepGaus_y->SetParLimits(3, 0, 50);
   fStepGaus_y->SetParameter(3, 0);
+  fStepGaus_y->SetParLimits(4, -1, 1);
+  fStepGaus_y->SetParameter(4, center);
   htmp->Fit(fStepGaus_y);
-  */
+  
   
   //Fit residual in X direction//Parallel to strips in DUT
   TF1* fGausResiduals_x = new TF1("fGausResidualsx", "gaus", -10, 10);
@@ -127,24 +139,28 @@ void TelescopeAnalysis::eventLoop()
   //fGausResiduals_x->SetParameter(2, 0.015);
   htmp->Fit("fGausResidualsx");
   
-  /*
+  
   //Fit with Gaussian convoluted with StepFunc  To be Done
+  height = fGausResiduals_x->GetParameter(0);
   center = fGausResiduals_x->GetParameter(1);
-  float rms = 5*fGausResiduals_x->GetParameter(2);
+  rms = 5*fGausResiduals_x->GetParameter(2);
   htmp->SetAxisRange(center-rms, center+rms, "X");
   
-  TF1* fStepGaus_x = new TF1("FuncStepGausx", Utility::funcStepGaus, -1., 1., 4);
+  TF1* fStepGaus_x = new TF1("FuncStepGausx", Utility::FuncStepGausShift, -1., 1., 5);
   fStepGaus_x->SetLineWidth(2);
   fStepGaus_x->SetLineColor(kRed);
-  fStepGaus_x->SetParLimits(0, 0., 0.1);
-  fStepGaus_x->SetParameter(0, 0.05);
+  fStepGaus_x->SetParLimits(0, 0., 0.4);
+  fStepGaus_x->SetParameter(0, 0.250);
   fStepGaus_x->SetParLimits(1, 0.0, 1.);
-  fStepGaus_x->SetParameter(1, 0.03);
+  fStepGaus_x->SetParameter(1, 0.003);
+  fStepGaus_y->SetParLimits(2, 0., height);
   fStepGaus_x->SetParameter(2, htmp->GetMaximum());
-  fStepGaus_x->SetParLimits(3, 0, 10);
+  fStepGaus_x->SetParLimits(3, 0, 50);
   fStepGaus_x->SetParameter(3, 0);
+  fStepGaus_x->SetParLimits(4, -1, 1);
+  fStepGaus_x->SetParameter(4, center);
   htmp->Fit(fStepGaus_x);
-  */
+  
 
   std::cout << "Summary of the Gaussian Fits to the residuals:\n"
             << "Residual X>>>Mean=" << fGausResiduals_x->GetParameter("Mean") 
@@ -152,6 +168,15 @@ void TelescopeAnalysis::eventLoop()
             << "\nResidual Y>>>Mean=" << fGausResiduals_y->GetParameter("Mean") 
             << ">>>Sigma=" << fGausResiduals_y->GetParameter("Sigma") 
             << std::endl;
+
+  std::cout << "Summary of the Step convolved with Gauss Fits to the residuals:\n"
+            << "Residual X>>>Mean=" << fStepGaus_x->GetParameter(4)
+            << ">>>Pitch=" <<  fStepGaus_x->GetParameter(0)
+            << "\nResidual Y>>>Mean=" << fStepGaus_y->GetParameter(4)
+            << ">>>Pitch=" << fStepGaus_y->GetParameter(0)
+            << std::endl;
+
+
 
   for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
     clearEvent();
@@ -161,30 +186,40 @@ void TelescopeAnalysis::eventLoop()
       cout << " Events processed. " << std::setw(8) << jentry 
 	   << endl;
     if(fei4Ev()->nPixHits > 2)    continue;
-    if(telEv()->nTrackParams != 1)  continue;
+    //Remove track duplicates
+    std::vector<double> xTkNoOverlap, yTkNoOverlap;
+    Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, &xTkNoOverlap, &yTkNoOverlap);
+    if(xTkNoOverlap.size() != 1)  continue;
     //get residuals
-    for(unsigned int itk = 0; itk < telEv()->xPos->size(); itk++) {
-      double tkX = -1.*telEv()->xPos->at(itk);
-      double tkY = telEv()->yPos->at(itk);
+    for(unsigned int itk = 0; itk < xTkNoOverlap.size(); itk++) {
+      double tkX = -1.*xTkNoOverlap.at(itk);//-1.*telEv()->xPos->at(itk);
+      double tkY = yTkNoOverlap.at(itk);//telEv()->yPos->at(itk);
       double minresx = 999.;
       double minresy = 999.;
       for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
         //default pitch and dimensions of fei4 plane
         double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
         double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
-        double xres = xval - tkX - fGausResiduals_x->GetParameter("Mean");
-        double yres = yval - tkY - fGausResiduals_y->GetParameter("Mean");
+        double xres = xval - tkX - fStepGaus_x->GetParameter(4);//fGausResiduals_x->GetParameter("Mean");
+        double yres = yval - tkY - fStepGaus_y->GetParameter(4);//fGausResiduals_y->GetParameter("Mean");
         if(std::fabs(xres) < std::fabs(minresx))   minresx = xres;
         if(std::fabs(yres) < std::fabs(minresy))   minresy = yres;
       }
       hist_->fillHist1D("TelescopeAnalysis","deltaXPos_trkfei4", minresx) ;
       hist_->fillHist1D("TelescopeAnalysis","deltaYPos_trkfei4", minresy);
-      if(std::fabs(minresx) < 4*fGausResiduals_x->GetParameter("Sigma") && 
-        std::fabs(minresy) < 4*fGausResiduals_y->GetParameter("Sigma")) {
+      //if(std::fabs(minresx) < 4*fGausResiduals_x->GetParameter("Sigma") && 
+      //  std::fabs(minresy) < 4*fGausResiduals_y->GetParameter("Sigma")) {
+      if(std::fabs(minresx) < 1*fStepGaus_x->GetParameter(0)/2. && 
+        std::fabs(minresy) < 1*fStepGaus_y->GetParameter(0)/2.) {
         hist_->fillHist1D("TelescopeAnalysis","deltaXPos_trkfei4M", minresx);
         hist_->fillHist1D("TelescopeAnalysis","deltaYPos_trkfei4M", minresy);
       }
+
     }
+
+    //std::vector<double> xSelectedTk, ySelectedTk;
+    //Utility::cutTrackFei4Residuals(&xTkNoOverlap, &yTkNoOverlap, fei4Ev()->col, fei4Ev()->row, &xSelectedTk, &ySelectedTk, fStepGaus_x->GetParameter(4), fStepGaus_y->GetParameter(4), fStepGaus_x->GetParameter(0), fStepGaus_y->GetParameter(0));
+
   }//event loop
 
 }

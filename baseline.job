@@ -14,13 +14,13 @@ channelMaskFile=chmask.txt
 residualSigmaDUT=0.026
 #Residual X>>>Mean=-0.498534>>>Sigma=0.0557367
 #Residual Y>>>Mean=-0.051529>>>Sigma=0.0150043
-residualSigmaFEI4X=0.0557367
-residualSigmaFEI4Y=0.0150043
-offsetFEI4X=0.498534
-offsetFEI4Y=0.051529
+residualSigmaFEI4X=0.252952
+residualSigmaFEI4Y=0.0544441
+offsetFEI4X=-0.498569
+offsetFEI4Y=-0.0514728
 nStrips=254
 pitchDUT=0.09
 #only needed by Alignment Analysis
-isProductionmode=0
+isProductionmode=1
 alignmentOutputFile=alignmentparOutput_926.txt
 #END
