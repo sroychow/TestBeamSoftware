@@ -117,8 +117,12 @@ namespace Utility {
 
   void removeTrackDuplicates(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<double> *xTkNoOverlap, std::vector<double> *yTkNoOverlap);
   void removeTrackDuplicates(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<double> *slopeTk, std::vector<double> *xTkNoOverlap, std::vector<double> *yTkNoOverlap, std::vector<double> *slopeTkNoOverlap);
-
+  void removeTrackDuplicates(const tbeam::TelescopeEvent *telEv, std::vector<tbeam::Track>& tkNoOverlap);
+  
   void cutTrackFei4Residuals(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<int> *colFei4, std::vector<int> *rowFei4, std::vector<double> *xSelectedTk, std::vector<double> *ySelectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch);
   void cutTrackFei4Residuals(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<double> *slopeTk, std::vector<int> *colFei4, std::vector<int> *rowFei4, std::vector<double> *xSelectedTk, std::vector<double> *ySelectedTk, std::vector<double> *slopeSelectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch);
+  
+  void cutTrackFei4Residuals(const tbeam::FeIFourEvent* fei4ev ,const std::vector<tbeam::Track>& tkNoOverlap, std::vector<tbeam::Track>& selectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch);
+
 }
 #endif

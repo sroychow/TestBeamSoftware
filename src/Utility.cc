@@ -205,8 +205,6 @@ namespace Utility {
         (*yTkNoOverlap).push_back(tkY);
       }
     }
-
-    return;
   }
 
   void removeTrackDuplicates(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<double> *slopeTk, std::vector<double> *xTkNoOverlap, std::vector<double> *yTkNoOverlap, std::vector<double> *slopeTkNoOverlap){
@@ -227,8 +225,24 @@ namespace Utility {
 	(*slopeTkNoOverlap).push_back(tkSlope);
       }
     }
+  }
 
-    return;
+  void removeTrackDuplicates(const tbeam::TelescopeEvent *telEv, std::vector<tbeam::Track>& tkNoOverlap) {
+    //Loop over original track collection and compare all track pairs to check for duplicates
+    for(unsigned int i = 0; i<telEv->xPos->size(); i++) {
+      double tkX = telEv->xPos->at(i);
+      double tkY = telEv->yPos->at(i);
+      bool isduplicate = false;
+      for (unsigned int j = i+1; j<telEv->xPos->size(); j++) {
+        double tkX_j = telEv->xPos->at(j);
+        double tkY_j = telEv->yPos->at(j);
+        if (fabs(tkY-tkY_j)<0.015*4 && fabs(tkX-tkX_j)<0.072*4) isduplicate = true;
+      }
+      if (!isduplicate) {
+        tbeam::Track t(i,tkX,tkY,telEv->dxdz->at(i),telEv->dydz->at(i),telEv->chi2->at(i),telEv->ndof->at(i));  
+        tkNoOverlap.push_back(t);
+      }      
+    }
   }
 
   void cutTrackFei4Residuals(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<int> *colFei4, std::vector<int> *rowFei4, std::vector<double> *xSelectedTk, std::vector<double> *ySelectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch){
@@ -275,15 +289,37 @@ namespace Utility {
       }
       //cout << "FEI4 minresx="<<minresx <<" minresy="<<minresy<< endl;
       if(std::fabs(minresx) < 1*xResPitch/2. &&
-        std::fabs(minresy) < 1*yResPitch/2.) {
+         std::fabs(minresy) < 1*yResPitch/2.) {
         //cout << "Selected track !"<<endl;
         (*xSelectedTk).push_back(xTk->at(itk));
         (*ySelectedTk).push_back(yTk->at(itk));
         (*slopeSelectedTk).push_back(slopeTk->at(itk));
       }
     }
+  }
 
-    return;
+  void cutTrackFei4Residuals(const tbeam::FeIFourEvent* fei4ev ,const std::vector<tbeam::Track>& tkNoOverlap, std::vector<tbeam::Track>& selectedTk, 
+                             const double xResMean, const double yResMean, const double xResPitch, const double yResPitch) {
+    
+    for(unsigned int itk = 0; itk < tkNoOverlap.size(); itk++) {
+      const tbeam::Track tTemp(tkNoOverlap.at(itk));
+      double tkX = -1.*tTemp.xPos;//-1.*telEv()->xPos->at(itk);
+      double tkY = tTemp.yPos;//telEv()->yPos->at(itk);
+      double minresx = 999.;
+      double minresy = 999.;
+      for (unsigned int i = 0; i < fei4ev->col->size(); i++) {
+        double xval = -9.875 + (fei4ev->col->at(i)-1)*0.250;
+        double yval = -8.375 + (fei4ev->row->at(i)-1)*0.05;
+        double xres = xval - tkX - xResMean;//fStepGaus_x->GetParameter(4);//fGausResiduals_x->GetParameter("Mean");
+        double yres = yval - tkY - yResMean;//fStepGaus_y->GetParameter(4);//fGausResiduals_y->GetParameter("Mean");
+        if(std::fabs(xres) < std::fabs(minresx))   minresx = xres;
+        if(std::fabs(yres) < std::fabs(minresy))   minresy = yres;
+      }
+      //cout << "FEI4 minresx="<<minresx <<" minresy="<<minresy<< endl;
+      if(std::fabs(minresx) < 1*xResPitch/2. && std::fabs(minresy) < 1*yResPitch/2.) {
+        selectedTk.push_back(tTemp);    
+      }
+    }
   }
 
 

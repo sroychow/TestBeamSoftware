@@ -111,17 +111,23 @@ void AlignmentAnalysis::eventLoop()
     const auto& d1c0 = *det1C0();
     const auto& d1c1 = *det1C1();
  
-    //Remove track duplicates
-    std::vector<double> xTkNoOverlap, yTkNoOverlap, slopeTkNoOverlap;
-    Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, telEv()->dydz, &xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap);
+    //Remove track duplicates 
+    //std::vector<double> xTkNoOverlap, yTkNoOverlap, slopeTkNoOverlap;
+    //Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, telEv()->dydz, &xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap);
+    std::vector<tbeam::Track>  tkNoOv;
+    Utility::removeTrackDuplicates(telEv(), tkNoOv);
+	
     //Match with FEI4
-    std::vector<double> xSelectedTk, ySelectedTk, slopeSelectedTk;
-    Utility::cutTrackFei4Residuals(&xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap, fei4Ev()->col, fei4Ev()->row, &xSelectedTk, &ySelectedTk, &slopeSelectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y());
+    //std::vector<double> xSelectedTk, ySelectedTk, slopeSelectedTk;
+    //Utility::cutTrackFei4Residuals(&xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap, fei4Ev()->col, fei4Ev()->row, &xSelectedTk, &ySelectedTk, &slopeSelectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y());
+    std::vector<tbeam::Track>  selectedTk;
+    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y()); 
+    
 
     //Find mean of residuals, scanning zDUT      
-    if (xSelectedTk.size()==1){
+    if (selectedTk.size()==1){
       if (d0c0.size()==1){
-	float xTkAtDUT = ySelectedTk.at(0) + (DUT_z-aLparameteres().FEI4_z)*slopeSelectedTk.at(0);
+	float xTkAtDUT = selectedTk[0].yPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;
 	float xDUT = (d0c0.at(0) - nstrips()/2) * dutpitch();
         xTkAtDUT = -1.*xTkAtDUT;
 	hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX", xDUT-xTkAtDUT);
@@ -129,13 +135,13 @@ void AlignmentAnalysis::eventLoop()
 	for (int iz=0; iz<100; iz++){
 	  DUT_z_try += 10.;
 	  //DUT_z_try += (float)(iz*5);
-	  xTkAtDUT = ySelectedTk.at(0) + (DUT_z_try-aLparameteres().FEI4_z)*slopeSelectedTk.at(0);
+	  xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;
           xTkAtDUT = -1.*xTkAtDUT;
 	  hist_->fillHist1D("TrackFit",Form("d0_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
 	}
       }
       if (d1c0.size()==1){
-	float xTkAtDUT = ySelectedTk.at(0) + (DUT_z-aLparameteres().FEI4_z)*slopeSelectedTk.at(0);
+	float xTkAtDUT = selectedTk[0].yPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;
         //xTkAtDUT = -1.*xTkAtDUT;
 	float xDUT = (d1c0.at(0) - nstrips()/2) * dutpitch();
 	hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX", xDUT-xTkAtDUT);
@@ -143,7 +149,7 @@ void AlignmentAnalysis::eventLoop()
 	for (int iz=0; iz<100; iz++){
 	  //DUT_z_try += (float)(iz*5);
 	  DUT_z_try += 10.;
-	  xTkAtDUT = ySelectedTk.at(0) + (DUT_z_try-aLparameteres().FEI4_z)*slopeSelectedTk.at(0);
+	  xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;
           xTkAtDUT = -1.*xTkAtDUT;
 	  hist_->fillHist1D("TrackFit",Form("d1_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
 	}
@@ -190,13 +196,20 @@ void AlignmentAnalysis::eventLoop()
     }
     if(!isGoodEvent())   continue;
     //Tk overlap removal
-    std::vector<double> xTkNoOverlap, yTkNoOverlap, slopeTkNoOverlap;
-    Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, telEv()->dydz, &xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap);
+    //std::vector<double> xTkNoOverlap, yTkNoOverlap, slopeTkNoOverlap;
+    //Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, telEv()->dydz, &xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap);
+    std::vector<tbeam::Track>  tkNoOv;
+    Utility::removeTrackDuplicates(telEv(), tkNoOv);
+
     //Match with FEI4
-    std::vector<double> xSelectedTk, ySelectedTk, slopeSelectedTk;
-    Utility::cutTrackFei4Residuals(&xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap, fei4Ev()->col, fei4Ev()->row, &xSelectedTk, &ySelectedTk, &slopeSelectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y());
+    //std::vector<double> xSelectedTk, ySelectedTk, slopeSelectedTk;
+    //Utility::cutTrackFei4Residuals(&xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap, fei4Ev()->col, fei4Ev()->row, &xSelectedTk, &ySelectedTk, &slopeSelectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y());
+
+    std::vector<tbeam::Track>  selectedTk;
+    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y()); 
+
     //Select events with one track to compute chi2(z)
-    if (xSelectedTk.size()!=1) continue;
+    if (selectedTk.size() != 1) continue;
     setDetChannelVectors();
     const auto& d0c0 = *det0C0();
     const auto& d0c1 = *det0C1();
@@ -208,7 +221,7 @@ void AlignmentAnalysis::eventLoop()
       for (int iz=0; iz<100; iz++){
 	DUT_z_try = 200 + (float)(iz*10);
 	float offset = line_d0.first * DUT_z_try + line_d0.second;
-	float xTkAtDUT = ySelectedTk.at(0) + (DUT_z_try-aLparameteres().FEI4_z)*slopeSelectedTk.at(0);// + offset;
+	float xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + offset;
         xTkAtDUT = -1.*xTkAtDUT + offset;
         //xTkAtDUT = xTkAtDUT + offset;
 	if (fabs(xTkAtDUT-xDUT) < 3*sigma_d0[iz]) {
@@ -223,7 +236,7 @@ void AlignmentAnalysis::eventLoop()
       for (int iz=0; iz<100; iz++){
 	DUT_z_try = 200 + (float)(iz*10);
 	float offset = line_d1.first * DUT_z_try + line_d1.second;
-	float xTkAtDUT = ySelectedTk.at(0) + (DUT_z_try-aLparameteres().FEI4_z)*slopeSelectedTk.at(0);// + offset;
+	float xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + offset;
         xTkAtDUT = -1.*xTkAtDUT + offset;
         //xTkAtDUT = xTkAtDUT + offset;
 	if (fabs(xTkAtDUT-xDUT) < 3*sigma_d1[iz]) {
@@ -289,13 +302,20 @@ void AlignmentAnalysis::eventLoop()
     }
     if(!isGoodEvent())   continue;
     //Tk overlap removal
-    std::vector<double> xTkNoOverlap, yTkNoOverlap, slopeTkNoOverlap;
-    Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, telEv()->dydz, &xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap);
+    //std::vector<double> xTkNoOverlap, yTkNoOverlap, slopeTkNoOverlap;
+    //Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, telEv()->dydz, &xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap);
+
+    std::vector<tbeam::Track>  tkNoOv;
+    Utility::removeTrackDuplicates(telEv(), tkNoOv);
+
     //Match with FEI4
-    std::vector<double> xSelectedTk, ySelectedTk, slopeSelectedTk;
-    Utility::cutTrackFei4Residuals(&xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap, fei4Ev()->col, fei4Ev()->row, &xSelectedTk, &ySelectedTk, &slopeSelectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y());
+    //std::vector<double> xSelectedTk, ySelectedTk, slopeSelectedTk;
+    //Utility::cutTrackFei4Residuals(&xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap, fei4Ev()->col, fei4Ev()->row, &xSelectedTk, &ySelectedTk, &slopeSelectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y());
     
-    if (xSelectedTk.size()!=1) continue;
+    std::vector<tbeam::Track>  selectedTk;
+    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y()); 
+
+    if (selectedTk.size()!=1) continue;
     setDetChannelVectors();
     const auto& d0c0 = *det0C0();
     const auto& d0c1 = *det0C1();
@@ -304,14 +324,14 @@ void AlignmentAnalysis::eventLoop()
     
     if (d0c0.size()==1){
       float xDUT = (d0c0.at(0) - nstrips()/2) * dutpitch();
-      float xTkAtDUT = ySelectedTk.at(0) + (d0_chi2_min_z-aLparameteres().FEI4_z)*slopeSelectedTk.at(0);// + d0_Offset_aligned;
+      float xTkAtDUT = selectedTk[0].yPos + (d0_chi2_min_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + d0_Offset_aligned;
       xTkAtDUT = -1.*xTkAtDUT + d0_Offset_aligned;
       //xTkAtDUT = xTkAtDUT + d0_Offset_aligned;
       hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);
     }
     if (d1c0.size()==1){
       float xDUT = (d1c0.at(0) - nstrips()/2) * dutpitch();
-      float xTkAtDUT = ySelectedTk.at(0) + (d1_chi2_min_z-aLparameteres().FEI4_z)*slopeSelectedTk.at(0);// + d1_Offset_aligned;
+      float xTkAtDUT = selectedTk[0].yPos + (d1_chi2_min_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + d1_Offset_aligned;
       xTkAtDUT = -1.*xTkAtDUT + d1_Offset_aligned;
       //xTkAtDUT = xTkAtDUT + d1_Offset_aligned;
       hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);

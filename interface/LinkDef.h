@@ -33,4 +33,6 @@
 #pragma link C++ class  std::map< std::string,std::vector<int> >+;
 #pragma link C++ class  std::map< std::string,std::vector<unsigned short> >+;
 #pragma link C++ class tbeam::TelescopeEvent+; 
+#pragma link C++ class tbeam::Track+;
+#pragma link C++ class std::vector<tbeam::Track>+;  
 #endif

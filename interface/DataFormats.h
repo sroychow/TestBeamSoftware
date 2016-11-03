@@ -122,5 +122,22 @@ namespace tbeam {
      virtual ~FeIFourEvent();
      ClassDef(FeIFourEvent,1)
   };
+  
+  class Track : public TObject {
+    public :
+      int trkIndex;
+      double xPos;
+      double yPos;
+      double dxdz;
+      double dydz;
+      double chi2;
+      double ndof;
+      Track();
+      Track(int, double, double, double, double, double, double);
+      Track(const tbeam::Track& t);
+      virtual ~Track(){}
+      ClassDef(Track,1)
+  }; 
+
 }
 #endif

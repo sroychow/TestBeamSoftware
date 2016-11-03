@@ -167,3 +167,33 @@ tbeam::FeIFourEvent::~FeIFourEvent() {
   delete     hitTime;
   delete     frameTime;
 }
+
+tbeam::Track::Track() {
+  trkIndex = 0;
+  xPos = 0;
+  yPos = 0;
+  dxdz = 0;
+  dydz = 0;
+  chi2 = 0;
+  ndof = 0;
+}
+tbeam::Track::Track(int i, double x, double y, double sx, double sy, double c2, double ndf) {
+  trkIndex = i;
+  xPos = x;
+  yPos = y;
+  dxdz = sx;
+  dydz = sy;
+  chi2 = c2;
+  ndof = ndf;
+}
+
+tbeam::Track::Track(const tbeam::Track& t) {
+  trkIndex = t.trkIndex;
+  xPos = t.xPos;
+  yPos = t.yPos;
+  dxdz = t.dxdz;
+  dydz = t.dydz;
+  chi2 = t.chi2;
+  ndof = t.ndof;
+}
+

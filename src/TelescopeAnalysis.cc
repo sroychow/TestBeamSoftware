@@ -1,9 +1,9 @@
 /*
   \file                TelescopeAnalysis.cc
   \brief               Example user code for Analysis
-  \author              Suvankar Roy Chowdhury, Rajarshi Bhattacharya
+  \author              Nicolas Chanon, Suvankar Roy Chowdhury
   \date                05/07/16
-  Support :            mail to : suvankar.roy.chowdhury@cern.ch, rajarshi.bhattacharya@cern.ch
+  Support :            mail to : nicolas.pierre.chanon@cern.ch, suvankar.roy.chowdhury@cern.ch
 */
 #include "TROOT.h"
 #include "TInterpreter.h"
@@ -68,7 +68,9 @@ void TelescopeAnalysis::eventLoop()
     }
 
     //Remove track duplicates
-    Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, &xTkNoOverlap, &yTkNoOverlap);
+    //Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, &xTkNoOverlap, &yTkNoOverlap);
+    std::vector<tbeam::Track>  tkNoOv;
+    Utility::removeTrackDuplicates(telEv(), tkNoOv);
 
     //get residuals
     for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
@@ -82,10 +84,18 @@ void TelescopeAnalysis::eventLoop()
       //now loop over tracks
       double xmin = 999.9;
       double ymin = 999.9;
-      
+      /*
       for(unsigned int itk = 0; itk < xTkNoOverlap.size(); itk++) {
         double tkX = -1.*xTkNoOverlap.at(itk); //-1.*telEv()->xPos->at(itk);
         double tkY = yTkNoOverlap.at(itk); //telEv()->yPos->at(itk);
+        hist_->fillHist2D("TelescopeAnalysis","tkXPosVsHtXPos", xval, tkX);
+        hist_->fillHist2D("TelescopeAnalysis","tkYPosVsHtYPos", yval, tkY);
+        if (std::fabs(xval - tkX) < xmin) xmin = xval - tkX;
+        if (std::fabs(yval - tkY) < ymin) ymin = yval - tkY;
+      }*/
+      for(unsigned int itk = 0; itk < tkNoOv.size(); itk++) {
+        double tkX = -1.*tkNoOv[itk].xPos; //-1.*telEv()->xPos->at(itk);
+        double tkY = tkNoOv[itk].yPos; //telEv()->yPos->at(itk);
         hist_->fillHist2D("TelescopeAnalysis","tkXPosVsHtXPos", xval, tkX);
         hist_->fillHist2D("TelescopeAnalysis","tkYPosVsHtYPos", yval, tkY);
         if (std::fabs(xval - tkX) < xmin) xmin = xval - tkX;
@@ -187,13 +197,17 @@ void TelescopeAnalysis::eventLoop()
 	   << endl;
     if(fei4Ev()->nPixHits > 2)    continue;
     //Remove track duplicates
-    std::vector<double> xTkNoOverlap, yTkNoOverlap;
-    Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, &xTkNoOverlap, &yTkNoOverlap);
-    if(xTkNoOverlap.size() != 1)  continue;
+    //std::vector<double> xTkNoOverlap, yTkNoOverlap;
+    //Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, &xTkNoOverlap, &yTkNoOverlap);
+    std::vector<tbeam::Track>  tkNoOv;
+    Utility::removeTrackDuplicates(telEv(), tkNoOv);
+
+    //if(xTkNoOverlap.size() != 1)  continue;
+    if(tkNoOv.size() != 1)  continue;
     //get residuals
-    for(unsigned int itk = 0; itk < xTkNoOverlap.size(); itk++) {
-      double tkX = -1.*xTkNoOverlap.at(itk);//-1.*telEv()->xPos->at(itk);
-      double tkY = yTkNoOverlap.at(itk);//telEv()->yPos->at(itk);
+    for(unsigned int itk = 0; itk < tkNoOv.size(); itk++) {
+      double tkX = -1.*tkNoOv[itk].xPos;//-1.*telEv()->xPos->at(itk);
+      double tkY = tkNoOv[itk].yPos;//telEv()->yPos->at(itk);
       double minresx = 999.;
       double minresy = 999.;
       for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
@@ -214,12 +228,7 @@ void TelescopeAnalysis::eventLoop()
         hist_->fillHist1D("TelescopeAnalysis","deltaXPos_trkfei4M", minresx);
         hist_->fillHist1D("TelescopeAnalysis","deltaYPos_trkfei4M", minresy);
       }
-
     }
-
-    //std::vector<double> xSelectedTk, ySelectedTk;
-    //Utility::cutTrackFei4Residuals(&xTkNoOverlap, &yTkNoOverlap, fei4Ev()->col, fei4Ev()->row, &xSelectedTk, &ySelectedTk, fStepGaus_x->GetParameter(4), fStepGaus_y->GetParameter(4), fStepGaus_x->GetParameter(0), fStepGaus_y->GetParameter(0));
-
   }//event loop
 
 }
