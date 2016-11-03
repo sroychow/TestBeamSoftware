@@ -330,13 +330,14 @@ void BeamAnaBase::getCbcConfig(uint32_t cwdWord, uint32_t windowWord){
 
 bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, const double ytrk0Pos, const double ytrk1Pos) {
   //DUT x acceptance
-  if((std::fabs(xtrk0Pos) < pitchDUT_*nStrips_/2.) && (std::fabs(xtrk1Pos) < pitchDUT_*nStrips_/2.));
+  if( (std::fabs(xtrk0Pos) > pitchDUT_*nStrips_/2.) 
+     || (std::fabs(xtrk1Pos) > pitchDUT_*nStrips_/2.))  return false;
   //DUT y acceptance
-  if(std::fabs(ytrk0Pos) < 25. && std::fabs(ytrk1Pos) < 25.)  return false; 
+  if(std::fabs(ytrk0Pos) > 25. || std::fabs(ytrk1Pos) > 25.)  return false; 
 
-  int xtkdutStrip0 = xtrk0Pos/pitchDUT_ + nStrips_/2; 
-  int xtkdutStrip1 = xtrk1Pos/pitchDUT_ + nStrips_/2; 
   if(doChannelMasking_) {
+    int xtkdutStrip0 = xtrk0Pos/pitchDUT_ + nStrips_/2; 
+    int xtkdutStrip1 = xtrk1Pos/pitchDUT_ + nStrips_/2; 
     bool mtk = std::find(dut_maskedChannels_->at("det0").begin(), dut_maskedChannels_->at("det0").end(), xtkdutStrip0) == dut_maskedChannels_->at("det0").end();
     mtk = mtk && std::find( dut_maskedChannels_->at("det1").begin(), dut_maskedChannels_->at("det1").end(), xtkdutStrip1) == dut_maskedChannels_->at("det1").end();
     return mtk;
@@ -360,9 +361,9 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
     double XTkatDUT1_itrk = selectedTk[itrk].yPos + (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dydz;
     XTkatDUT1_itrk = -1.*XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
     double YTkatDUT0_itrk = selectedTk[itrk].xPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
-    double YTkatDUT1_itrk = selectedTk[itrk].xPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
+    double YTkatDUT1_itrk = selectedTk[itrk].xPos + (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
     //Selected tracks within DUT acceptance FEI4
-    //if(isTrkfiducial(XTkatDUT0_itrk, XTkatDUT1_itrk, YTkatDUT0_itrk, YTkatDUT1_itrk)) {
+    if(isTrkfiducial(XTkatDUT0_itrk, XTkatDUT1_itrk, YTkatDUT0_itrk, YTkatDUT1_itrk)) {
       selectedTk[itrk].xtkDut0 = XTkatDUT0_itrk;
       selectedTk[itrk].xtkDut1 = XTkatDUT1_itrk;
       selectedTk[itrk].ytkDut0 = YTkatDUT0_itrk;
@@ -371,7 +372,7 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
       //                                       << selectedTk[itrk].ytkDut0 << "\t" << selectedTk[itrk].ytkDut1 << std::endl;
       tbeam::Track temp(selectedTk[itrk]);
       fidTkColl.push_back(temp);
-    //} 
+    } 
   }
   //std::cout << selectedTk.size() << "\t" << fidTkColl.size() << std::endl;
 }
