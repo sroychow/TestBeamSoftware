@@ -169,13 +169,15 @@ tbeam::FeIFourEvent::~FeIFourEvent() {
 }
 
 tbeam::Track::Track() {
-  trkIndex = 0;
-  xPos = 0;
-  yPos = 0;
-  dxdz = 0;
-  dydz = 0;
-  chi2 = 0;
-  ndof = 0;
+  trkIndex = 0.;
+  xPos = 0.;
+  yPos = 0.;
+  dxdz = 0.;
+  dydz = 0.;
+  chi2 = 0.;
+  ndof = 0.;
+  xtkDut0 = 0.;
+  xtkDut1 = 0.;
 }
 tbeam::Track::Track(int i, double x, double y, double sx, double sy, double c2, double ndf) {
   trkIndex = i;
@@ -185,6 +187,25 @@ tbeam::Track::Track(int i, double x, double y, double sx, double sy, double c2, 
   dydz = sy;
   chi2 = c2;
   ndof = ndf;
+  xtkDut0 = 0.;
+  xtkDut1 = 0.;
+  ytkDut0 = 0.;
+  ytkDut1 = 0.;
+
+}
+
+tbeam::Track::Track(int i, double x, double y, double sx, double sy, double c2, double ndf, double xtk0, double xtk1, double ytk0, double ytk1) {
+  trkIndex = i;
+  xPos = x;
+  yPos = y;
+  dxdz = sx;
+  dydz = sy;
+  chi2 = c2;
+  ndof = ndf;
+  xtkDut0 = xtk0;
+  xtkDut1 = xtk0;
+  ytkDut0 = ytk0;
+  ytkDut1 = ytk0;
 }
 
 tbeam::Track::Track(const tbeam::Track& t) {
@@ -195,5 +216,9 @@ tbeam::Track::Track(const tbeam::Track& t) {
   dydz = t.dydz;
   chi2 = t.chi2;
   ndof = t.ndof;
+  xtkDut0 = t.xtkDut0;
+  xtkDut1 = t.xtkDut1;
+  ytkDut0 = t.ytkDut0;
+  ytkDut1 = t.ytkDut1;
 }
 

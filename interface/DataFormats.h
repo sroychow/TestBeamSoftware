@@ -132,8 +132,13 @@ namespace tbeam {
       double dydz;
       double chi2;
       double ndof;
+      double xtkDut0;
+      double xtkDut1;
+      double ytkDut0;
+      double ytkDut1;
       Track();
-      Track(int, double, double, double, double, double, double);
+      Track(int i, double x, double y, double sx, double sy, double c2, double ndf);
+      Track(int i, double x, double y, double sx, double sy, double c2, double ndf, double xtk0, double xtk1, double ytk0, double ytk1);
       Track(const tbeam::Track& t);
       virtual ~Track(){}
       ClassDef(Track,1)

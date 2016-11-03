@@ -328,70 +328,51 @@ void BeamAnaBase::getCbcConfig(uint32_t cwdWord, uint32_t windowWord){
   cwd_ = (cwdWord>>6)%4;
 }
 
-bool BeamAnaBase::isTrkfiducial(const double xtrkPos, int& xtkdutStrip, const std::string det) {
-  xtkdutStrip = (xtrkPos/0.09) + 127;
-  if(doChannelMasking_ && (xtkdutStrip > 254 ||  xtkdutStrip < 127))   return false; 
-  //else if(xtkdutStrip > 185 ||  xtkdutStrip < 83)   return false; 
+bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, const double ytrk0Pos, const double ytrk1Pos) {
+  //DUT x acceptance
+  if((std::fabs(xtrk0Pos) < pitchDUT_*nStrips_/2.) && (std::fabs(xtrk1Pos) < pitchDUT_*nStrips_/2.));
+  //DUT y acceptance
+  if(std::fabs(ytrk0Pos) < 25. && std::fabs(ytrk1Pos) < 25.)  return false; 
+
+  int xtkdutStrip0 = xtrk0Pos/pitchDUT_ + nStrips_/2; 
+  int xtkdutStrip1 = xtrk1Pos/pitchDUT_ + nStrips_/2; 
   if(doChannelMasking_) {
-    return std::find(dut_maskedChannels_->at(det).begin(), 
-                     dut_maskedChannels_->at(det).end(), 
-                     xtkdutStrip) == dut_maskedChannels_->at(det).end();
-    
+    bool mtk = std::find(dut_maskedChannels_->at("det0").begin(), dut_maskedChannels_->at("det0").end(), xtkdutStrip0) == dut_maskedChannels_->at("det0").end();
+    mtk = mtk && std::find( dut_maskedChannels_->at("det1").begin(), dut_maskedChannels_->at("det1").end(), xtkdutStrip1) == dut_maskedChannels_->at("det1").end();
+    return mtk;
   }
   return true;
 }
 
-void BeamAnaBase::getExtrapolatedTracks(std::vector<double>& xTkdut0, std::vector<double>& xTkdut1) {
-
-  for(unsigned int itrk = 0; itrk<telEv_->nTrackParams;itrk++) {
+void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>  fidTkColl) {
+  //Tk overlap removal
+  std::vector<tbeam::Track>  tkNoOv;
+  Utility::removeTrackDuplicates(telEv_, tkNoOv);
+  //Match with FEI4
+  std::vector<tbeam::Track>  selectedTk;
+  Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y()); 
+  std::cout << selectedTk.size() << std::endl;
+  for(unsigned int itrk = 0; itrk<selectedTk.size();itrk++) {
     //do track fei4 matching
-    double tkX = -1.*telEv()->xPos->at(itrk);
-    double tkY = telEv()->yPos->at(itrk);
-    bool match = false;
-    double minresx = 999.;
-    double minresy = 999.;
-    for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
-      //default pitch and dimensions of fei4 plane
-      double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
-      double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
-      double xres = xval - tkX + offsetFEI4x_;
-      double yres = yval - tkY + offsetFEI4y_;
-      if(std::fabs(xres) < std::fabs(minresx))   minresx = xres;
-      if(std::fabs(yres) < std::fabs(minresy))   minresy = yres;
-    }
-    if(std::fabs(minresx) < 4*residualSigmaFEI4x_ && std::fabs(minresy) < 4*residualSigmaFEI4y_) {
-      hout_->fillHist1D("TrackMatch","deltaXPos_trkfei4", minresx);
-      hout_->fillHist1D("TrackMatch","deltaYPos_trkfei4", minresy);
-      match = true;
-    }
-    if(!match)   continue;
-    double XTkatDUT0_itrk = telEv_->yPos->at(itrk) + 
-                            (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*telEv_->dydz->at(itrk);
+    double tkX = -1.*selectedTk[itrk].xPos;
+    double tkY = selectedTk[itrk].yPos;
+    double XTkatDUT0_itrk = selectedTk[itrk].yPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dydz;
     XTkatDUT0_itrk = -1.*XTkatDUT0_itrk + alPars_.d0_Offset_aligned;
-    double XTkatDUT1_itrk = telEv_->yPos->at(itrk) + 
-                            (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*telEv_->dydz->at(itrk);
+    double XTkatDUT1_itrk = selectedTk[itrk].yPos + (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dydz;
     XTkatDUT1_itrk = -1.*XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
-    //check for duplicate tracks LOOSE MATCHING--We start with this.Then move to TIGHT CUT
-    bool duplD0 = false, duplD1 = false;
-    for(const auto& x0 : xTkdut0) {
-      if(std::fabs(XTkatDUT0_itrk-x0) < 2*0.09) {
-        duplD0=true;
-        break;
-      }
-    }
-    for(const auto& x1 : xTkdut1) {
-      if(std::fabs(XTkatDUT1_itrk-x1) < 2*0.09) {
-        duplD1=true;
-        break;
-      }
-    }
-    if(!duplD0 && !duplD1) {     
-      xTkdut0.push_back(XTkatDUT0_itrk);
-      xTkdut1.push_back(XTkatDUT1_itrk);
-    }
+    double YTkatDUT0_itrk = selectedTk[itrk].xPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
+    double YTkatDUT1_itrk = selectedTk[itrk].xPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
+    //Selected tracks within DUT acceptance FEI4
+    //if(isTrkfiducial(XTkatDUT0_itrk, XTkatDUT1_itrk, YTkatDUT0_itrk, YTkatDUT1_itrk)) {
+      selectedTk[itrk].xtkDut0 = XTkatDUT0_itrk;
+      selectedTk[itrk].xtkDut1 = XTkatDUT1_itrk;
+      selectedTk[itrk].ytkDut0 = YTkatDUT0_itrk;
+      selectedTk[itrk].ytkDut1 = YTkatDUT0_itrk;
+      std::cout << "Tk extrapolation values=" << selectedTk[itrk].xtkDut0 << "\t" << selectedTk[itrk].xtkDut1 << "\t"
+                                              << selectedTk[itrk].ytkDut0 << "\t" << selectedTk[itrk].ytkDut1 << std::endl;
+      fidTkColl.push_back(selectedTk[itrk]);
+    //} 
   }
-
-
 }
 
 void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
