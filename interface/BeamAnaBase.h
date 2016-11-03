@@ -68,7 +68,7 @@ class BeamAnaBase {
     virtual void clearEvent();
     virtual bool readJob(const std::string jfile);
     void getCbcConfig(uint32_t cwdWord, uint32_t windowWord);
-    void getExtrapolatedTracks(std::vector<tbeam::Track> fidTkColl);
+    void getExtrapolatedTracks(std::vector<tbeam::Track>& fidTkColl);
     void readChannelMaskData(const std::string cmaskF);
     void setTelMatching(const bool mtel);
     void setChannelMasking(const std::string cFile);

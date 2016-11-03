@@ -344,14 +344,13 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
   return true;
 }
 
-void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>  fidTkColl) {
+void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
   //Tk overlap removal
   std::vector<tbeam::Track>  tkNoOv;
   Utility::removeTrackDuplicates(telEv_, tkNoOv);
   //Match with FEI4
   std::vector<tbeam::Track>  selectedTk;
   Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y()); 
-  std::cout << selectedTk.size() << std::endl;
   for(unsigned int itrk = 0; itrk<selectedTk.size();itrk++) {
     //do track fei4 matching
     double tkX = -1.*selectedTk[itrk].xPos;
@@ -368,11 +367,13 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>  fidTkColl) {
       selectedTk[itrk].xtkDut1 = XTkatDUT1_itrk;
       selectedTk[itrk].ytkDut0 = YTkatDUT0_itrk;
       selectedTk[itrk].ytkDut1 = YTkatDUT0_itrk;
-      std::cout << "Tk extrapolation values=" << selectedTk[itrk].xtkDut0 << "\t" << selectedTk[itrk].xtkDut1 << "\t"
-                                              << selectedTk[itrk].ytkDut0 << "\t" << selectedTk[itrk].ytkDut1 << std::endl;
-      fidTkColl.push_back(selectedTk[itrk]);
+      //std::cout << "Tk extrapolation values=" << selectedTk[itrk].xtkDut0 << "\t" << selectedTk[itrk].xtkDut1 << "\t"
+      //                                       << selectedTk[itrk].ytkDut0 << "\t" << selectedTk[itrk].ytkDut1 << std::endl;
+      tbeam::Track temp(selectedTk[itrk]);
+      fidTkColl.push_back(temp);
     //} 
   }
+  //std::cout << selectedTk.size() << "\t" << fidTkColl.size() << std::endl;
 }
 
 void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {

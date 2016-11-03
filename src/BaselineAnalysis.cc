@@ -104,11 +104,15 @@ void BaselineAnalysis::eventLoop()
         if(telEv()->nTrackParams!=1)   continue;
         hist_->fillHist1D("TrackMatch", "trkcluseff", 0);
         //Residual Calculation Now moved to AlignmentAnalysis
-        std::vector<double>  xtkDet0, xtkDet1;
-        getExtrapolatedTracks(xtkDet0, xtkDet1);
-        hist_->fillHist1D("TrackMatch", "nTrackParamsNodupl", xtkDet0.size());
-        bool isXtkfidDUT0 = false;
-        bool isXtkfidDUT1 = false;
+        //std::vector<double>  xtkDet0, xtkDet1;
+        //getExtrapolatedTracks(xtkDet0, xtkDet1);
+        std::vector<tbeam::Track>  fidTrkcoll;
+        getExtrapolatedTracks(fidTrkcoll);
+        //hist_->fillHist1D("TrackMatch", "nTrackParamsNodupl", xtkDet0.size());
+        hist_->fillHist1D("TrackMatch", "nTrackParamsNodupl", fidTrkcoll.size());
+        if(fidTrkcoll.empty())    continue;
+        //bool isXtkfidDUT0 = false;
+        //bool isXtkfidDUT1 = false;
         bool trkClsmatchD0 = false;
         bool trkClsmatchD1 = false;
         bool smatchD1 = false;
@@ -131,6 +135,72 @@ void BaselineAnalysis::eventLoop()
 
         int xtkStripDet0 = 999.;
         int xtkStripDet1 = 999.;
+        for(auto &tk : fidTrkcoll) {
+          double x0 = tk.xtkDut0; 
+          hist_->fillHist1D("TrackMatch","hposxTkDUT0",x0); 
+          //matching at det0
+          for(auto& h : d0c0) {
+            double res = x0 - (h-nstrips()/2)*dutpitch();
+            if(std::fabs(res) < std::fabs(minHitresStripD0)) {
+              minHitresStripD0 = res; 
+              minHitStripD0 = h;
+            }
+          }   
+          for(auto& cl : dutRecoClmap()->at("det0C0") ) {
+            double res = x0 - (cl.x-nstrips()/2)*dutpitch();
+            if(std::fabs(res) <= 4*resDUT())   trkClsmatchD0 = true; 
+            if(std::fabs(res) < std::fabs(minclsresD0))  {
+              minclsresD0 = res;
+              minclsposD0 = (cl.x-nstrips()/2)*dutpitch();
+              minClusStripD0 = cl.x;
+              minClusWD0 = cl.size;
+            }
+          }
+          hist_->fillHist1D("TrackMatch","hminposClsDUT0",minclsposD0);
+          hist_->fillHist1D("TrackMatch","minresidualDUT0_1trkfid", minclsresD0);
+          hist_->fillHist1D("TrackMatch","clswidthDUT0_1trkfid", minClusWD0);
+          hist_->fillHist2D("TrackMatch","minclsTrkPoscorrD0", x0/dutpitch() + nstrips()/2 , minClusStripD0);
+          //matching at det1
+          double x1 = tk.xtkDut1;
+          hist_->fillHist1D("TrackMatch","hposxTkDUT1",x1); 
+          for(auto& h : d1c0) {
+            double res = x1 - (h-nstrips()/2)*dutpitch();
+            if(std::fabs(res) < std::fabs(minHitresStripD1)) {
+              minHitresStripD1 = res; 
+              minHitStripD1 = h;
+            }
+          }   
+          for(auto& cl : dutRecoClmap()->at("det1C0") ) {
+            double res = x1 - (cl.x-nstrips()/2)*dutpitch();
+            if(std::fabs(x1 - (cl.x-nstrips()/2)*dutpitch()) <= 4*resDUT())   trkClsmatchD1 = true;
+            if(std::fabs(res) < std::fabs(minclsresD1))  {
+              minclsresD1 = res;
+              minclsposD1 = (cl.x-nstrips()/2)*dutpitch();
+              minClusStripD1 = cl.x;
+              minClusWD1 = cl.size;
+            }
+          }
+
+          for(auto& s : dutRecoStubmap()->at("C0"))  {
+            double sposres = x1 - (s.x-nstrips()/2)*dutpitch();
+            if(std::fabs(sposres) <= 4*resDUT())  smatchD1 = true;  
+            if(std::fabs(sposres) < std::fabs(minStubresC0)) {
+              minStubresC0 = sposres;
+              minStubposC0 = (s.x-nstrips()/2)*dutpitch();
+              minStubStripC0 = s.x;
+            }
+          }
+          hist_->fillHist1D("TrackMatch","hminposClsDUT1",minclsposD1);
+          hist_->fillHist1D("TrackMatch","minresidualDUT1_1trkfid", minclsresD1);
+          hist_->fillHist1D("TrackMatch","clswidthDUT1_1trkfid", minClusWD1);
+          hist_->fillHist2D("TrackMatch","minclsTrkPoscorrD1", xtkStripDet1, minClusStripD1);
+          //for stub
+          hist_->fillHist1D("TrackMatch","sminresidualC0_1trkfid", minStubresC0);
+          hist_->fillHist1D("TrackMatch","hminposStub",minStubposC0);
+          hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1", x1/dutpitch() + nstrips()/2, minStubStripC0);           
+       }
+
+        /*
         for(auto &x0 : xtkDet0) { 
           if(isTrkfiducial(x0,xtkStripDet0,"det0")) {
             isXtkfidDUT0 = true;
@@ -198,21 +268,15 @@ void BaselineAnalysis::eventLoop()
             hist_->fillHist1D("TrackMatch","hminposStub",minStubposC0);
             hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1", xtkStripDet1, minStubStripC0);           
           }
-        }
-        if(isXtkfidDUT0) {
-          trkFidDet0++;
-          hist_->fillHist1D("TrackMatch", "trkcluseff", 1);
-        }
-        if(isXtkfidDUT1) {
-          trkFidDet1++;
-          hist_->fillHist1D("TrackMatch", "trkcluseff", 2);
-        }
-        if(isXtkfidDUT0 || isXtkfidDUT1)  trkFidany++;
-        if(isXtkfidDUT0 && isXtkfidDUT1)  {
-          hist_->fillHist1D("TrackMatch", "trkcluseff", 3);
-          trkFidbothPlane++;
-          hist_->fillHist1D("TrackMatch","effVtdc_den",static_cast<unsigned int>(condEv()->tdcPhase));
-        }
+        }*/
+        trkFidDet0++;
+        hist_->fillHist1D("TrackMatch", "trkcluseff", 1);
+        trkFidDet1++;
+        hist_->fillHist1D("TrackMatch", "trkcluseff", 2);
+        trkFidany++;
+        hist_->fillHist1D("TrackMatch", "trkcluseff", 3);
+        trkFidbothPlane++;
+        hist_->fillHist1D("TrackMatch","effVtdc_den",static_cast<unsigned int>(condEv()->tdcPhase));
         if(trkClsmatchD0)   {
           det0clsMatch++;
           hist_->fillHist1D("TrackMatch", "trkcluseff", 4);
