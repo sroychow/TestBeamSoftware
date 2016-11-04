@@ -56,46 +56,38 @@ void TelescopeAnalysis::eventLoop()
     if(fei4Ev()->nPixHits > 2)    continue;
     if(telEv()->xPos->empty())    continue;
 
-    std::vector<double> xTkNoOverlap, yTkNoOverlap;
+    std::vector<tbeam::Track>  tkNoOv;
+    Utility::removeTrackDuplicates(telEv(), tkNoOv);
+    //if(tkNoOv.size() != 1)   continue;
 
-    //std::cout << telEv()->xPos->size() << std::endl;
-    for(unsigned int i = 0; i<telEv()->xPos->size(); i++) {
+    for(unsigned int i = 0; i<tkNoOv.size(); i++) {
       //std::cout << i<< std::endl;
-      double tkX = -1.*telEv()->xPos->at(i);
-      double tkY = telEv()->yPos->at(i);
+      double tkX = -1.*tkNoOv[i].xPos;
+      double tkY = tkNoOv[i].xPos;
       hist_->fillHist1D("TelescopeAnalysis","TkXPos", tkX);
       hist_->fillHist1D("TelescopeAnalysis","TkYPos", tkY);
     }
 
-    //Remove track duplicates
-    //Utility::removeTrackDuplicates(telEv()->xPos, telEv()->yPos, &xTkNoOverlap, &yTkNoOverlap);
-    std::vector<tbeam::Track>  tkNoOv;
-    Utility::removeTrackDuplicates(telEv(), tkNoOv);
-
-    //get residuals
     for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
       hist_->fillHist1D("TelescopeAnalysis","HtColumn", fei4Ev()->col->at(i));
       hist_->fillHist1D("TelescopeAnalysis","HtRow", fei4Ev()->row->at(i));
-      //default pitch and dimensions of fei4 plane
       double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
       double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
       hist_->fillHist1D("TelescopeAnalysis","HtXPos", xval);
       hist_->fillHist1D("TelescopeAnalysis","HtYPos", yval);
-      //now loop over tracks
+    }
+
+    //get residuals
+    //now loop over tracks
+    for(unsigned int itk = 0; itk < tkNoOv.size(); itk++) {
+      double tkX = -1.*tkNoOv[itk].xPos; 
+      double tkY = tkNoOv[itk].yPos; 
       double xmin = 999.9;
       double ymin = 999.9;
-      /*
-      for(unsigned int itk = 0; itk < xTkNoOverlap.size(); itk++) {
-        double tkX = -1.*xTkNoOverlap.at(itk); //-1.*telEv()->xPos->at(itk);
-        double tkY = yTkNoOverlap.at(itk); //telEv()->yPos->at(itk);
-        hist_->fillHist2D("TelescopeAnalysis","tkXPosVsHtXPos", xval, tkX);
-        hist_->fillHist2D("TelescopeAnalysis","tkYPosVsHtYPos", yval, tkY);
-        if (std::fabs(xval - tkX) < xmin) xmin = xval - tkX;
-        if (std::fabs(yval - tkY) < ymin) ymin = yval - tkY;
-      }*/
-      for(unsigned int itk = 0; itk < tkNoOv.size(); itk++) {
-        double tkX = -1.*tkNoOv[itk].xPos; //-1.*telEv()->xPos->at(itk);
-        double tkY = tkNoOv[itk].yPos; //telEv()->yPos->at(itk);
+      for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
+        //default pitch and dimensions of fei4 plane
+        double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
+        double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
         hist_->fillHist2D("TelescopeAnalysis","tkXPosVsHtXPos", xval, tkX);
         hist_->fillHist2D("TelescopeAnalysis","tkYPosVsHtYPos", yval, tkY);
         if (std::fabs(xval - tkX) < xmin) xmin = xval - tkX;
@@ -179,15 +171,6 @@ void TelescopeAnalysis::eventLoop()
             << ">>>Sigma=" << fGausResiduals_y->GetParameter("Sigma") 
             << std::endl;
 
-  std::cout << "Summary of the Step convolved with Gauss Fits to the residuals:\n"
-            << "Residual X>>>Mean=" << fStepGaus_x->GetParameter(4)
-            << ">>>Pitch=" <<  fStepGaus_x->GetParameter(0)
-            << "\nResidual Y>>>Mean=" << fStepGaus_y->GetParameter(4)
-            << ">>>Pitch=" << fStepGaus_y->GetParameter(0)
-            << std::endl;
-
-
-
   for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
     clearEvent();
     Long64_t ientry = analysisTree()->GetEntry(jentry);
@@ -230,6 +213,15 @@ void TelescopeAnalysis::eventLoop()
       }
     }
   }//event loop
+
+  std::cout << "Summary of the Step convolved with Gauss Fits to the residuals:\n"
+            << "Residual X>>>Mean=" << fStepGaus_x->GetParameter(4)
+            << ">>>Pitch=" <<  fStepGaus_x->GetParameter(0)
+            << "\nResidual Y>>>Mean=" << fStepGaus_y->GetParameter(4)
+            << ">>>Pitch=" << fStepGaus_y->GetParameter(0)
+            << std::endl;
+
+
 
 }
 

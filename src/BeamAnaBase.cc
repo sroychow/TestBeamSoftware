@@ -367,7 +367,7 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
       selectedTk[itrk].xtkDut0 = XTkatDUT0_itrk;
       selectedTk[itrk].xtkDut1 = XTkatDUT1_itrk;
       selectedTk[itrk].ytkDut0 = YTkatDUT0_itrk;
-      selectedTk[itrk].ytkDut1 = YTkatDUT0_itrk;
+      selectedTk[itrk].ytkDut1 = YTkatDUT1_itrk;
       //std::cout << "Tk extrapolation values=" << selectedTk[itrk].xtkDut0 << "\t" << selectedTk[itrk].xtkDut1 << "\t"
       //                                       << selectedTk[itrk].ytkDut0 << "\t" << selectedTk[itrk].ytkDut1 << std::endl;
       tbeam::Track temp(selectedTk[itrk]);
