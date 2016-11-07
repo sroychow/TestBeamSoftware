@@ -198,7 +198,8 @@ namespace Utility {
         double tkX_j = telEv->xPos->at(j);
         double tkY_j = telEv->yPos->at(j);
         //if (fabs(tkY-tkY_j)<0.015*4 && fabs(tkX-tkX_j)<0.072*4) isduplicate = true;
-        if (fabs(tkY-tkY_j)<0.015 && fabs(tkX-tkX_j)<0.072) isduplicate = true;
+        //if (fabs(tkY-tkY_j)<0.015 && fabs(tkX-tkX_j)<0.072) isduplicate = true;
+        if (fabs(tkY-tkY_j)<0.001 && fabs(tkX-tkX_j)<0.001) isduplicate = true;
       }
       if (!isduplicate) {
         tbeam::Track t(i,tkX,tkY,telEv->dxdz->at(i),telEv->dydz->at(i),telEv->chi2->at(i),telEv->ndof->at(i));  
@@ -208,26 +209,46 @@ namespace Utility {
   }
 
   void cutTrackFei4Residuals(const tbeam::FeIFourEvent* fei4ev ,const std::vector<tbeam::Track>& tkNoOverlap, std::vector<tbeam::Track>& selectedTk, 
-                             const double xResMean, const double yResMean, const double xResPitch, const double yResPitch) {
-    
+                             const double xResMean, const double yResMean, const double xResPitch, const double yResPitch, bool doClosestTrack) {
+   
+    double mindelta = 999.;
+    double minresx = 999.;
+    double minresy = 999.;
+    int itkClosest = -1;
+
     for(unsigned int itk = 0; itk < tkNoOverlap.size(); itk++) {
       const tbeam::Track tTemp(tkNoOverlap.at(itk));
       double tkX = -1.*tTemp.xPos;//-1.*telEv()->xPos->at(itk);
       double tkY = tTemp.yPos;//telEv()->yPos->at(itk);
-      double minresx = 999.;
-      double minresy = 999.;
+      if (!doClosestTrack){
+        minresx = 999.;
+        minresy = 999.;
+	mindelta = 999.;
+      }
       for (unsigned int i = 0; i < fei4ev->col->size(); i++) {
         double xval = -9.875 + (fei4ev->col->at(i)-1)*0.250;
         double yval = -8.375 + (fei4ev->row->at(i)-1)*0.05;
         double xres = xval - tkX - xResMean;//fStepGaus_x->GetParameter(4);//fGausResiduals_x->GetParameter("Mean");
         double yres = yval - tkY - yResMean;//fStepGaus_y->GetParameter(4);//fGausResiduals_y->GetParameter("Mean");
-        if(std::fabs(xres) < std::fabs(minresx))   minresx = xres;
-        if(std::fabs(yres) < std::fabs(minresy))   minresy = yres;
+        //if(std::fabs(xres) < std::fabs(minresx))   minresx = xres;
+        //if(std::fabs(yres) < std::fabs(minresy))   minresy = yres;
+        if (sqrt(xres*xres+yres*yres)<mindelta){
+	  mindelta = sqrt(xres*xres+yres*yres);
+	  minresx = xres;
+	  minresy = yres;
+	  itkClosest = itk;
+	}
       }
       //cout << "FEI4 minresx="<<minresx <<" minresy="<<minresy<< endl;
-      if(std::fabs(minresx) < 1*xResPitch/2. && std::fabs(minresy) < 1*yResPitch/2.) {
-        selectedTk.push_back(tTemp);    
-      }
+      //if(std::fabs(minresx) < 1.*xResPitch/2. && std::fabs(minresy) < 1*yResPitch/2.) {
+      //  selectedTk.push_back(tTemp);    
+      //}
+      if (!doClosestTrack && (std::fabs(minresx) < xResPitch) && (std::fabs(minresy) < yResPitch)) selectedTk.push_back(tTemp);
+    }
+    //cout << "FEI4 minresx="<<minresx <<" minresy="<<minresy<< endl;
+    if (doClosestTrack && (std::fabs(minresx) < xResPitch) && (std::fabs(minresy) < yResPitch) && itkClosest!=-1){
+      const tbeam::Track tClosest(tkNoOverlap.at(itkClosest));
+      selectedTk.push_back(tClosest);
     }
   }
 

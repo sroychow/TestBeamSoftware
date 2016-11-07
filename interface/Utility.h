@@ -87,6 +87,18 @@ namespace Utility {
   //  Convenience routines for fitting residuals //
   //  ------------------------------------------ //
 
+  static double FuncPol1Gaus(Double_t * x, Double_t * par){
+    double xx = x[0];
+    double mean = par[1];
+    double sigma = par[2];
+    double norm = par[0];
+    double cte = par[3];
+    double slope = par[4];
+    double f = norm*exp(-0.5*((xx-mean)/sigma)*((xx-mean)/sigma));
+    f = f + cte + slope * xx;
+    return f;
+  }
+
   static double funcStepGaus(Double_t * x, Double_t * par){
     double xx = x[0];
     double pitch = par[0];
@@ -122,7 +134,7 @@ namespace Utility {
   void cutTrackFei4Residuals(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<int> *colFei4, std::vector<int> *rowFei4, std::vector<double> *xSelectedTk, std::vector<double> *ySelectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch);
   void cutTrackFei4Residuals(std::vector<double> *xTk, std::vector<double> *yTk, std::vector<double> *slopeTk, std::vector<int> *colFei4, std::vector<int> *rowFei4, std::vector<double> *xSelectedTk, std::vector<double> *ySelectedTk, std::vector<double> *slopeSelectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch);
   
-  void cutTrackFei4Residuals(const tbeam::FeIFourEvent* fei4ev ,const std::vector<tbeam::Track>& tkNoOverlap, std::vector<tbeam::Track>& selectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch);
+  void cutTrackFei4Residuals(const tbeam::FeIFourEvent* fei4ev ,const std::vector<tbeam::Track>& tkNoOverlap, std::vector<tbeam::Track>& selectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch, bool doClosestTrack);
 
 }
 #endif

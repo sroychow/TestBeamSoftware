@@ -351,7 +351,7 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
   Utility::removeTrackDuplicates(telEv_, tkNoOv);
   //Match with FEI4
   std::vector<tbeam::Track>  selectedTk;
-  Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y()); 
+  Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y(), true); 
   for(unsigned int itrk = 0; itrk<selectedTk.size();itrk++) {
     //do track fei4 matching
     double tkX = -1.*selectedTk[itrk].xPos;

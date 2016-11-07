@@ -18,6 +18,18 @@ class TelescopeAnalysis : public BeamAnaBase {
   void bookHistograms();
   void clearEvent();
   void endJob();
+/*
+  static double FuncPol1Gaus(Double_t * x, Double_t * par){
+    double xx = x[0];
+    double mean = par[1];
+    double sigma = par[2];
+    double norm = par[0];
+    double cte = par[3];
+    double slope = par[4];
+    double f = norm*exp(-0.5*((xx-mean)/sigma)*((xx-mean)/sigma));
+    f = f + cte + slope * xx;
+    return f;
+  }
   static double FuncStepGausShift(Double_t * x, Double_t * par){
     double xx = x[0];
     double pitch = par[0];
@@ -31,7 +43,7 @@ class TelescopeAnalysis : public BeamAnaBase {
     f += cte;
     return f;
   }
-
+*/
  private:
   Histogrammer* hist_;
   unsigned long int nEntries_; 
