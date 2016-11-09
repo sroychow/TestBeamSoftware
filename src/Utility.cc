@@ -218,7 +218,7 @@ namespace Utility {
 
     for(unsigned int itk = 0; itk < tkNoOverlap.size(); itk++) {
       const tbeam::Track tTemp(tkNoOverlap.at(itk));
-      double tkX = -1.*tTemp.xPos;//-1.*telEv()->xPos->at(itk);
+      double tkX = tTemp.xPos;//-1.*tTemp.xPos;//-1.*telEv()->xPos->at(itk);
       double tkY = tTemp.yPos;//telEv()->yPos->at(itk);
       if (!doClosestTrack){
         minresx = 999.;
@@ -226,8 +226,10 @@ namespace Utility {
 	mindelta = 999.;
       }
       for (unsigned int i = 0; i < fei4ev->col->size(); i++) {
-        double xval = -9.875 + (fei4ev->col->at(i)-1)*0.250;
-        double yval = -8.375 + (fei4ev->row->at(i)-1)*0.05;
+        //double xval = -9.875 + (fei4ev->col->at(i)-1)*0.250;
+        //double yval = -8.375 + (fei4ev->row->at(i)-1)*0.05;
+        double xval = 8.375 - (fei4ev->row->at(i)-1)*0.05;
+        double yval = 9.875 - (fei4ev->col->at(i)-1)*0.250;
         double xres = xval - tkX - xResMean;//fStepGaus_x->GetParameter(4);//fGausResiduals_x->GetParameter("Mean");
         double yres = yval - tkY - yResMean;//fStepGaus_y->GetParameter(4);//fGausResiduals_y->GetParameter("Mean");
         //if(std::fabs(xres) < std::fabs(minresx))   minresx = xres;

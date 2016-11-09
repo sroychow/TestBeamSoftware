@@ -136,30 +136,34 @@ void AlignmentAnalysis::eventLoop()
     //cout << "NHits: d0, "<<d0c0.size()<<" ; d1, "<<d1c0.size()<<endl;
     if (d0c0.size()==1) {
       for (unsigned int ih=0; ih<d0c0.size(); ih++){
-	float xTkAtDUT = selectedTk[0].yPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;
+	//float xTkAtDUT = selectedTk[0].yPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;
+	float xTkAtDUT = selectedTk[0].xPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dxdz;
 	float xDUT = (d0c0.at(ih) - nstrips()/2) * dutpitch();
-        xTkAtDUT = -1.*xTkAtDUT;
+        //xTkAtDUT = -1.*xTkAtDUT;
 	hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX", xDUT-xTkAtDUT);
 	DUT_z_try = zMin; //300
 	for (int iz=0; iz<zNsteps; iz++){
 	  DUT_z_try += zStep;
-	  xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;
-          xTkAtDUT = -1.*xTkAtDUT;
+	  //xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;
+	  xTkAtDUT = selectedTk[0].xPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dxdz;
+          //xTkAtDUT = -1.*xTkAtDUT;
 	  hist_->fillHist1D("TrackFit",Form("d0_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
 	}
       }
     }
     if (d1c0.size()==1){
       for (unsigned int ih=0; ih<d1c0.size(); ih++){
-	float xTkAtDUT = selectedTk[0].yPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;
-        xTkAtDUT = -1.*xTkAtDUT;
+	//float xTkAtDUT = selectedTk[0].yPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;
+	float xTkAtDUT = selectedTk[0].xPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dxdz;
+        //xTkAtDUT = -1.*xTkAtDUT;
 	float xDUT = (d1c0.at(ih) - nstrips()/2) * dutpitch();
 	hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX", xDUT-xTkAtDUT);
 	DUT_z_try = zMin;//300;
 	for (int iz=0; iz<zNsteps; iz++){
 	  DUT_z_try += zStep;
-	  xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;
-          xTkAtDUT = -1.*xTkAtDUT;
+	  //xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;
+	  xTkAtDUT = selectedTk[0].xPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dxdz;
+          //xTkAtDUT = -1.*xTkAtDUT;
 	  hist_->fillHist1D("TrackFit",Form("d1_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
 	}
       }
@@ -233,9 +237,10 @@ void AlignmentAnalysis::eventLoop()
       for (int iz=0; iz<zNsteps; iz++){
 	DUT_z_try = zMin + (float)(iz*zStep);
 	float offset = line_d0.first * DUT_z_try + line_d0.second;
-	float xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + offset;
-        xTkAtDUT = -1.*xTkAtDUT + offset;
-        //xTkAtDUT = xTkAtDUT + offset;
+	//float xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + offset;
+	float xTkAtDUT = selectedTk[0].xPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dxdz;
+        //xTkAtDUT = -1.*xTkAtDUT + offset;
+        xTkAtDUT = xTkAtDUT + offset;
 	if (fabs(xTkAtDUT-xDUT) < 3*sigma_d0[iz]) {
 	  chi2_d0[iz] += (xTkAtDUT-xDUT)/resTelescope * (xTkAtDUT-xDUT)/resTelescope;
 	  Nevent_d0_window[iz] ++;
@@ -248,9 +253,10 @@ void AlignmentAnalysis::eventLoop()
       for (int iz=0; iz<zNsteps; iz++){
 	DUT_z_try = zMin + (float)(iz*zStep);
 	float offset = line_d1.first * DUT_z_try + line_d1.second;
-	float xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + offset;
-        xTkAtDUT = -1.*xTkAtDUT + offset;
-        //xTkAtDUT = xTkAtDUT + offset;
+	//float xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + offset;
+	float xTkAtDUT = selectedTk[0].xPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dxdz;
+        //xTkAtDUT = -1.*xTkAtDUT + offset;
+        xTkAtDUT = xTkAtDUT + offset;
 	if (fabs(xTkAtDUT-xDUT) < 3*sigma_d1[iz]) {
 	  chi2_d1[iz] += (xTkAtDUT-xDUT)/resTelescope * (xTkAtDUT-xDUT)/resTelescope;
 	  Nevent_d1_window[iz]++;
@@ -287,7 +293,7 @@ void AlignmentAnalysis::eventLoop()
   float DUT_z_aligned = DUT_z;
   float d0_Offset_aligned = line_d0.first * d0_chi2_min_z + line_d0.second;
   float d1_Offset_aligned = line_d1.first * d1_chi2_min_z + line_d1.second;
-  
+ 
   std::ofstream fileAlignment;
   if(isProduction_) {
     fileAlignment.open(alignparFile_.c_str(), ios::out | ios::app);
@@ -338,16 +344,18 @@ void AlignmentAnalysis::eventLoop()
     
     if (d0c0.size()==1){
       float xDUT = (d0c0.at(0) - nstrips()/2) * dutpitch();
-      float xTkAtDUT = selectedTk[0].yPos + (d0_chi2_min_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + d0_Offset_aligned;
-      xTkAtDUT = -1.*xTkAtDUT + d0_Offset_aligned;
-      //xTkAtDUT = xTkAtDUT + d0_Offset_aligned;
+      //float xTkAtDUT = selectedTk[0].yPos + (d0_chi2_min_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + d0_Offset_aligned;
+      float xTkAtDUT = selectedTk[0].xPos + (d0_chi2_min_z-aLparameteres().FEI4_z)*selectedTk[0].dxdz;
+      //xTkAtDUT = -1.*xTkAtDUT + d0_Offset_aligned;
+      xTkAtDUT = xTkAtDUT + d0_Offset_aligned;
       hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);
     }
     if (d1c0.size()==1){
       float xDUT = (d1c0.at(0) - nstrips()/2) * dutpitch();
-      float xTkAtDUT = selectedTk[0].yPos + (d1_chi2_min_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + d1_Offset_aligned;
-      xTkAtDUT = -1.*xTkAtDUT + d1_Offset_aligned;
-      //xTkAtDUT = xTkAtDUT + d1_Offset_aligned;
+      //float xTkAtDUT = selectedTk[0].yPos + (d1_chi2_min_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + d1_Offset_aligned;
+      float xTkAtDUT = selectedTk[0].xPos + (d1_chi2_min_z-aLparameteres().FEI4_z)*selectedTk[0].dxdz;
+      //xTkAtDUT = -1.*xTkAtDUT + d1_Offset_aligned;
+      xTkAtDUT = xTkAtDUT + d1_Offset_aligned;
       hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);
     }
   }//end of 3rd loop over events
@@ -429,14 +437,14 @@ std::pair<float, float> AlignmentAnalysis::GetOffsetVsZ(const char* det, float**
     fGausExtractedX->SetParameter(2, 0.026);
     fGausExtractedX->SetParameter(3, cte);
     fGausExtractedX->SetParameter(4, 0);
-    htmp->Fit("fGausExtractedX");
+    htmp->Fit("fGausExtractedX", "WW");
 
     center = fGausExtractedX->GetParameter(1);
     rms = 5*fGausExtractedX->GetParameter(2);
     (*sigma)[iz] = rms;
     htmp->SetAxisRange(center-rms, center+rms, "X");
     fGausExtractedX->SetRange(center-rms, center+rms);
-    htmp->Fit("fGausExtractedX");
+    htmp->Fit("fGausExtractedX", "WW");
  
 /*
     center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();

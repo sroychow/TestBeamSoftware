@@ -64,8 +64,8 @@ void TelescopeAnalysis::eventLoop()
 
     for(unsigned int i = 0; i<tkNoOv.size(); i++) {
       //std::cout << i<< std::endl;
-      double tkX = -1.*tkNoOv[i].xPos;
-      double tkY = tkNoOv[i].xPos;
+      double tkX = tkNoOv[i].xPos;//-1.*tkNoOv[i].xPos;
+      double tkY = tkNoOv[i].yPos;
       hist_->fillHist1D("TelescopeAnalysis","TkXPos", tkX);
       hist_->fillHist1D("TelescopeAnalysis","TkYPos", tkY);
     }
@@ -73,8 +73,10 @@ void TelescopeAnalysis::eventLoop()
     for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
       hist_->fillHist1D("TelescopeAnalysis","HtColumn", fei4Ev()->col->at(i));
       hist_->fillHist1D("TelescopeAnalysis","HtRow", fei4Ev()->row->at(i));
-      double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
-      double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
+      //double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
+      //double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
+      double xval = 8.375 - (fei4Ev()->row->at(i)-1)*0.05;
+      double yval = 9.875 - (fei4Ev()->col->at(i)-1)*0.250;
       hist_->fillHist1D("TelescopeAnalysis","HtXPos", xval);
       hist_->fillHist1D("TelescopeAnalysis","HtYPos", yval);
     }
@@ -85,14 +87,16 @@ void TelescopeAnalysis::eventLoop()
     double ymin = 999.9;
     double deltamin = 999.9;
     for(unsigned int itk = 0; itk < tkNoOv.size(); itk++) {
-      double tkX = -1.*tkNoOv[itk].xPos; 
+      double tkX = tkNoOv[itk].xPos;//-1.*tkNoOv[itk].xPos; 
       double tkY = tkNoOv[itk].yPos; 
       //double xmin = 999.9;
       //double ymin = 999.9;
       //double deltamin = 999.9;
       for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
-        double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
-        double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
+        //double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
+        //double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
+        double xval = 8.375 - (fei4Ev()->row->at(i)-1)*0.05;
+        double yval = 9.875 - (fei4Ev()->col->at(i)-1)*0.250;
         hist_->fillHist2D("TelescopeAnalysis","tkXPosVsHtXPos", xval, tkX);
         hist_->fillHist2D("TelescopeAnalysis","tkYPosVsHtYPos", yval, tkY);
         //if (std::fabs(xval - tkX) < std::fabs(xmin)) xmin = xval - tkX;
@@ -180,14 +184,16 @@ void TelescopeAnalysis::eventLoop()
     double ymin = 999.9;
     double deltamin = 999.9;
     for(unsigned int itk = 0; itk < tkNoOv.size(); itk++) {
-      double tkX = -1.*tkNoOv[itk].xPos;
+      double tkX = tkNoOv[itk].xPos;//-1.*tkNoOv[itk].xPos;
       double tkY = tkNoOv[itk].yPos;
       //double xmin = 999.9;
       //double ymin = 999.9;
       //double deltamin = 999.9;
       for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {
-        double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
-        double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
+        //double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
+        //double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
+        double xval = 8.375 - (fei4Ev()->row->at(i)-1)*0.05;
+        double yval = 9.875 - (fei4Ev()->col->at(i)-1)*0.250;
         //if (std::fabs(xval - tkX - offset_x_tmp) < std::fabs(xmin)) xmin = xval - tkX - offset_x_tmp;
         //if (std::fabs(yval - tkY - offset_y_tmp) < std::fabs(ymin)) ymin = yval - tkY - offset_y_tmp;
         if (sqrt((xval - tkX - offset_x_tmp)*(xval - tkX - offset_x_tmp) + (yval - tkY - offset_y_tmp)*(yval - tkY - offset_y_tmp)) < deltamin){
@@ -222,7 +228,7 @@ void TelescopeAnalysis::eventLoop()
   fStepGaus_y->SetLineWidth(2);
   fStepGaus_y->SetLineColor(kRed);
   fStepGaus_y->SetParLimits(0, 0., 0.4);
-  fStepGaus_y->SetParameter(0, 0.05);
+  fStepGaus_y->SetParameter(0, 0.250);
   fStepGaus_y->SetParLimits(1, 0.0, 0.1);
   fStepGaus_y->SetParameter(1, 0.003);
   fStepGaus_y->SetParLimits(2, 0., height);
@@ -262,7 +268,7 @@ void TelescopeAnalysis::eventLoop()
   fStepGaus_x->SetLineWidth(2);
   fStepGaus_x->SetLineColor(kRed);
   fStepGaus_x->SetParLimits(0, 0., 0.4);
-  fStepGaus_x->SetParameter(0, 0.250);
+  fStepGaus_x->SetParameter(0, 0.050);
   fStepGaus_x->SetParLimits(1, 0.0, 0.1);
   fStepGaus_x->SetParameter(1, 0.003);
   fStepGaus_y->SetParLimits(2, 0., height);
@@ -324,12 +330,14 @@ void TelescopeAnalysis::eventLoop()
     double minresy = 999.;
     double mindelta = 999.;
     for(unsigned int itk = 0; itk < tkNoOv.size(); itk++) {
-      double tkX = -1.*tkNoOv[itk].xPos;//-1.*telEv()->xPos->at(itk);
+      double tkX = tkNoOv[itk].xPos;//-1.*tkNoOv[itk].xPos;//-1.*telEv()->xPos->at(itk);
       double tkY = tkNoOv[itk].yPos;//telEv()->yPos->at(itk);
       for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
         //default pitch and dimensions of fei4 plane
-        double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
-        double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
+        //double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
+        //double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
+        double xval = 8.375 - (fei4Ev()->row->at(i)-1)*0.05;
+        double yval = 9.875 - (fei4Ev()->col->at(i)-1)*0.250;
         double xres = xval - tkX - offset_x_total;//fStepGaus_x->GetParameter(4);//fGausResiduals_x->GetParameter("Mean");
         double yres = yval - tkY - offset_y_total;//fStepGaus_y->GetParameter(4);//fGausResiduals_y->GetParameter("Mean");
         //if(std::fabs(xres) < std::fabs(minresx))   minresx = xres;
