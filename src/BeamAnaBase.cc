@@ -111,6 +111,7 @@ bool BeamAnaBase::readJob(const std::string jfile) {
             << "\nnStrips:" << nStrips_
             << "\npitchDUT:" << pitchDUT_
             << std::endl;
+   if(doChannelMasking_)  setChannelMasking(chmaskFilename_);
 }
 
 void BeamAnaBase::beginJob(){
@@ -340,6 +341,7 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
     int xtkdutStrip1 = xtrk1Pos/pitchDUT_ + nStrips_/2; 
     bool mtk = std::find(dut_maskedChannels_->at("det0").begin(), dut_maskedChannels_->at("det0").end(), xtkdutStrip0) == dut_maskedChannels_->at("det0").end();
     mtk = mtk && std::find( dut_maskedChannels_->at("det1").begin(), dut_maskedChannels_->at("det1").end(), xtkdutStrip1) == dut_maskedChannels_->at("det1").end();
+    mtk = mtk && xtkdutStrip0 > 127 && xtkdutStrip1 > 127;
     return mtk;
   }
   return true;
@@ -354,22 +356,18 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
   Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y(), true); 
   for(unsigned int itrk = 0; itrk<selectedTk.size();itrk++) {
     //do track fei4 matching
-    double tkX = -1.*selectedTk[itrk].xPos;
-    double tkY = selectedTk[itrk].yPos;
-    double XTkatDUT0_itrk = selectedTk[itrk].yPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dydz;
-    XTkatDUT0_itrk = -1.*XTkatDUT0_itrk + alPars_.d0_Offset_aligned;
-    double XTkatDUT1_itrk = selectedTk[itrk].yPos + (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dydz;
-    XTkatDUT1_itrk = -1.*XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
-    double YTkatDUT0_itrk = selectedTk[itrk].xPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
-    double YTkatDUT1_itrk = selectedTk[itrk].xPos + (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
+    double XTkatDUT0_itrk = selectedTk[itrk].xPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
+    XTkatDUT0_itrk = XTkatDUT0_itrk + alPars_.d0_Offset_aligned;
+    double XTkatDUT1_itrk = selectedTk[itrk].xPos + (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
+    XTkatDUT1_itrk = XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
+    double YTkatDUT0_itrk = selectedTk[itrk].yPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dydz;
+    double YTkatDUT1_itrk = selectedTk[itrk].yPos + (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dydz;
     //Selected tracks within DUT acceptance FEI4
     if(isTrkfiducial(XTkatDUT0_itrk, XTkatDUT1_itrk, YTkatDUT0_itrk, YTkatDUT1_itrk)) {
       selectedTk[itrk].xtkDut0 = XTkatDUT0_itrk;
       selectedTk[itrk].xtkDut1 = XTkatDUT1_itrk;
       selectedTk[itrk].ytkDut0 = YTkatDUT0_itrk;
       selectedTk[itrk].ytkDut1 = YTkatDUT1_itrk;
-      //std::cout << "Tk extrapolation values=" << selectedTk[itrk].xtkDut0 << "\t" << selectedTk[itrk].xtkDut1 << "\t"
-      //                                       << selectedTk[itrk].ytkDut0 << "\t" << selectedTk[itrk].ytkDut1 << std::endl;
       tbeam::Track temp(selectedTk[itrk]);
       fidTkColl.push_back(temp);
     } 

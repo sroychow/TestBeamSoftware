@@ -128,9 +128,11 @@ void Histogrammer::bookTrackMatchHistograms() {
   new TH1D("clswidthDUT0_1trkfid","ClusterWidth(cluster matched to track) at DUT0 plane(fiducial)(#trk=1)",50,-0.5,49.5);
   new TH1D("clswidthDUT1_1trkfid","ClusterWidth(cluster matched to track) at DUT1 plane(fiducial)(#trk=1)",50,-0.5,49.5);
 
-  //new TH1D("sresidualC0multitrkfidNodupl","Stub Residual at DUT0 plane(fiducial)(#trk>1, no duplicate tracks)",800,-20.,20.);
-  new TH2D("minstubTrkPoscorrD1","Cluster xTrk Pos Correlation;trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
-  h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1"));
+  new TH2D("minstubTrkPoscorrD1_all","Closest-Stub xTrk Pos Correlation;trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
+  new TH2D("minstubTrkPoscorrD1_matched","Closest-Stub xTrk Pos Correlation(matched);trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
+  h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1_all"));
+  h2d->SetOption("colz");
+  h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1_matched"));
   h2d->SetOption("colz");
 
   new TH1D("sminresidualC0_1trkfid","Stub Residual at DUT1 plane(fiducial)(#trk=1)",1000,-10.,10.);

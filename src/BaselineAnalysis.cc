@@ -86,6 +86,8 @@ void BaselineAnalysis::eventLoop()
       continue;
      }
 
+     if(fei4Ev()->nPixHits != 1)    continue;
+     
      hist_->fillHist1D("EventInfo","condData", condEv()->condData);
      hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(condEv()->tdcPhase));
       
@@ -190,7 +192,8 @@ void BaselineAnalysis::eventLoop()
           //for stub
           hist_->fillHist1D("TrackMatch","sminresidualC0_1trkfid", minStubresC0);
           hist_->fillHist1D("TrackMatch","hminposStub",minStubposC0);
-          hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1", x1/dutpitch() + nstrips()/2, minStubStripC0);           
+          hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_all", x1/dutpitch() + nstrips()/2, minStubStripC0);
+          if(smatchD1)  hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_matched", x1/dutpitch() + nstrips()/2, minStubStripC0);           
        }
 
         hist_->fillHist1D("TrackMatch", "trkcluseff", 3);
@@ -219,13 +222,14 @@ void BaselineAnalysis::eventLoop()
         }
       }   
    }//event loop
+   //error(1/N )sqrt( k(1 − k/N )).
    std::cout << "\n#events with 1 fid trk(both)=" << trkFid
              << "\n#events with atleast 1 matched cluster with 1 fid trk(D0)=" << det0clsMatch
              << "\n#events with atleast 1 matched cluster with 1 fid trk(D1)=" << det1clsMatch
              << "\n#events with atleast 1 matched cluster with 1 fid trk(any)=" << clsMatchany
              << "\n#events with atleast 1 matched cluster with 1 fid trk(both)=" << clsMatchboth
              << "\n#events with atleast 1 matched reco stub in D1=" << recostubMatchD1
-             << "\n#Abs Stub Efficiency=" << double(recostubMatchD1)/double(trkFid)
+             << "\n#Abs Stub Efficiency=" << double(recostubMatchD1)/double(trkFid) << "\tError=" << TMath::Sqrt(recostubMatchD1*(1.- double(recostubMatchD1)/double(trkFid) ))/double(trkFid)
              << std::endl;
 }
 
