@@ -3,7 +3,7 @@
 #include <string>
 #include "TROOT.h"
 #include "TStopwatch.h"
-#include "AlignmentAnalysis.h"
+#include "AlignmentMultiDimAnalysis.h"
 //#include "ReconstructionFromRaw.h"
 using std::cout;
 using std::cerr;
@@ -20,7 +20,7 @@ int main( int argc,char* argv[] ){
   //Let's roll
   TStopwatch timer;
   timer.Start();
-  AlignmentAnalysis r;
+  AlignmentMultiDimAnalysis r;
   r.readJob(jobfile);
   r.beginJob();
   std::cout << "Event Loop start" << std::endl;
