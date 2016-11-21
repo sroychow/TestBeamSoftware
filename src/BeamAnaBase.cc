@@ -79,6 +79,8 @@ bool BeamAnaBase::readJob(const std::string jfile) {
       else if(key=="d1minZ") alPars_.d1_chi2_min_z = std::atof(value.c_str());
       else if(key=="d0Offsetaligned") alPars_.d0_Offset_aligned = std::atof(value.c_str()); 
       else if(key=="d1Offsetaligned") alPars_.d1_Offset_aligned = std::atof(value.c_str());
+      else if(key=="deltaZdutplane") alPars_.deltaZ = std::atof(value.c_str()); 
+      else if(key=="angle") alPars_.theta = std::atof(value.c_str()); 
       else if(key=="doTelescopeMatching") doTelMatching_ = (atoi(value.c_str()) > 0) ? true : false;
       else if(key=="doChannelMasking") doChannelMasking_ = (atoi(value.c_str()) > 0) ? true : false;
       else if(key=="channelMaskFile")  chmaskFilename_ = value;
@@ -97,9 +99,9 @@ bool BeamAnaBase::readJob(const std::string jfile) {
             << "\nOutFile: " << outFilename_
             << "\nFEI4Z:" << alPars_.FEI4_z
             << "\nd0_chi2_min_z:" << alPars_.d0_chi2_min_z
-            << "\nd1_chi2_min_z:" << alPars_.d1_chi2_min_z
             << "\nd0_Offset_aligned:" << alPars_.d0_Offset_aligned
-            << "\nd1_Offset_aligned:" << alPars_.d1_Offset_aligned
+            << "\ndeltaZ:" << alPars_.deltaZ
+            << "\nangle:" << alPars_.theta
             << "\ndoTelescopeMatching:" << doTelMatching_
             << "\ndoChannelMasking:" << doChannelMasking_
             << "\nchannelMaskFile:" << chmaskFilename_
@@ -356,16 +358,17 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
   Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y(), true); 
   for(unsigned int itrk = 0; itrk<selectedTk.size();itrk++) {
     //do track fei4 matching
-    double XTkatDUT0_itrk = selectedTk[itrk].xPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
-    XTkatDUT0_itrk = XTkatDUT0_itrk + alPars_.d0_Offset_aligned;
-    double XTkatDUT1_itrk = selectedTk[itrk].xPos + (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
-    XTkatDUT1_itrk = XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
+    //double XTkatDUT0_itrk = selectedTk[itrk].xPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
+    //XTkatDUT0_itrk = XTkatDUT0_itrk + alPars_.d0_Offset_aligned;
+    //double XTkatDUT1_itrk = selectedTk[itrk].xPos + (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dxdz;
+    //XTkatDUT1_itrk = XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
     double YTkatDUT0_itrk = selectedTk[itrk].yPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dydz;
     double YTkatDUT1_itrk = selectedTk[itrk].yPos + (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dydz;
+    std::pair<double,double>  xtkdut = Utility::extrapolateTrackAtDUTwithAngles(selectedTk[itrk], alPars_.FEI4_z, alPars_.d0_Offset_aligned, alPars_.d0_chi2_min_z, alPars_.deltaZ, alPars_.theta);
     //Selected tracks within DUT acceptance FEI4
-    if(isTrkfiducial(XTkatDUT0_itrk, XTkatDUT1_itrk, YTkatDUT0_itrk, YTkatDUT1_itrk)) {
-      selectedTk[itrk].xtkDut0 = XTkatDUT0_itrk;
-      selectedTk[itrk].xtkDut1 = XTkatDUT1_itrk;
+    if(isTrkfiducial(xtkdut.first, xtkdut.second, YTkatDUT0_itrk, YTkatDUT1_itrk)) {
+      selectedTk[itrk].xtkDut0 = xtkdut.first;
+      selectedTk[itrk].xtkDut1 = xtkdut.second;
       selectedTk[itrk].ytkDut0 = YTkatDUT0_itrk;
       selectedTk[itrk].ytkDut1 = YTkatDUT1_itrk;
       tbeam::Track temp(selectedTk[itrk]);

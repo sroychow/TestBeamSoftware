@@ -18,6 +18,8 @@ namespace tbeam {
     double d1_chi2_min_z;
     double d0_Offset_aligned;
     double d1_Offset_aligned;
+    double deltaZ;
+    double theta;
   };
   class cluster;
   class stub;

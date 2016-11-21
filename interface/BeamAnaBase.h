@@ -61,6 +61,8 @@ class BeamAnaBase {
     double offsetfei4y() const {return offsetFEI4y_;}
     double nstrips() const {return nStrips_;}
     double dutpitch() const {return pitchDUT_;}
+    double dutangle() const {return alPars_.theta;}
+    double sensordeltaZ() const {return alPars_.deltaZ;}
     virtual void beginJob();
     virtual void endJob();
     virtual void eventLoop() = 0; 

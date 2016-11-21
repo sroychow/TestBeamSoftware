@@ -156,8 +156,6 @@ void AlignmentMultiDimAnalysis::eventLoop()
     //Match with FEI4
     std::vector<tbeam::Track>  selectedTk;
     Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y(), true); 
-    //cout << "NselectedTk="<<selectedTk.size()<<endl;    
-
     //Find mean of residuals, scanning zDUT      
     if (selectedTk.size()!=1) continue;
     //cout << "NHits: d0, "<<d0c0.size()<<" ; d1, "<<d1c0.size()<<endl;
@@ -166,10 +164,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
         float xDUT = (d0c0.at(ih) - nstrips()/2) * dutpitch();
         selectedTk_d0_1Hit.push_back(selectedTk[0]);
         d0_DutXpos.push_back(xDUT);
-	//float xTkAtDUT = selectedTk[0].yPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;
 	float xTkAtDUT = selectedTk[0].xPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dxdz;
-        //xTkAtDUT = -1.*xTkAtDUT;
-	//hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX", xDUT-xTkAtDUT);
         hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_bis", xDUT-xTkAtDUT);
 	DUT_z_try = zMin; //300
 	//for (int iz=0; iz<zNsteps; iz++){
@@ -186,10 +181,8 @@ void AlignmentMultiDimAnalysis::eventLoop()
         float xDUT = (d1c0.at(ih) - nstrips()/2) * dutpitch();
         selectedTk_d1_1Hit.push_back(selectedTk[0]);
         d1_DutXpos.push_back(xDUT);
-	//float xTkAtDUT = selectedTk[0].yPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;
 	float xTkAtDUT = selectedTk[0].xPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dxdz;
         //xTkAtDUT = -1.*xTkAtDUT;
-	//hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX", xDUT-xTkAtDUT);
         hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_bis", xDUT-xTkAtDUT);
 	DUT_z_try = zMin;//300;
 	//for (int iz=0; iz<zNsteps; iz++){
@@ -201,19 +194,6 @@ void AlignmentMultiDimAnalysis::eventLoop()
 	//}
       }
     }
-/*
-    if (d0c0.size()==1 && d1c0.size()==1){
-      float D0xDUT = (d0c0.at(0) - nstrips()/2) * dutpitch();
-      float D1xDUT = (d1c0.at(0) - nstrips()/2) * dutpitch();
-      bothPlanes_TkXposFEI4.push_back(selectedTk[0].xPos);
-      bothPlanes_TkDxDz.push_back(selectedTk[0].dxdz);
-      bothPlanes_DutXposD0.push_back(D0xDUT);
-      bothPlanes_DutXposD1.push_back(D1xDUT);
-      float xTkAtDUT = selectedTk[0].xPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dxdz;
-      hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_ter", D0xDUT-xTkAtDUT);
-      hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_ter", D1xDUT-xTkAtDUT);
-    }
-*/
     if (dutRecoClmap()->at("det0C0").size()==1 && dutRecoClmap()->at("det1C0").size()==1){
       double D0xDUT;
       double D1xDUT;
