@@ -55,14 +55,14 @@ class BeamAnaBase {
     int nStubscbcSword() const { return nStubscbcSword_;}
     bool hasTelescope() const { return hasTelescope_;}
     double resDUT() const {return residualSigmaDUT_;}
-    double resfei4x() const {return residualSigmaFEI4x_;}
-    double resfei4y() const {return residualSigmaFEI4y_;}
-    double offsetfei4x() const {return offsetFEI4x_;}
-    double offsetfei4y() const {return offsetFEI4y_;}
+    double resfei4x() const {return alPars_.residualSigmaFEI4x();}
+    double resfei4y() const {return alPars_.residualSigmaFEI4y();}
+    double offsetfei4x() const {return alPars_.offsetFEI4x();}
+    double offsetfei4y() const {return alPars_.offsetFEI4y();}
     double nstrips() const {return nStrips_;}
     double dutpitch() const {return pitchDUT_;}
-    double dutangle() const {return alPars_.theta;}
-    double sensordeltaZ() const {return alPars_.deltaZ;}
+    double dutangle() const {return alPars_.theta();}
+    double sensordeltaZ() const {return alPars_.deltaZ();}
     virtual void beginJob();
     virtual void endJob();
     virtual void eventLoop() = 0; 

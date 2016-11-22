@@ -17,12 +17,12 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
   ~AlignmentMultiDimAnalysis();
   void beginJob();
   void eventLoop(); 
-  double ComputeChi2(const double* x) const;
-  double ComputeChi2BothPlanes(const double* x) const;
-  
-void bookHistograms();
+  void bookHistograms();
   void clearEvent();
   void endJob();
+  double ComputeChi2(const double* x) const;
+  double ComputeChi2BothPlanes(const double* x) const;
+
   static double FuncStepGaus(Double_t * x, Double_t * par){
     double xx = x[0];
     double pitch = par[0];
@@ -35,6 +35,7 @@ void bookHistograms();
     f += cte;
     return f;
   }
+  void doTelescopeAnalysis(tbeam::alignmentPars& aLp);
  private:
   std::string runNumber_;
   std::string outFile_;
@@ -63,6 +64,7 @@ void bookHistograms();
   ROOT::Minuit2::Minuit2Minimizer* minimizerBothPlanesConstraint;
 
   bool doConstrainDeltaOffset;
+  tbeam::alignmentPars al;
 };
 
 #endif

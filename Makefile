@@ -46,7 +46,7 @@ TelescopeAnalysis.o : src/TelescopeAnalysis.cc
 	mv $@ ../src/
 
 AlignmentMultiDimAnalysis.o : src/AlignmentMultiDimAnalysis.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+	$(CXX)  $(CXXFLAGS) -Wdeprecated-declarations `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
 
 DeltaClusterAnalysis.o : src/DeltaClusterAnalysis.cc
