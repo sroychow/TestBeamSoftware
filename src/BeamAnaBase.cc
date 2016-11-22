@@ -364,7 +364,8 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
     //XTkatDUT1_itrk = XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
     double YTkatDUT0_itrk = selectedTk[itrk].yPos + (alPars_.d0_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dydz;
     double YTkatDUT1_itrk = selectedTk[itrk].yPos + (alPars_.d1_chi2_min_z-alPars_.FEI4_z)*selectedTk[itrk].dydz;
-    std::pair<double,double>  xtkdut = Utility::extrapolateTrackAtDUTwithAngles(selectedTk[itrk], alPars_.FEI4_z, alPars_.d0_Offset_aligned, alPars_.d0_chi2_min_z, alPars_.deltaZ, alPars_.theta);
+    std::pair<double,double>  xtkdut = Utility::extrapolateTrackAtDUTwithAngles(selectedTk[itrk], alPars_.FEI4_z, alPars_.d0_Offset_aligned, 
+                                                                                alPars_.d0_chi2_min_z, alPars_.deltaZ, TMath::Pi()*alPars_.theta/180.);
     //Selected tracks within DUT acceptance FEI4
     if(isTrkfiducial(xtkdut.first, xtkdut.second, YTkatDUT0_itrk, YTkatDUT1_itrk)) {
       selectedTk[itrk].xtkDut0 = xtkdut.first;
