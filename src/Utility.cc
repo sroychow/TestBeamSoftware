@@ -262,9 +262,7 @@ namespace Utility {
 
     double zDUT_d1 = zDUT_d0 + deltaZ*cos(theta);
     double xTkAtDUT_d1 = track.xPos + (zDUT_d1 - FEI4_z) * track.dxdz;
-    //double offset_d1 = offset_d0 + sin(theta)*deltaZ*(1.- track.dxdz*tan(theta)) - track.dxdz*deltaZ;
     double offset_d1 = offset_d0 + sin(theta)*deltaZ;
-    //double offset_d1 = offset_d0 * sin(theta) / (1.+cos(theta));
     xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-track.dxdz*tan(theta)));
 
     std::pair<double, double> xTkAtDUT;

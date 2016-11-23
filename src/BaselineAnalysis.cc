@@ -77,6 +77,7 @@ void BaselineAnalysis::eventLoop()
        hist_->fillHist1D("EventInfo","offset", cbcOffset2());
        hist_->fillHist1D("EventInfo","window", stubWindow());
        hist_->fillHist1D("EventInfo","tilt", static_cast<unsigned long int>(condEv()->tilt));
+       cout << "Alignment Parameters" << aLparameteres();
      }
      hist_->fillHist1D("EventInfo","isPeriodic",isPeriodic());
      hist_->fillHist1D("EventInfo","isGoodFlag",isGoodEvent());
@@ -193,7 +194,7 @@ void BaselineAnalysis::eventLoop()
           hist_->fillHist1D("TrackMatch","sminresidualC0_1trkfid", minStubresC0);
           hist_->fillHist1D("TrackMatch","hminposStub",minStubposC0);
           hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_all", x1/dutpitch() + nstrips()/2, minStubStripC0);
-          if(smatchD1)  hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_matched", x1/dutpitch() + nstrips()/2, minStubStripC0);           
+          if(smatchD1)  hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_matched", x1/dutpitch() + nstrips()/2, minStubStripC0);  
        }
 
         hist_->fillHist1D("TrackMatch", "trkcluseff", 3);

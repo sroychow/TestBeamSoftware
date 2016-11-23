@@ -81,6 +81,7 @@ bool BeamAnaBase::readJob(const std::string jfile) {
       else if(key=="fei4Z")  alPars_.FEI4z(std::atof(value.c_str()));
       else if(key=="readAlignmentFromfile")  ralignmentFromfile = (atoi(value.c_str()) > 0) ? true : false;
       else if(key=="alignmentOutputFile")  alignParfile = value;
+      else if(key=="residualSigmaDUT")     residualSigmaDUT_ = std::atof(value.c_str());
       else if(key=="doTelescopeMatching") doTelMatching_ = (atoi(value.c_str()) > 0) ? true : false;
       else if(key=="doChannelMasking") doChannelMasking_ = (atoi(value.c_str()) > 0) ? true : false;
       else if(key=="channelMaskFile")  chmaskFilename_ = value;
@@ -391,8 +392,9 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
     //XTkatDUT1_itrk = XTkatDUT1_itrk + alPars_.d1_Offset_aligned;
     double YTkatDUT0_itrk = selectedTk[itrk].yPos + (alPars_.d0Z() - alPars_.FEI4z())*selectedTk[itrk].dydz;
     double YTkatDUT1_itrk = selectedTk[itrk].yPos + (alPars_.d1Z() - alPars_.FEI4z())*selectedTk[itrk].dydz;
-    std::pair<double,double>  xtkdut = Utility::extrapolateTrackAtDUTwithAngles(selectedTk[itrk], alPars_.FEI4z(), alPars_.d0Offset(), 
-                                                                                alPars_.d0Z(), alPars_.deltaZ(), alPars_.theta());
+    std::pair<double,double>  xtkdut = Utility::extrapolateTrackAtDUTwithAngles(selectedTk[itrk], 
+                                       alPars_.FEI4z(), alPars_.d0Offset(), alPars_.d0Z(), 
+                                       alPars_.deltaZ(), alPars_.theta());
     //Selected tracks within DUT acceptance FEI4
     if(isTrkfiducial(xtkdut.first, xtkdut.second, YTkatDUT0_itrk, YTkatDUT1_itrk)) {
       selectedTk[itrk].xtkDut0 = xtkdut.first;
@@ -403,7 +405,6 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
       fidTkColl.push_back(temp);
     } 
   }
-  //std::cout << selectedTk.size() << "\t" << fidTkColl.size() << std::endl;
 }
 
 void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {

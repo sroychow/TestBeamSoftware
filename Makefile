@@ -60,7 +60,7 @@ telescopeAna:   src/telescopeAna.cc $(OBJS) src/TelescopeAnalysis.o src/Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 alignmentReco:   src/alignmentReco.cc $(OBJS) src/AlignmentMultiDimAnalysis.o src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs ` -lMathMore -lMinuit2
+	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs ` -lMinuit2
 
 deltaClusAnalysis: src/dclusAnalysis.cc $(OBJS) src/DeltaClusterAnalysis.o src/Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`

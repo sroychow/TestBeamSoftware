@@ -38,8 +38,8 @@ namespace tbeam {
      double d0Z() const { return d0_chi2_min_z; }
      void d0Z(const double dz) { d0_chi2_min_z = dz; }
 
-     double d1Z() const { return d1_Offset_aligned; }
-     void d1Z(const double dz) { d1_Offset_aligned = dz; }
+     double d1Z() const { return d1_chi2_min_z; }
+     void d1Z(const double dz) { d1_chi2_min_z = dz; }
 
      double d0Offset() const { return d0_Offset_aligned; } 
      void d0Offset(const double doff) { d0_Offset_aligned = doff; } 
