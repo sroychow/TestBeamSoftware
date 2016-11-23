@@ -1,24 +1,13 @@
 #START
-Run=769
-inputFile=AnalysisTree_769.root
-outputFile=telescopeOutput_769.root
-//Run=926:zD0=657.622:offsetD0=2.42379:zD1=659.481:offsetD1=2.40335
+Run=769;
+inputFile=AnalysisTree/AnalysisTree_769.root
+outputFile=bOutput_769.root
 fei4Z=724
-d0minZ=432.006
-d1minZ=436.273
-d0Offsetaligned=-1.25361
-d1Offsetaligned=-1.23976
+readAlignmentFromfile=1
 doTelescopeMatching=1
 doChannelMasking_=0
 channelMaskFile=chmask.txt
 residualSigmaDUT=0.026
-//Summary of the Step convolved with Gauss Fits to the residuals:
-//Residual X>>>Mean=-0.499878>>>Pitch=0.250008
-//Residual Y>>>Mean=-0.0530388>>>Pitch=0.0499252
-residualSigmaFEI4X=0.0309913
-residualSigmaFEI4Y=0.135798
-offsetFEI4X=-3.65698
-offsetFEI4Y=-0.831087
 nStrips=254
 pitchDUT=0.09
 #only needed by Alignment Analysis
