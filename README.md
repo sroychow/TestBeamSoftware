@@ -17,7 +17,7 @@ make
 
 #JobCard Description
 
-Run=<RUN-NUMBER>
+Run=\<RUN-NUMBER\>
 
 inputFile=AnalysisTree_<RUN-NUMBER>.root
 
