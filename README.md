@@ -15,6 +15,12 @@ make
 
 ./alignmentReco \<jobcardName\>
 
+Apart from a root file with all the histograms, the application also produces a text file with all the alignment parameters. 
+This application can be run in "production" or "new" mode(can be set in the job card). If you run in production mode, the 
+alignment output parameter file will be opened in append mode. It can be used for analysing many runs and dunping the 
+output in the same file. In the "new" mode, a new alignment output file will be created and if a file exists with the same name,
+ it will be overwritten.
+
 #JobCard Description
 
 Only the parameters required for this application are described.
@@ -39,10 +45,7 @@ pitchDUT=0.09 # Pitch
 
 alignmentOutputFile=\<filename\> #Filename where the alignment parameters will be written
 
-isProductionmode=0 #if =0 a new alignmentOutputFile will be created. If a file of the same name exists,
-it will overwrite its content.; =1 will open the alignmentOutputFile file in append mode, use this 
-option when running over many runs
-
+isProductionmode=0 #if =0 new mode; =1 append mode 
 #Step2: Baseline Analysis to study detector performance
 
 Only the parameters required for this application are described.
