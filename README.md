@@ -42,3 +42,33 @@ alignmentOutputFile=\<filename\> #Filename where the alignment parameters will b
 isProductionmode=0 #if =0 a new alignmentOutputFile will be created. If a file of the same name exists,
 it will overwrite its content.; =1 will open the alignmentOutputFile file in append mode, use this 
 option when running over many runs
+
+#Step2: Baseline Analysis to study detector performance
+
+Only the parameters required for this application are described.
+
+Run=\<RUN-NUMBER\>
+
+inputFile=AnalysisTree_\<RUN-NUMBER\>.root
+
+outputFile=\<output-file name\>
+
+fei4Z=\<FEI4-distance\>
+
+readAlignmentFromfile=1 #if=1, alignment parameters will be read from alignmentOutputFile; if=0, telescope matching will not work(or you have to hardcode values in your code! Not recommended!!)
+
+doTelescopeMatching=1 #set to true; will look for telescope data; if =0, detector only performance
+
+doChannelMasking=0 #=0 if no channel masked; =1 if channel masking required
+
+channelMaskFile=\<filename\> #set name of file with channel mask; required if doChannelMasking=1 
+
+nStrips=254 # No. of strips
+
+pitchDUT=0.09 # Pitch
+
+residualSigmaDUT=0.026 #residual(4times this value) in mm used for matching DUT hit/cluster/stub to Track
+
+alignmentOutputFile=\<filename\> #Filename from where the alignment parameters will be read
+
+
