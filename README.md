@@ -71,4 +71,24 @@ residualSigmaDUT=0.026 #residual(4times this value) in mm used for matching DUT 
 
 alignmentOutputFile=\<filename\> #Filename from where the alignment parameters will be read
 
+#Alignment Paremter file format
 
+Each line in the file corresponds to a Run and is a ":" separated list of all alignment parameters required by our analysis written out in the following order.
+
+Run:offsetFEI4X:offsetFEI4Y:residualSigmaFEI4X:residualSigmaFEI4Y:zD0:offsetD0:deltaZ:angle
+
+Run=\<Run Number\>
+
+offsetFEI4X/Y=Offset of track with respect to FeI4 hits in X and Y
+
+residualSigmaFEI4X/Y=Pitch at FeI4 plane obtained from telescope-Fei4 residual fits
+
+zD0=Position of DUT0 w.r.t FeI4
+
+offsetD0=Offset of track-DUT hits obtained from residual fit at DUT planr
+
+deltaZ=difference in Z pos between DUT0 and DUT1
+
+angle=DUT angle w.r.t beam
+
+**If alignment parameters are read from file, the code searches for the Run Number and takes the alignment parameters from that line.
