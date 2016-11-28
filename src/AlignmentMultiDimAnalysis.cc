@@ -162,7 +162,6 @@ void AlignmentMultiDimAnalysis::eventLoop()
     Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, al.offsetFEI4x(), al.offsetFEI4y(), al.residualSigmaFEI4x(), al.residualSigmaFEI4y(), true); 
     //Find mean of residuals, scanning zDUT      
     if (selectedTk.size()!=1) continue;
-    if (d0c0.size()!=1 ||  d1c0.size() !=1 )   continue;
     //cout << "NHits: d0, "<<d0c0.size()<<" ; d1, "<<d1c0.size()<<endl;
     if (d0c0.size()==1) {
       for (unsigned int ih=0; ih<d0c0.size(); ih++){
