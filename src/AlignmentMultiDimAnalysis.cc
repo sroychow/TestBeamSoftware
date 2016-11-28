@@ -162,6 +162,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
     Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, al.offsetFEI4x(), al.offsetFEI4y(), al.residualSigmaFEI4x(), al.residualSigmaFEI4y(), true); 
     //Find mean of residuals, scanning zDUT      
     if (selectedTk.size()!=1) continue;
+    if (d0c0.size()!=1 ||  d1c0.size() !=1 )   continue;
     //cout << "NHits: d0, "<<d0c0.size()<<" ; d1, "<<d1c0.size()<<endl;
     if (d0c0.size()==1) {
       for (unsigned int ih=0; ih<d0c0.size(); ih++){
@@ -303,8 +304,8 @@ void AlignmentMultiDimAnalysis::eventLoop()
   resultBothPlanes[4] = resultMinimizerBothPlanes[4];
   double chi2BothPlanes = ComputeChi2BothPlanes(resultBothPlanes);
   cout << "BothPlanes offset_d0="<< resultBothPlanes[0]<<" zDUT_d0="<<resultBothPlanes[1]<<" offset_d1="<< resultBothPlanes[2]<<" zDUT_d1="<<resultBothPlanes[3] << " theta="<<resultBothPlanes[4]*180./TMath::Pi()<< " chi2="<<chi2BothPlanes<<endl;
-
-  for (unsigned int i=0; i<selectedTk_d1_1Hit.size(); i++){
+  
+  for (unsigned int i=0; i<selectedTk_bothPlanes_1Cls.size(); i++){
     double xDUT_d0 =   bothPlanes_DutXposD0.at(i);
     double xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), resultBothPlanes[0], resultBothPlanes[1], resultBothPlanes[4]);
     double resDUT_d0 = xDUT_d0 - xTkAtDUT_d0;
