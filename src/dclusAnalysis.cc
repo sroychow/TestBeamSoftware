@@ -52,8 +52,8 @@ int main( int argc,char* argv[] ){
   TStopwatch timer;
   timer.Start();
   DeltaClusterAnalysis r(inFilename,outFilename);
-  r.setTelMatching(telmatch);
-  r.setChannelMasking(dochMask, cMaskFilename);
+  //r.setTelMatching(telmatch);
+  //r.setChannelMasking(dochMask, cMaskFilename);
   std::cout << "Event Loop start" << std::endl;
   r.eventLoop();
   r.endJob();

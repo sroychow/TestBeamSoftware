@@ -11,18 +11,17 @@
 class TH1;
 class BaselineAnalysis : public BeamAnaBase {
  public:
-  BaselineAnalysis(const string inFilename,const string outFilename);
+  BaselineAnalysis();
   ~BaselineAnalysis();
   void beginJob();
   void eventLoop(); 
   void bookHistograms();
-  void fitResidualHistograms();
   void printEfficiency();
   void clearEvent();
   void endJob();
 
  private:
-  std::string outFile_;
+  //std::string outFile_;
   Histogrammer* hist_;
   unsigned long int nEntries_; 
 };

@@ -3,7 +3,7 @@
         \brief               Analysis to study the delta position between clusters in 2 sensors
         \author              Jarne De Clercq, Jelena Luetic
         \date                05/07/16
-        Support :            mail to : 
+        Support :            mail to :
 */
 
 #include "TROOT.h"
@@ -25,10 +25,10 @@ DeltaClusterAnalysis::DeltaClusterAnalysis(const std::string inFilename,const st
   BeamAnaBase::BeamAnaBase(),
   outFile_(outFilename)
 {
-  std::cout << "EDM Tuple Analyzer initialized with the following options\n" 
+  std::cout << "EDM Tuple Analyzer initialized with the following options\n"
             << "Infile: " << inFilename
             << "\nOutFile: " << outFile_
-            << std::endl; 
+            << std::endl;
   if( setInputFile(inFilename) == 0 ) {
     std::cout << "Empty Chain!!";
     exit(1);
@@ -55,7 +55,7 @@ void DeltaClusterAnalysis::beginJob() {
   analysisTree()->GetEntry(0);
   getCbcConfig(condEv()->cwd, condEv()->window);
 }
- 
+
 void DeltaClusterAnalysis::eventLoop()
 {
    //if (fChain == 0) return;
@@ -66,7 +66,7 @@ void DeltaClusterAnalysis::eventLoop()
 
    std::cout << "CBC configuration:: SW=" << stubWindow()
              << "\tCWD=" << cbcClusterWidth()
-             << "\tOffset1="<< cbcOffset1() 
+             << "\tOffset1="<< cbcOffset1()
              << "\tOffset2" << cbcOffset2()
    << std::endl;
    for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
@@ -74,7 +74,7 @@ void DeltaClusterAnalysis::eventLoop()
      Long64_t ientry = analysisTree()->GetEntry(jentry);
      if (ientry < 0) break;
      if (jentry%1000 == 0) {
-       cout << " Events processed. " << std::setw(8) << jentry 
+       cout << " Events processed. " << std::setw(8) << jentry
 	    << endl;
      }
      //cout << "Point 1" << endl;
@@ -93,23 +93,23 @@ void DeltaClusterAnalysis::eventLoop()
      if(!isGoodEvent())   continue;
      hist_->fillHist1D("EventInfo","condData", condEv()->condData);
      hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(condEv()->tdcPhase));
-      
+
       //cout << "Point 2" << endl;
       //All input vectors are set here. You can use the hit,cluster, stub maps only after calling this method
       setDetChannelVectors();
 
       bool cls1 = dutRecoClmap()->at("det0C0").size() == 1 && dutRecoClmap()->at("det1C0").size() == 1;
-      hist_->fillHist2D("DeltaCluster", "nclsCorrelation", dutRecoClmap()->at("det0C0").size(), dutRecoClmap()->at("det1C0").size()); 
+      hist_->fillHist2D("DeltaCluster", "nclsCorrelation", dutRecoClmap()->at("det0C0").size(), dutRecoClmap()->at("det1C0").size());
       hist_->fillHist1D("DeltaCluster", "evtsW1cls",cls1);
-      hist_->fillHist1D("DeltaCluster","nclusterdiffC0", std::abs(dutRecoClmap()->at("det0C0").size() - 
+      hist_->fillHist1D("DeltaCluster","nclusterdiffC0", std::fabs(dutRecoClmap()->at("det0C0").size() - 
                                                          dutRecoClmap()->at("det1C0").size()));
 
       if(!cls1)  continue;//single cluster on both sensors
-      //Follow up all other study for single cluster events here        
+      //Follow up all other study for single cluster events here
       const auto& d0c0 = *det0C0();
       const auto& d0c1 = *det0C1();
       const auto& d1c0 = *det1C0();
-      const auto& d1c1 = *det1C1();      
+      const auto& d1c1 = *det1C1();
       //cout << "Point 3" << endl;
       //Fill histo for det0
       hist_->fillHist1D("det0","chsizeC0", d0c0.size());

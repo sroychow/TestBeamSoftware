@@ -19,20 +19,20 @@ using std::string;
 
 namespace Utility {
   void tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters) {
-  
+
     // Skip delimiters at beginning.
     std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-  
+
     // Find first "non-delimiter".
     std::string::size_type pos = str.find_first_of(delimiters, lastPos);
-  
+
     while (std::string::npos != pos || string::npos != lastPos)  {
       // Found a token, add it to the vector.
       tokens.push_back(str.substr(lastPos, pos - lastPos));
-    
+
       // Skip delimiters.  Note the "not_of"
       lastPos = str.find_first_not_of(delimiters, pos);
-    
+
       // Find next "non-delimiter"
       pos = str.find_first_of(delimiters, lastPos);
     }
@@ -90,20 +90,20 @@ namespace Utility {
 	  }
 	}
       }
-    return ncbcSw;  
+    return ncbcSw;
   }
 
   // ------------------------------------------------------------------------
-  // Convenience routine for filling 1D histograms. We rely on root to keep 
-  // track of all the histograms that are booked all over so that we do not 
-  // have to use any global variables to save the histogram pointers. Instead, 
-  // we use the name of the histograms and gROOT to retrieve them from the 
-  // Root object pool whenever necessary. This is the closest one can go to 
+  // Convenience routine for filling 1D histograms. We rely on root to keep
+  // track of all the histograms that are booked all over so that we do not
+  // have to use any global variables to save the histogram pointers. Instead,
+  // we use the name of the histograms and gROOT to retrieve them from the
+  // Root object pool whenever necessary. This is the closest one can go to
   // hbook and ID based histogramming
   // -------------------------------------------------------------------------
-  
+
   TH1* getHist1D(const char* hname) {
-    TObject *obj = gDirectory->GetList()->FindObject(hname); 
+    TObject *obj = gDirectory->GetList()->FindObject(hname);
     if (!obj) {
       std::cerr << "**** getHist1D: Histogram for <" << hname << "> not found!" << std::endl;
       return 0;
@@ -121,14 +121,14 @@ namespace Utility {
       h = dynamic_cast<TH1I*>(obj);
     else
       h = dynamic_cast<TH1F*>(obj);
-    
+
     if (!h) {
       std::cerr << "**** getHist1D: <" << hname << "> may not be a 1D Histogram" << std::endl;
       return 0;
     }
     return h;
   }
-  
+
   TH1* getHist1D(const string& hname) {
     return getHist1D(hname.c_str());
   }
@@ -136,12 +136,12 @@ namespace Utility {
   // Convenience routine for filling 2D histograms
   // ---------------------------------------------
   TH2* getHist2D(const char* hname) {
-    TObject *obj = gDirectory->GetList()->FindObject(hname); 
+    TObject *obj = gDirectory->GetList()->FindObject(hname);
     if (!obj) {
       cerr << "**** getHist2D: Histogram for <" << hname << "> not found!" << endl;
       return nullptr;
     }
-    
+
     TH2 *h = nullptr;
     if (obj->InheritsFrom("TH2D"))
       h = dynamic_cast<TH2D*>(obj);
@@ -153,7 +153,7 @@ namespace Utility {
       h = dynamic_cast<TH2I*>(obj);
     else
       h = dynamic_cast<TH2F*>(obj);
-    
+
     if (!h) {
       cerr << "**** getHist2D: <<" << hname << ">> may not be a 2D Histogram" << endl;
       return nullptr;
@@ -184,4 +184,100 @@ namespace Utility {
     return getHistProfile(hname.c_str());
   }
 
+  // ---------------------------------------------
+  // Convenience routine for track cleaning
+  // ---------------------------------------------
+
+  void removeTrackDuplicates(const tbeam::TelescopeEvent *telEv, std::vector<tbeam::Track>& tkNoOverlap) {
+    //Loop over original track collection and compare all track pairs to check for duplicates
+    for(unsigned int i = 0; i<telEv->xPos->size(); i++) {
+      double tkX = telEv->xPos->at(i);
+      double tkY = telEv->yPos->at(i);
+      bool isduplicate = false;
+      for (unsigned int j = i+1; j<telEv->xPos->size(); j++) {
+        double tkX_j = telEv->xPos->at(j);
+        double tkY_j = telEv->yPos->at(j);
+        //if (fabs(tkY-tkY_j)<0.015*4 && fabs(tkX-tkX_j)<0.072*4) isduplicate = true;
+        //if (fabs(tkY-tkY_j)<0.015 && fabs(tkX-tkX_j)<0.072) isduplicate = true;
+        if (fabs(tkY-tkY_j)<0.001 && fabs(tkX-tkX_j)<0.001) isduplicate = true;
+      }
+      if (!isduplicate) {
+        tbeam::Track t(i,tkX,tkY,telEv->dxdz->at(i),telEv->dydz->at(i),telEv->chi2->at(i),telEv->ndof->at(i));
+        tkNoOverlap.push_back(t);
+      }
+    }
+  }
+
+  void cutTrackFei4Residuals(const tbeam::FeIFourEvent* fei4ev ,const std::vector<tbeam::Track>& tkNoOverlap, std::vector<tbeam::Track>& selectedTk,
+                             const double xResMean, const double yResMean, const double xResPitch, const double yResPitch, bool doClosestTrack) {
+
+    double mindelta = 999.;
+    double minresx = 999.;
+    double minresy = 999.;
+    int itkClosest = -1;
+
+    for(unsigned int itk = 0; itk < tkNoOverlap.size(); itk++) {
+      const tbeam::Track tTemp(tkNoOverlap.at(itk));
+      double tkX = -1.*tTemp.yPos;
+      double tkY = tTemp.xPos;
+      if (!doClosestTrack){
+        minresx = 999.;
+        minresy = 999.;
+        mindelta = 999.;
+      }
+      for (unsigned int i = 0; i < fei4ev->col->size(); i++) {
+        double yval = 9.875 - (fei4ev->col->at(i)-1)*0.250;
+        double xval = 8.375 - (fei4ev->row->at(i)-1)*0.05;
+        double xres = xval - tkX - xResMean;//fStepGaus_x->GetParameter(4);//fGausResiduals_x->GetParameter("Mean");
+        double yres = yval - tkY - yResMean;//fStepGaus_y->GetParameter(4);//fGausResiduals_y->GetParameter("Mean");
+
+        if (sqrt(xres*xres+yres*yres)<mindelta){
+	         mindelta = sqrt(xres*xres+yres*yres);
+           minresx = xres;
+           minresy = yres;
+           itkClosest = itk;
+      	}
+      }
+      if (!doClosestTrack && (std::fabs(minresx) < xResPitch) && (std::fabs(minresy) < yResPitch)) selectedTk.push_back(tTemp);
+    }
+    //cout << "doClosestTrack " << doClosestTrack << endl;
+    //cout << "minresx " << minresx << endl;
+    //cout << "xResPitch " << xResPitch << endl;
+    //cout << "minresy " << minresy << endl;
+    //cout << "yResPitch " << yResPitch << endl;
+
+    if (doClosestTrack && (std::fabs(minresx) < xResPitch) && (std::fabs(minresy) < yResPitch) && itkClosest!=-1){
+      const tbeam::Track tClosest(tkNoOverlap.at(itkClosest));
+      selectedTk.push_back(tClosest);
+    }
+  }
+
+  double extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset, double zDUT, double theta){
+
+    //Compute distance between DUT center and track impact at DUT along X
+    double xTkAtDUT = track.yPos + (zDUT - FEI4_z) * track.dydz;
+    xTkAtDUT *= -1.;
+    xTkAtDUT = (xTkAtDUT + offset)/ (cos(theta)*(1.-track.dydz*tan(theta)));
+
+    return xTkAtDUT;
+  }
+
+  std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta){
+
+    //Compute distance between DUT center and track impact at DUT along X
+    double xTkAtDUT_d0 = track.yPos + (zDUT_d0 - FEI4_z) * track.dydz;
+    xTkAtDUT_d0 *= -1.;
+    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-track.dydz*tan(theta)));
+
+    double zDUT_d1 = zDUT_d0 + deltaZ*cos(theta);
+    double xTkAtDUT_d1 = track.yPos + (zDUT_d1 - FEI4_z) * track.dydz;
+    xTkAtDUT_d1 *= -1;
+    double offset_d1 = offset_d0 + sin(theta)*deltaZ;
+    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-track.dydz*tan(theta)));
+
+    std::pair<double, double> xTkAtDUT;
+    xTkAtDUT.first = xTkAtDUT_d0;
+    xTkAtDUT.second = xTkAtDUT_d1;
+    return xTkAtDUT;
+  }
 }
