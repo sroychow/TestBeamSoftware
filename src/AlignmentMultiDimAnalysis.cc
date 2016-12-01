@@ -304,12 +304,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   resultBothPlanes[4] = resultMinimizerBothPlanes[4];
   double chi2BothPlanes = ComputeChi2BothPlanes(resultBothPlanes);
   cout << "BothPlanes offset_d0="<< resultBothPlanes[0]<<" zDUT_d0="<<resultBothPlanes[1]<<" offset_d1="<< resultBothPlanes[2]<<" zDUT_d1="<<resultBothPlanes[3] << " theta="<<resultBothPlanes[4]*180./TMath::Pi()<< " chi2="<<chi2BothPlanes<<endl;
-<<<<<<< HEAD
 
-
-=======
-  
->>>>>>> 3e9bf7fae294a43fbf9f0e69e6b96ec0614e3960
   for (unsigned int i=0; i<selectedTk_bothPlanes_1Cls.size(); i++){
     double xDUT_d0 =   bothPlanes_DutXposD0.at(i);
     double xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), resultBothPlanes[0], resultBothPlanes[1], resultBothPlanes[4]);
