@@ -84,6 +84,7 @@ class BeamAnaBase {
     void fillCommonHistograms();
     std::map<std::string,std::string> jobCardmap() const { return jobCardmap_;}
     std::string inFile() { return iFilename_; }    
+    unsigned long int getMaxEvt() { return maxEvent_; }
 
   private :
     std::string iFilename_;
@@ -100,6 +101,7 @@ class BeamAnaBase {
     bool hasTelescope_;
     bool doTelMatching_;
     bool doChannelMasking_;
+    unsigned long int maxEvent_=0;
     int sw_;
     int offset1_;
     int offset2_;
