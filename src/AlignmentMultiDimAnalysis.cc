@@ -208,7 +208,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   hTmp->SetAxisRange(offset_init_d0-1., offset_init_d0+1., "X");
   double cte = (hTmp->GetBinContent(hTmp->FindBin(offset_init_d0-1.))+hTmp->GetBinContent(hTmp->FindBin(offset_init_d0+1.)))/2.;
   fGausExtractedX->SetParameter(0, hTmp->GetMaximum());
-  fGausExtractedX->SetParLimits(1, -5., 5.);
+  fGausExtractedX->SetParLimits(1, -6., 6.);
   //fGausExtractedX->SetParLimits(1, -10., 10.);
   fGausExtractedX->SetParameter(1, offset_init_d0);
   fGausExtractedX->SetParLimits(2, 0, 0.3);
@@ -236,7 +236,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   doD0 = true;
   doD1 = false;
   double chi2 = 0;
-  minimizer->SetLimitedVariable(0, "offset", offset_init_d0, 0.0001, -5., 5.);
+  minimizer->SetLimitedVariable(0, "offset", offset_init_d0, 0.0001, -6., 6.);
   minimizer->SetLimitedVariable(1, "zDUT", 435., 0.01, 200., 800.);
   minimizer->SetLimitedVariable(2, "theta", 0.*TMath::Pi()/180., 0.01, -90.*TMath::Pi()/180., 90.*TMath::Pi()/180.);
 
@@ -261,7 +261,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   doD0 = false;
   doD1 = true;
   minimizer->Clear();
-  minimizer->SetLimitedVariable(0, "offset", offset_init_d1, 0.0001, -5., 5.);
+  minimizer->SetLimitedVariable(0, "offset", offset_init_d1, 0.0001, -6., 6.);
   minimizer->SetLimitedVariable(1, "zDUT", 435., 0.01, 200., 800.);
   minimizer->SetLimitedVariable(2, "theta", 0.*TMath::Pi()/180., 0.01, -90.*TMath::Pi()/180., 90.*TMath::Pi()/180.);
 
@@ -287,9 +287,9 @@ void AlignmentMultiDimAnalysis::eventLoop()
   doD0 = true;
   doD1 = true;
   minimizerBothPlanes->Clear();
-  minimizerBothPlanes->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -5., 5.);
+  minimizerBothPlanes->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -6., 6.);
   minimizerBothPlanes->SetLimitedVariable(1, "zDUT_d0", 435., 0.01, 200., 800.);
-  minimizerBothPlanes->SetLimitedVariable(2, "offset_d1", offset_init_d1, 0.0001, -5., 5.);
+  minimizerBothPlanes->SetLimitedVariable(2, "offset_d1", offset_init_d1, 0.0001, -6., 6.);
   minimizerBothPlanes->SetLimitedVariable(3, "zDUT_d1", 435., 0.01, 200., 800.);
   minimizerBothPlanes->SetLimitedVariable(4, "theta", 0., 0.01, -90.*TMath::Pi()/180., 90.*TMath::Pi()/180.);
 
@@ -326,7 +326,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   doD0 = true;
   doD1 = true;
   minimizerBothPlanesConstraint->Clear();
-  minimizerBothPlanesConstraint->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -5., 5.);
+  minimizerBothPlanesConstraint->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -6., 6.);
   minimizerBothPlanesConstraint->SetLimitedVariable(1, "zDUT_d0", 435., 0.01, 200., 800.);
   minimizerBothPlanesConstraint->SetLimitedVariable(2, "deltaZ", 3., 0.01, 0., 8.);
   minimizerBothPlanesConstraint->SetLimitedVariable(3, "theta", TMath::ATan((offset_init_d1-offset_init_d0)/3.), 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
