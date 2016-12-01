@@ -52,6 +52,7 @@ void BaselineAnalysis::eventLoop()
              << "\tOffset1="<< cbcOffset1() 
              << "\tOffset2" << cbcOffset2()
    << std::endl;
+   Float_t elogangle;
    long int trkFid = 0;
    long int det0clsMatch = 0;
    long int det1clsMatch = 0;
@@ -60,6 +61,8 @@ void BaselineAnalysis::eventLoop()
    long int recostubMatchD1 = 0;
    unsigned long int lastBadevent = 0; 
    int nMatchedCluster = 0;
+
+   long int runSub = -1;
    
    for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
      clearEvent();
@@ -68,10 +71,14 @@ void BaselineAnalysis::eventLoop()
      if (jentry%1000 == 0) {
        cout << " Events processed. " << std::setw(8) << jentry 
 	    << endl;
+       runSub++;
      }
+
      if(jentry==0) {
+       if(condEv()->DUTangle>=999000) elogangle=(999000.-(condEv()->DUTangle))/10;
        hist_->fillHist1D("EventInfo","hvSettings", condEv()->HVsettings);
-       hist_->fillHist1D("EventInfo","dutAngle", condEv()->DUTangle);
+       hist_->fillHist1D("EventInfo","dutAngle", elogangle);
+       hist_->fillHist1D("EventInfo","alignAngle", dutangle()*180/TMath::Pi());
        hist_->fillHist1D("EventInfo","vcth", condEv()->vcth);
        hist_->fillHist1D("EventInfo","offset", cbcOffset1());
        hist_->fillHist1D("EventInfo","offset", cbcOffset2());
@@ -87,7 +94,7 @@ void BaselineAnalysis::eventLoop()
       continue;
      }
 
-     if(fei4Ev()->nPixHits != 1)    continue;
+     if(doTelMatching() && fei4Ev()->nPixHits != 1)   continue;
      
      hist_->fillHist1D("EventInfo","condData", condEv()->condData);
      hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(condEv()->tdcPhase));
@@ -198,25 +205,30 @@ void BaselineAnalysis::eventLoop()
        }
 
         hist_->fillHist1D("TrackMatch", "trkcluseff", 3);
-        trkFid++;
+	trkFid++;
+	hist_->fillHist1D("TrackMatch", "trkFidStability", runSub);
         hist_->fillHist1D("TrackMatch","effVtdc_den",static_cast<unsigned int>(condEv()->tdcPhase));
         if(trkClsmatchD0)   {
           det0clsMatch++;
           hist_->fillHist1D("TrackMatch", "trkcluseff", 4);
+          hist_->fillHist1D("TrackMatch", "clsD0Stability", runSub);
         }
         if(trkClsmatchD1)   {
           det1clsMatch++;
           hist_->fillHist1D("TrackMatch", "trkcluseff", 5);
+          hist_->fillHist1D("TrackMatch", "clsD1Stability", runSub);
         }
         if(trkClsmatchD0 || trkClsmatchD1)   clsMatchany++;
         if(trkClsmatchD0 && trkClsmatchD1)   {
           clsMatchboth++;
           hist_->fillHist1D("TrackMatch", "trkcluseff", 6);
+          hist_->fillHist1D("TrackMatch", "clsBothStability", runSub);
           hist_->fillHist1D("TrackMatch","effVtdc_num",static_cast<unsigned int>(condEv()->tdcPhase));
         }
         if(smatchD1) {
           recostubMatchD1++;
           hist_->fillHist1D("TrackMatch", "trkcluseff", 8);
+          hist_->fillHist1D("TrackMatch", "stubStability", runSub);
         }
         if(!trkClsmatchD0 && !trkClsmatchD1)  {
           hist_->fillHist1D("TrackMatch", "trkcluseff", 7);
@@ -231,7 +243,7 @@ void BaselineAnalysis::eventLoop()
              << "\n#events with atleast 1 matched cluster with 1 fid trk(both)=" << clsMatchboth
              << "\n#events with atleast 1 matched reco stub in D1=" << recostubMatchD1
              << "\n#Abs Stub Efficiency=" << double(recostubMatchD1)/double(trkFid) << "\tError=" << TMath::Sqrt(recostubMatchD1*(1.- double(recostubMatchD1)/double(trkFid) ))/double(trkFid)
-             << std::endl;
+	     << std::endl;
 }
 
 void BaselineAnalysis::clearEvent() {

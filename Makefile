@@ -23,7 +23,7 @@ CXXFLAGS += -g -std=c++11 -fpermissive
 
 HDRS_DICT = interface/DataFormats.h interface/LinkDef.h
 
-bin: baselineReco deltaClusAnalysis alignmentReco telescopeAna
+bin: baselineReco testReco deltaClusAnalysis alignmentReco telescopeAna
 all: 
 	gmake cint 
 	gmake bin 
@@ -41,6 +41,10 @@ BaselineAnalysis.o : src/BaselineAnalysis.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
 
+TestAnalysis.o : src/TestAnalysis.cc
+	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+	mv $@ ../src/
+
 TelescopeAnalysis.o : src/TelescopeAnalysis.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
@@ -54,6 +58,9 @@ DeltaClusterAnalysis.o : src/DeltaClusterAnalysis.cc
 	mv $@ ../src/
 
 baselineReco:   src/baselineReco.cc $(OBJS) src/BaselineAnalysis.o src/Dict.o
+	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
+
+testReco:   src/testReco.cc $(OBJS) src/TestAnalysis.o src/Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 telescopeAna:   src/telescopeAna.cc $(OBJS) src/TelescopeAnalysis.o src/Dict.o

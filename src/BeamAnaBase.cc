@@ -253,8 +253,8 @@ void BeamAnaBase::fillCommonHistograms() {
       int nstubscbcSword = nStubscbcSword_;
       hout_->fillHist1D("StubInfo","nstubRecoC0", dutRecoStubmap_->at("C0").size());      
       hout_->fillHist1D("StubInfo","nstubsFromReco",totStubReco);
-      hout_->fillHist1D("StubInfo","nstubsFromCBCSword",nstubrecoSword);
-      hout_->fillHist1D("StubInfo","nstubsFromRecoSword",nstubscbcSword);
+      hout_->fillHist1D("StubInfo","nstubsFromCBCSword",nstubscbcSword);
+      hout_->fillHist1D("StubInfo","nstubsFromRecoSword",nstubrecoSword);
       for(auto& c : *recostubChipids_)  
         hout_->fillHistofromVec(c.second,"StubInfo","recoStubWord");
       for(auto& c : *cbcstubChipids_)  

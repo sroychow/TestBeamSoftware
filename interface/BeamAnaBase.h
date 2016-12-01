@@ -83,7 +83,8 @@ class BeamAnaBase {
     Histogrammer* outFile() { return hout_; }
     void fillCommonHistograms();
     std::map<std::string,std::string> jobCardmap() const { return jobCardmap_;}
-    
+    std::string inFile() { return iFilename_; }    
+
   private :
     std::string iFilename_;
     std::string outFilename_;
