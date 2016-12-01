@@ -38,7 +38,8 @@ unsigned long int BasePGAnalysis::readEventsLimit(Int_t target) {
   unsigned long int max;
   ifstream _f;
   Bool_t check=false;
-  _f.open("/afs/cern.ch/user/r/rossia/workspace/CMSSW_7_3_0_pre1/BeamBasePGAna/TDR_Code/TestBeamSoftware/interface/eventsLimit.dat");
+  //  _f.open("/afs/cern.ch/user/r/rossia/workspace/CMSSW_7_3_0_pre1/BeamBasePGAna/TDR_Code/TestBeamSoftware/interface/eventsLimit.dat");
+  _f.open("interface/eventsLimit.dat");
   while(_f.good() && !check){
     _f>>run>>max;
     if(run==target) check=true;
@@ -64,11 +65,11 @@ void BasePGAnalysis::eventLoop()
   std::string filename=inFile();
   run_ = std::stoi(filename.substr(filename.find(".root")-3,3));
   cout<<"Run Number : "<<run_<<endl;
-  maxEvents_=readEventsLimit(run_);
-  if(nEntries_<maxEvents_) maxEvents_=nEntries_;
+  maxEvent = getMaxEvt();
+  if(nEntries_<maxEvent || maxEvent==0) maxEvent=nEntries_;
 
    Long64_t nbytes = 0, nb = 0;
-   cout << "#Events=" << nEntries_ <<" -->  MAX EVENTS TO BE PROCESSED : "<<maxEvents_<<endl;
+   cout << "#Events=" << nEntries_ <<" -->  MAX EVENTS TO BE PROCESSED : "<<maxEvent<<endl;
    hist_->fillHist1D("EventInfo","nevents", nEntries_);
 
    std::cout << "CBC configuration:: SW=" << stubWindow()
@@ -90,7 +91,7 @@ void BasePGAnalysis::eventLoop()
 
    long int runSub = -1;
    
-   for (Long64_t jentry=0; jentry<nEntries_ && jentry<maxEvents_;jentry++) {
+   for (Long64_t jentry=0; jentry<nEntries_ && jentry<maxEvent;jentry++) {
      clearEvent();
      Long64_t ientry = analysisTree()->GetEntry(jentry);
      if (ientry < 0) break;
