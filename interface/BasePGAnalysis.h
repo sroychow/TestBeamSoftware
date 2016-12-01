@@ -25,6 +25,6 @@ class BasePGAnalysis : public BeamAnaBase {
   Histogrammer* hist_;
   int run_;
   unsigned long int nEntries_; 
-  unsigned long int maxEvents_; 
+  unsigned long int maxEvent; 
 };
 #endif
