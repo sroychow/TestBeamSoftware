@@ -209,6 +209,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   double cte = (hTmp->GetBinContent(hTmp->FindBin(offset_init_d0-1.))+hTmp->GetBinContent(hTmp->FindBin(offset_init_d0+1.)))/2.;
   fGausExtractedX->SetParameter(0, hTmp->GetMaximum());
   fGausExtractedX->SetParLimits(1, -5., 5.);
+  //fGausExtractedX->SetParLimits(1, -10., 10.);
   fGausExtractedX->SetParameter(1, offset_init_d0);
   fGausExtractedX->SetParLimits(2, 0, 0.3);
   fGausExtractedX->SetParameter(2, 0.03);
@@ -304,7 +305,8 @@ void AlignmentMultiDimAnalysis::eventLoop()
   double chi2BothPlanes = ComputeChi2BothPlanes(resultBothPlanes);
   cout << "BothPlanes offset_d0="<< resultBothPlanes[0]<<" zDUT_d0="<<resultBothPlanes[1]<<" offset_d1="<< resultBothPlanes[2]<<" zDUT_d1="<<resultBothPlanes[3] << " theta="<<resultBothPlanes[4]*180./TMath::Pi()<< " chi2="<<chi2BothPlanes<<endl;
 
-  for (unsigned int i=0; i<selectedTk_d1_1Hit.size(); i++){
+
+  for (unsigned int i=0; i<selectedTk_bothPlanes_1Cls.size(); i++){
     double xDUT_d0 =   bothPlanes_DutXposD0.at(i);
     double xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), resultBothPlanes[0], resultBothPlanes[1], resultBothPlanes[4]);
     double resDUT_d0 = xDUT_d0 - xTkAtDUT_d0;
@@ -315,7 +317,6 @@ void AlignmentMultiDimAnalysis::eventLoop()
     double resDUT_d1 = xDUT_d1 - xTkAtDUT_d1;
     hist_->fillHist1D("TrackFit","d1_1tk1ClusterBothPlanes_diffX_aligned", resDUT_d1);
   }
-
 
   doConstrainDeltaOffset = true;
   doD0 = true;
@@ -586,6 +587,7 @@ double AlignmentMultiDimAnalysis::ComputeChi2(const double* x) const{
 
   if (doD0) htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d0_1tk1Hit_diffX"));
   if (doD1) htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d1_1tk1Hit_diffX"));
+  htmp->GetXaxis()->UnZoom();
   double center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-2., center+2., "X");
   double cte = (htmp->GetBinContent(htmp->FindBin(center-2.))+htmp->GetBinContent(htmp->FindBin(center+2.)))/2.;
@@ -718,6 +720,7 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
   double xwindow = 2.;
 
   if (doD0) htmp0 = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d0_1tk1Hit_diffX"));
+  htmp0->GetXaxis()->UnZoom();
   double center_d0 = ((float)htmp0->GetMaximumBin())*(htmp0->GetXaxis()->GetXmax()-htmp0->GetXaxis()->GetXmin())/((float)htmp0->GetNbinsX()) + htmp0->GetXaxis()->GetXmin();//htmp0->GetMean();
   htmp0->SetAxisRange(center_d0-xwindow, center_d0+xwindow, "X");
   double cte_d0 = (htmp0->GetBinContent(htmp0->FindBin(center_d0-xwindow))+htmp0->GetBinContent(htmp0->FindBin(center_d0+xwindow)))/2.;
@@ -750,6 +753,7 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
   //htmp0->SetAxisRange(center_d0-5*rms_d0, center_d0+5*rms_d0, "X");
 
   if (doD1) htmp1 = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d1_1tk1Hit_diffX"));
+  htmp1->GetXaxis()->UnZoom();
   double center_d1 = ((float)htmp1->GetMaximumBin())*(htmp1->GetXaxis()->GetXmax()-htmp1->GetXaxis()->GetXmin())/((float)htmp1->GetNbinsX()) + htmp1->GetXaxis()->GetXmin();//htmp1->GetMean();
   htmp1->SetAxisRange(center_d1-xwindow, center_d1+xwindow, "X");
   double cte_d1 = (htmp1->GetBinContent(htmp1->FindBin(center_d1-xwindow))+htmp1->GetBinContent(htmp1->FindBin(center_d1+xwindow)))/2.;
@@ -829,9 +833,9 @@ void AlignmentMultiDimAnalysis::doTelescopeAnalysis(tbeam::alignmentPars& aLp) {
     hist_->fillHist1D("TelescopeAnalysis","nhitsFei4", fei4Ev()->nPixHits);
     hist_->fillHist1D("TelescopeAnalysis","nTrack", telEv()->nTrackParams);
     
-    if(fei4Ev()->nPixHits > 2)    continue;
-    if (fei4Ev()->nPixHits==0) continue;
-    if(telEv()->xPos->empty())    continue;
+    if(fei4Ev()->nPixHits > 2)   continue;
+    if (fei4Ev()->nPixHits==0)   continue;
+    if(telEv()->xPos->empty())   continue;
 
     std::vector<tbeam::Track>  tkNoOv;
     Utility::removeTrackDuplicates(telEv(), tkNoOv);
