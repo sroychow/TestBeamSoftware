@@ -87,6 +87,7 @@ bool BeamAnaBase::readJob(const std::string jfile) {
       else if(key=="channelMaskFile")  chmaskFilename_ = value;
       else if(key=="nStrips") nStrips_ = atoi(value.c_str());
       else if(key=="pitchDUT") pitchDUT_ = std::atof(value.c_str());
+      else if(key=="maximumEVT") maxEvent_ = std::atoi(value.c_str());
     }
   }
   jobcardFile.close();
