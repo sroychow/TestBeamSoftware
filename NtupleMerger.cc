@@ -4,6 +4,8 @@ using std::setw;
 NtupleMerger::NtupleMerger(const std::string telTuple, const std::string runNumber) :
   telFound_(true),
   fei4Found_(true),
+  dutF_(nullptr),
+  dqmF_(nullptr),
   telOutputEvent_(new tbeam::TelescopeEvent()),//for output
   telEvent_(new tbeam::TelescopeEvent()),//for input
   fei4Event_(new tbeam::FeIFourEvent()),
@@ -293,7 +295,8 @@ void NtupleMerger::eventLoop() {
     if (jentry%1000 == 0)  {
       cout << " Events processed. " << std::setw(8) << jentry 
 	   << "\t Load DUT=" << dutentry 
-           << "EDM Event = " << condEvent_->event 
+           << "\t EDM Event = " << condEvent_->event 
+           << "\t TelescopeFound=" << telFound_ 
            << endl;
     }
     counter[0]++;
@@ -320,8 +323,8 @@ void NtupleMerger::eventLoop() {
     
     outdutEvent_ = &dtemp;
     outcondEvent_ = &ctemp;
-    telOutputEvent_ = &trigTrackmap_->at(ctemp.event);
-    fei4OutputEvent_ = &trigFeI4map_->at(ctemp.event);  
+    if(telFound_) telOutputEvent_ = &trigTrackmap_->at(ctemp.event);
+    if(fei4Found_) fei4OutputEvent_ = &trigFeI4map_->at(ctemp.event);  
     pFlag_ = cbctemp.eventFlag_;
     bool tdcMatch = (cbctemp.tdcCounter_ == ctemp.tdcPhase);
     goodEventFlag_ = cbcErrflag && pFlag_ && tdcMatch;

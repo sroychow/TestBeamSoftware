@@ -15,6 +15,7 @@ tbeam::cbc::cbc():
 
 tbeam::cluster::cluster():
    x(0),
+   fx(-99.),
    size(0)
 {
 }
@@ -24,6 +25,7 @@ tbeam::cluster::~cluster(){
 
 tbeam::stub::stub():
    x(0),
+   fx(-99.),
    direction(0)
 {
    seeding = new tbeam::cluster();

@@ -18,6 +18,7 @@ namespace tbeam {
      cluster();
      ~cluster();
      uint16_t x;
+     float fx;//floating point position
      uint16_t size;
      //std::vector<tbeam::stub *> stubs;
      ClassDef(cluster,1)
@@ -29,6 +30,7 @@ namespace tbeam {
      tbeam::cluster * seeding;  // Bottom sensor cluster
      tbeam::cluster * matched;  // Top sensor cluster
      uint16_t x;        // Position of the stub (bottom sensor)
+     float fx;        // Floating point Position of the stub (bottom sensor)
      int16_t direction; // Direction of the stub (cl0-cl1)
      ClassDef(stub,1)
   };

@@ -53,4 +53,4 @@ include Makefile.dep
 # Clean 
 .PHONY   : clean 
 clean : 
-	@-rm $(OBJS) $(EXE) $(DICTH) $(DICTC) *.o  
+	@-rm $(OBJS) $(EXE) $(DICTH) $(DICTC) *.o
