@@ -290,7 +290,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   minimizerBothPlanes->SetLimitedVariable(1, "zDUT_d0", 435., 0.01, 200., 800.);
   minimizerBothPlanes->SetLimitedVariable(2, "offset_d1", offset_init_d1, 0.0001, -5., 5.);
   minimizerBothPlanes->SetLimitedVariable(3, "zDUT_d1", 435., 0.01, 200., 800.);
-  minimizerBothPlanes->SetLimitedVariable(4, "theta", 0., 0.01, -90.*TMath::Pi()/180., 90.*TMath::Pi()/180.);
+  minimizerBothPlanes->SetLimitedVariable(4, "theta", 0., 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
 
   cout << "DUT both planes: Start chi2 minimization"<<endl;
   minimizerBothPlanes->Minimize();
@@ -322,9 +322,13 @@ void AlignmentMultiDimAnalysis::eventLoop()
   doD1 = true;
   minimizerBothPlanesConstraint->Clear();
   minimizerBothPlanesConstraint->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -5., 5.);
+  //minimizerBothPlanesConstraint->SetLimitedVariable(0, "offset_d0", resultBothPlanes[0], 0.0001, -5., 5.);
   minimizerBothPlanesConstraint->SetLimitedVariable(1, "zDUT_d0", 435., 0.01, 200., 800.);
-  minimizerBothPlanesConstraint->SetLimitedVariable(2, "deltaZ", 3., 0.01, 0., 8.);
-  minimizerBothPlanesConstraint->SetLimitedVariable(3, "theta", TMath::ATan((offset_init_d1-offset_init_d0)/3.), 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
+  //minimizerBothPlanesConstraint->SetLimitedVariable(1, "zDUT_d0", resultBothPlanes[1], 0.01, 200., 800.);
+  minimizerBothPlanesConstraint->SetLimitedVariable(2, "deltaZ", 2.65, 0.01, 0., 8.);
+  //minimizerBothPlanesConstraint->SetFixedVariable(2, "deltaZ", 2.6);
+  minimizerBothPlanesConstraint->SetLimitedVariable(3, "theta", TMath::ATan((offset_init_d1-offset_init_d0)/2.6), 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
+  //minimizerBothPlanesConstraint->SetLimitedVariable(3, "theta", resultBothPlanes[4], 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
 
   cout << "DUT both planes with deltaOffset constraint: Start chi2 minimization"<<endl;
   minimizerBothPlanesConstraint->Minimize();
@@ -465,7 +469,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
 
   htmp->Fit(fStepGaus);
 
-  bool doMinimizerChecks = true;
+  bool doMinimizerChecks = false;
   if (doMinimizerChecks){
 
     doConstrainDeltaOffset = false; 
@@ -739,7 +743,7 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
   double rms_d0 = fGausExtractedX->GetParameter(2);
   bool failedFit_d0 = false;
   double center_err_d0 = fGausExtractedX->GetParError(1);
-  if (!(center_err_d0>0) || !(height_d0>5.)) failedFit_d0 = true;
+  if (!(center_err_d0>0) || !(height_d0>5.) || !(fGausExtractedX->GetChisquare()>0)) failedFit_d0 = true;
   if (failedFit_d0) {
     chi2=99999.;
       if (!doConstrainDeltaOffset) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" offset_d1=" << offset_d1<< " zDUT_d1="<< zDUT_d1<<" chi2="<<chi2<<" theta="<<theta*180./TMath::Pi()<<" Fit Failed !"<<endl;
@@ -771,7 +775,7 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
   double rms_d1 = fGausExtractedX->GetParameter(2);
   bool failedFit_d1 = false;
   double center_err_d1 = fGausExtractedX->GetParError(1);
-  if (!(center_err_d1>0) || !(height_d1>5.)) failedFit_d1 = true;
+  if (!(center_err_d1>0) || !(height_d1>5.) || !(fGausExtractedX->GetChisquare()>0)) failedFit_d1 = true;
   if (failedFit_d1) {
     chi2=99999.;
       if (!doConstrainDeltaOffset) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" offset_d1=" << offset_d1<< " zDUT_d1="<< zDUT_d1<<" chi2="<<chi2<<" theta="<<theta*180./TMath::Pi()<<" Fit Failed !"<<endl;
@@ -808,7 +812,8 @@ zDUT_d1, theta);
   }
 
   cout << "nEvWindow="<<nEvWindow<<endl;
-  chi2 /= ((double)nEvWindow);
+  if (nEvWindow>0) chi2 /= ((double)nEvWindow);
+  else chi2 = 99999.;
 
   if (!doConstrainDeltaOffset) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" offset_d1=" << offset_d1<< " zDUT_d1="<< zDUT_d1<<" theta="<<theta*180./TMath::Pi()<<" chi2="<<chi2<<endl;
   if (doConstrainDeltaOffset) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" deltaZ="<<deltaZ<<" theta="<<theta*180./TMath::Pi()<<" chi2="<<chi2<<endl; 
@@ -890,6 +895,7 @@ void AlignmentMultiDimAnalysis::doTelescopeAnalysis(tbeam::alignmentPars& aLp) {
    TF1* fPol1Gaus_y = new TF1("FuncPol1Gausy", Utility::FuncPol1Gaus, center-0.5, center+0.5, 5);
    float cte = (htmp->GetBinContent(htmp->FindBin(center-0.5))+htmp->GetBinContent(htmp->FindBin(center+0.5)))/2.;
    fPol1Gaus_y->SetParameter(0, htmp->GetMaximum());
+   fPol1Gaus_y->SetParLimits(1, center-0.5, center+0.5);
    fPol1Gaus_y->SetParameter(1, center);
    fPol1Gaus_y->SetParLimits(2, 0, 0.2);
    fPol1Gaus_y->SetParameter(2, 0.070);
@@ -903,6 +909,7 @@ void AlignmentMultiDimAnalysis::doTelescopeAnalysis(tbeam::alignmentPars& aLp) {
    TF1* fPol1Gaus_x = new TF1("FuncPol1Gausx", Utility::FuncPol1Gaus, center-0.5, center+0.5, 5);
    cte = (htmp->GetBinContent(htmp->FindBin(center-0.5))+htmp->GetBinContent(htmp->FindBin(center+0.5)))/2.;
    fPol1Gaus_x->SetParameter(0, htmp->GetMaximum());
+   fPol1Gaus_x->SetParLimits(1, center-0.5, center+0.5);
    fPol1Gaus_x->SetParameter(1, center);
    fPol1Gaus_x->SetParLimits(2, 0, 0.2);
    fPol1Gaus_x->SetParameter(2, 0.015);
