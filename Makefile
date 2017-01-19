@@ -18,7 +18,7 @@ SOFLAGS  = -shared
 CXXFLAGS = -I./interface -I./  
 
 CXX       = g++
-CXXFLAGS += -g -std=c++11 -fpermissive
+CXXFLAGS += -g -std=c++11
 
 
 HDRS_DICT = interface/DataFormats.h interface/LinkDef.h
