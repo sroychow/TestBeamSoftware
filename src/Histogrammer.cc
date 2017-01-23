@@ -138,6 +138,8 @@ void Histogrammer::bookTrackMatchHistograms() {
   h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1_all"));
   h2d->SetOption("colz");
   h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1_matched"));
+
+
   new TH1D("sminresidualC0_1trkfid","Stub Residual at DUT1 plane(fiducial)(#trk=1)",1000,-10.,10.);
 
   new TH1I("trkcluseff","",9,-0.5,8.5);
@@ -151,6 +153,7 @@ void Histogrammer::bookTrackMatchHistograms() {
   h->GetXaxis()->SetBinLabel(7,"xtkClsMatchD0_&&_D1");
   h->GetXaxis()->SetBinLabel(8,"no-match_D0&&_D1");
   h->GetXaxis()->SetBinLabel(9,"xtkStubMatchC0");
+
   new TH1I("effVtdc_num",";TDC;#Events",17,-0.5,16.5);
   new TH1I("effVtdc_den",";TDC;#Events",17,-0.5,16.5);
 
@@ -230,6 +233,7 @@ void Histogrammer::bookTrackFitHistograms(float zMin, float zStep, int zNsteps){
 
   new TH1F("nEventBeforeResid","nEventBeforeResid", 10, 0, 9);
   new TH1F("nEventAfterResid","nEventAfterResid", 10, 0, 9);
+
 }
 
 TH1* Histogrammer::GetHistoByName(const char* dir, const char* hname){

@@ -240,6 +240,12 @@ namespace Utility {
       }
       if (!doClosestTrack && (std::fabs(minresx) < xResPitch) && (std::fabs(minresy) < yResPitch)) selectedTk.push_back(tTemp);
     }
+    //cout << "doClosestTrack " << doClosestTrack << endl;
+    //cout << "minresx " << minresx << endl;
+    //cout << "xResPitch " << xResPitch << endl;
+    //cout << "minresy " << minresy << endl;
+    //cout << "yResPitch " << yResPitch << endl;
+
     if (doClosestTrack && (std::fabs(minresx) < xResPitch) && (std::fabs(minresy) < yResPitch) && itkClosest!=-1){
       const tbeam::Track tClosest(tkNoOverlap.at(itkClosest));
       selectedTk.push_back(tClosest);

@@ -212,6 +212,7 @@ void BeamAnaBase::fillCommonHistograms() {
         }
         hout_->fillHist2D("det1","nhitvsHitClusPosDiffC0", dut1_chtempC0_->size(), minposdiff);
       }
+
       if(dut0_chtempC0_->size() && !dut1_chtempC0_->size()) hout_->fillHist1D("Correlation","cor_hitC0", 1);
       if(!dut0_chtempC0_->size() && dut1_chtempC0_->size()) hout_->fillHist1D("Correlation","cor_hitC0", 2);
       if(dut0_chtempC0_->size() && dut1_chtempC0_->size()) hout_->fillHist1D("Correlation","cor_hitC0", 3);

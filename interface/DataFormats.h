@@ -155,6 +155,7 @@ namespace tbeam {
      virtual ~TelescopeEvent();
      ClassDef(TelescopeEvent,1)
   };
+
   class FeIFourEvent : public TObject {
     public:
      Int_t                nPixHits;
@@ -171,6 +172,7 @@ namespace tbeam {
      virtual ~FeIFourEvent();
      ClassDef(FeIFourEvent,1)
   };
+
   class Track : public TObject {
     public :
       int trkIndex;
@@ -191,5 +193,6 @@ namespace tbeam {
       virtual ~Track(){}
       ClassDef(Track,1)
   };
+
 }
 #endif

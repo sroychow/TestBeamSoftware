@@ -55,6 +55,13 @@ class BeamAnaBase {
     int nStubscbcSword() const { return nStubscbcSword_;}
     bool hasTelescope() const { return hasTelescope_;}
     double resDUT() const {return residualSigmaDUT_;}
+<<<<<<< HEAD
+=======
+    //double resfei4x() const {return residualSigmaFEI4x_;}
+    //double resfei4y() const {return residualSigmaFEI4y_;}
+    //double offsetfei4x() const {return offsetFEI4x_;}
+    //double offsetfei4y() const {return offsetFEI4y_;}
+>>>>>>> a3fa5ccbc1713929e7097ea675677713e187f60d
     double resfei4x() const {return alPars_.residualSigmaFEI4x();}
     double resfei4y() const {return alPars_.residualSigmaFEI4y();}
     double offsetfei4x() const {return alPars_.offsetFEI4x();}
@@ -83,6 +90,10 @@ class BeamAnaBase {
     Histogrammer* outFile() { return hout_; }
     void fillCommonHistograms();
     std::map<std::string,std::string> jobCardmap() const { return jobCardmap_;}
+<<<<<<< HEAD
+=======
+
+>>>>>>> a3fa5ccbc1713929e7097ea675677713e187f60d
   private :
     std::string iFilename_;
     std::string outFilename_;

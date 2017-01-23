@@ -88,6 +88,7 @@ void BaselineAnalysis::eventLoop()
 
      hist_->fillHist1D("EventInfo","condData", condEv()->condData);
      hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(condEv()->tdcPhase));
+
       setDetChannelVectors();
       const auto& d0c0 = *det0C0();
       const auto& d0c1 = *det0C1();
@@ -97,12 +98,16 @@ void BaselineAnalysis::eventLoop()
       //Telescope Matching
       if(doTelMatching() && hasTelescope()) {
         hist_->fillHist1D("TrackMatch","nTrackParams",telEv()->nTrackParams);
+
         hist_->fillHist1D("TrackMatch", "trkcluseff", 0);
         //Residual Calculation Now moved to AlignmentAnalysis
         //std::vector<double>  xtkDet0, xtkDet1;
         //getExtrapolatedTracks(xtkDet0, xtkDet1);
         std::vector<tbeam::Track>  fidTrkcoll;
         getExtrapolatedTracks(fidTrkcoll);
+
+
+
         //hist_->fillHist1D("TrackMatch", "nTrackParamsNodupl", xtkDet0.size());
         hist_->fillHist1D("TrackMatch", "nTrackParamsNodupl", fidTrkcoll.size());
 
@@ -158,6 +163,7 @@ void BaselineAnalysis::eventLoop()
 
 	// hist_->fillHist1D("TrackMatch", "NTrack_myDuplicate",   noDuplicate_Me_Trkcoll.size());
         hist_->fillHist1D("TrackMatch", "NTrack_NicoDuplicate", tkNoOv.size());
+
         if(fidTrkcoll.empty())    continue;
         bool trkClsmatchD0 = false;
         bool trkClsmatchD1 = false;
@@ -173,10 +179,12 @@ void BaselineAnalysis::eventLoop()
         int minClusStripD1 = 999;
         int minClusWD0 = 999;
         int minClusWD1 = 999;
+
         int minHitStripD0 = 999;
         int minHitStripD1 = 999;
         double minHitresStripD0 = 999.;
         double minHitresStripD1 = 999.;
+
 
         double xtkStripDet0 = 999;
         double xtkStripDet1 = 999;
@@ -380,6 +388,7 @@ void BaselineAnalysis::eventLoop()
           hist_->fillHist1D("TrackMatch", "trkcluseff", 6);
           hist_->fillHist1D("TrackMatch","effVtdc_num",static_cast<unsigned int>(condEv()->tdcPhase));
         }
+
         if(trkClsmatchD0 && trkClsmatchD1 && smatchD1)  hist_->fillHist1D("TrackMatch", "StubEff_vs_X_num", xtkStripDet0);
 
         if(smatchD1) {

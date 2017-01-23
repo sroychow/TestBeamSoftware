@@ -138,5 +138,6 @@ namespace Utility {
 
   double extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset, double zPlane, double theta);
   std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta);
+
 }
 #endif
