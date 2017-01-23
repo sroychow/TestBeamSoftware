@@ -136,5 +136,7 @@ namespace Utility {
   
   void cutTrackFei4Residuals(const tbeam::FeIFourEvent* fei4ev ,const std::vector<tbeam::Track>& tkNoOverlap, std::vector<tbeam::Track>& selectedTk, double xResMean, double yResMean, double xResPitch, double yResPitch, bool doClosestTrack);
 
+  double extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset, double zPlane, double theta);
+  std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta);
 }
 #endif

@@ -32,7 +32,7 @@ void Histogrammer::bookEventHistograms() {
   fout_->mkdir("EventInfo");
   fout_->cd("EventInfo");
   new TH1I("nevents", "#Events", 10000001, -0.5, 10000000.5);
-  new TH1I("dutAngle", "DUT Angle;DUTAngle;#Events", 3100, -0.5, 3099.5);  
+  new TH1I("dutAngle", "DUT Angle;DUTAngle;#Events", 3100, -0.5, 3099.5);
   new TH1I("hvSettings", "High Voltage settings;HV;#Events", 1000,-0.5,999.5);
   new TH1I("vcth", "Vcth value;vcth;#Events", 200,-0.5,199.5);
   new TH1I("offset", ";offset;#Events", 200,-0.5,199.5);
@@ -54,7 +54,7 @@ void Histogrammer::bookDUTHistograms(std::string det) {
   //bookDUTHistoForColumn(d,"C1");
 }
 void Histogrammer::bookDUTHistoForColumn(TString& d, TString c) {
-  fout_->cd(d);    
+  fout_->cd(d);
   new TH1I("chsize" + c ,"dut0 channel occupancy per event" + c + ";#Channels;#Events",51,-0.5,50.5);
   new TH1I("hitmap" + c,"dut0 hitmap " + c + ";strip no.;#Events",1016,-0.5,1015.5);
   new TH1D("ncluster" + c,"#cluster dut0 " + c + ";#Clusters;#Events",51,-0.5,50.5);
@@ -75,8 +75,8 @@ void Histogrammer::bookStubHistograms() {
   new TH1I("cbcStubWord","Stub Bit from CBC",16,-0.5,15.5);
   new TH1I("recoStubWord","Stub Bit from offline CBC logic emulation",16,-0.5,15.5);
   new TH1I("nstubsFromCBCSword","Total number of stubs from CBC stub word",20,-.5,19.5);
-  new TH1I("nstubsFromRecoSword","Total number of stubs from Reco Stub word",20,-.5,19.5); 
-  new TH1I("nstubsFromReco","Total number of stubs from Reconstruction",20,-.5,19.5); 
+  new TH1I("nstubsFromRecoSword","Total number of stubs from Reco Stub word",20,-.5,19.5);
+  new TH1I("nstubsFromReco","Total number of stubs from Reconstruction",20,-.5,19.5);
   new TH1I("stubMatch","Matching between CBC Stub and Reco Stub",4,0.5,4.5);
   new TH1I("nstubsdiffSword","#StubsRecoStubword - #StubsfromStubWord",20,-0.5,19.5);
   new TH1I("nstubsdiff","#StubsReco - #StubsfromStubWord",20,-0.5,19.5);
@@ -95,7 +95,7 @@ void Histogrammer::bookCorrelationHistograms() {
   bookCorrelationHistoForColumn("C0");
   //bookCorrelationHistoForColumn("C1");
 }
-    
+
 void Histogrammer::bookCorrelationHistoForColumn(TString c) {
   new TH1D("cor_hit" + c,"Sensor Hit Correlation " + c,4,0.5,4.5);
   new TH1I("nclusterdiff" + c,"Difference in #clusters between dut0 and dut1() for " + c + ";#cluster_{det0} - #cluster_  {det1_};Events",20,-0.5,19.5);
@@ -133,6 +133,11 @@ void Histogrammer::bookTrackMatchHistograms() {
   h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1"));
   h2d->SetOption("colz");
 
+  new TH2D("minstubTrkPoscorrD1_all","Closest-Stub xTrk Pos Correlation;trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
+  new TH2D("minstubTrkPoscorrD1_matched","Closest-Stub xTrk Pos Correlation(matched);trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
+  h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1_all"));
+  h2d->SetOption("colz");
+  h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1_matched"));
   new TH1D("sminresidualC0_1trkfid","Stub Residual at DUT1 plane(fiducial)(#trk=1)",1000,-10.,10.);
 
   new TH1I("trkcluseff","",9,-0.5,8.5);
@@ -146,7 +151,6 @@ void Histogrammer::bookTrackMatchHistograms() {
   h->GetXaxis()->SetBinLabel(7,"xtkClsMatchD0_&&_D1");
   h->GetXaxis()->SetBinLabel(8,"no-match_D0&&_D1");
   h->GetXaxis()->SetBinLabel(9,"xtkStubMatchC0");
-  
   new TH1I("effVtdc_num",";TDC;#Events",17,-0.5,16.5);
   new TH1I("effVtdc_den",";TDC;#Events",17,-0.5,16.5);
 
@@ -193,6 +197,11 @@ void Histogrammer::bookTrackFitHistograms(float zMin, float zStep, int zNsteps){
 
   new TH1I("d0_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
   new TH1I("d1_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d1",10000,-10,10);
+  new TH1I("d0_1tk1Hit_diffX_bis","X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
+  new TH1I("d1_1tk1Hit_diffX_bis","X_{TkAtDUT}-X_{DUT}, d1",10000,-10,10);
+
+  new TH1I("d0_1tk1Hit_diffX_ter","X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
+  new TH1I("d1_1tk1Hit_diffX_ter","X_{TkAtDUT}-X_{DUT}, d1",10000,-10,10);
 
   for (int iz=0; iz<zNsteps; iz++){
     new TH1I(Form("d0_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
@@ -210,6 +219,17 @@ void Histogrammer::bookTrackFitHistograms(float zMin, float zStep, int zNsteps){
 
   new TH1I("d0_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d0",10000,-10,10);
   new TH1I("d1_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d1",10000,-10,10);
+  new TH1I("d0_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",10000,-10,10);
+  new TH1I("d1_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",10000,-10,10);
+  new TH1I("d0_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",10000,-10,10);
+  new TH1I("d1_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",10000,-10,10);
+
+  new TH1F("bothPlanes_chi2VsTheta","chi2 vs injected #theta", 41, -20.-0.5, 21.-0.5);
+  new TH1F("bothPlanesConstraint_chi2VsTheta","chi2 vs injected #theta", 41, -20.-0.5, 21.-0.5);
+  new TH1F("bothPlanesConstraint_chi2VsDeltaZ","chi2 vs injected #deltaZ", 41, 0.-0.125, 10.25-0.125);
+
+  new TH1F("nEventBeforeResid","nEventBeforeResid", 10, 0, 9);
+  new TH1F("nEventAfterResid","nEventAfterResid", 10, 0, 9);
 }
 
 TH1* Histogrammer::GetHistoByName(const char* dir, const char* hname){
@@ -234,13 +254,13 @@ void Histogrammer::FillAlignmentOffsetVsZ(const char* det, const char* histo, in
   h->SetBinError(iz+1, x_err);
 }
 
-void Histogrammer::closeFile() { 
+void Histogrammer::closeFile() {
   fout_->cd();
   fout_->Write();
   fout_->Close();
-  isFileopen_=false;  
+  isFileopen_=false;
 }
-void Histogrammer::fillClusterHistograms( const char* det, std::vector<tbeam::cluster>& cvec, 
+void Histogrammer::fillClusterHistograms( const char* det, std::vector<tbeam::cluster>& cvec,
                                           const char* col) {
   fout_->cd(det);
   TString c(col);
@@ -250,13 +270,13 @@ void Histogrammer::fillClusterHistograms( const char* det, std::vector<tbeam::cl
     Utility::fillHist1D("clusterPos" + c,cvec[i].x);
     Utility::fillHistProfile("clusterWidthVsPosProf" + c,cvec[i].x,cvec[i].size);
     Utility::fillHist2D("clusterWidthVsPos2D" + c,cvec[i].x,cvec[i].size);
-  } 
+  }
 }
 
 Histogrammer::~Histogrammer() {
   if(isFileopen_)  {
-    std::cout << "You forgot to close the output file!!!Closing it now" << std::endl;  
+    std::cout << "You forgot to close the output file!!!Closing it now" << std::endl;
     closeFile();
    }
-  delete fout_; 
+  delete fout_;
 }
