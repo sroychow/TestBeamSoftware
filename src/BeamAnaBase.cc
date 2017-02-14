@@ -364,14 +364,16 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
   if( (std::fabs(xtrk0Pos) > pitchDUT_*nStrips_/2.) 
      || (std::fabs(xtrk1Pos) > pitchDUT_*nStrips_/2.))  return false;
   //DUT y acceptance
-  if(std::fabs(ytrk0Pos) > 25. || std::fabs(ytrk1Pos) > 25.)  return false; 
+  if(std::fabs(ytrk0Pos) > 5. || std::fabs(ytrk1Pos) > 5.)  return false; 
 
   if(doChannelMasking_) {
     int xtkdutStrip0 = xtrk0Pos/pitchDUT_ + nStrips_/2; 
     int xtkdutStrip1 = xtrk1Pos/pitchDUT_ + nStrips_/2; 
     bool mtk = std::find(dut_maskedChannels_->at("det0").begin(), dut_maskedChannels_->at("det0").end(), xtkdutStrip0) == dut_maskedChannels_->at("det0").end();
     mtk = mtk && std::find( dut_maskedChannels_->at("det1").begin(), dut_maskedChannels_->at("det1").end(), xtkdutStrip1) == dut_maskedChannels_->at("det1").end();
+#ifdef MAY_16
     mtk = mtk && xtkdutStrip0 > 127 && xtkdutStrip1 > 127;
+#endif
     return mtk;
   }
   return true;

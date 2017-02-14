@@ -89,9 +89,9 @@ namespace Utility {
 
   static double FuncPol1Gaus(Double_t * x, Double_t * par){
     double xx = x[0];
+    double norm = par[0];
     double mean = par[1];
     double sigma = par[2];
-    double norm = par[0];
     double cte = par[3];
     double slope = par[4];
     double f = norm*exp(-0.5*((xx-mean)/sigma)*((xx-mean)/sigma));

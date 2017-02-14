@@ -45,7 +45,12 @@ void AlignmentMultiDimAnalysis::beginJob() {
   setAddresses();
   nEntries_ = analysisTree()->GetEntries();
 
-  zMin = 200;
+#ifdef MAY_16
+   zMin = 200.;
+#elif NOV_15
+   zMin = 1000.;
+#endif
+  
   zStep = 20.;
   zNsteps = 50;
 
@@ -105,9 +110,13 @@ void AlignmentMultiDimAnalysis::eventLoop()
   //First do telescope-fei4 matching 
   al = aLparameteres();
   doTelescopeAnalysis(al);
-  
+#ifdef MAY_16
   float DUT_z = 460.0;//oct16=460;//may16=435
-  float DUT_z_try = 400;
+  float DUT_z_try = 400;  
+#elif NOV_15
+  float DUT_z = 1400.;//oct16=460;//may16=435//nov 15 approx=1400
+  float DUT_z_try = 1200;
+#endif
   
   Long64_t nbytes = 0, nb = 0;
   cout << "#Events=" << nEntries_ << endl;
@@ -152,20 +161,25 @@ void AlignmentMultiDimAnalysis::eventLoop()
     const auto& d0c1 = *det0C1();
     const auto& d1c0 = *det1C0();
     const auto& d1c1 = *det1C1();
- 
+    //fillCommonHistograms();
     //Remove track duplicates 
     std::vector<tbeam::Track>  tkNoOv;
     Utility::removeTrackDuplicates(telEv(), tkNoOv);
-	
+
+    hist_->fillHist1D("TelescopeAnalysis","nTrack_noduplicate", tkNoOv.size());	
     //Match with FEI4
     std::vector<tbeam::Track>  selectedTk;
     Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, al.offsetFEI4x(), al.offsetFEI4y(), al.residualSigmaFEI4x(), al.residualSigmaFEI4y(), true); 
+    hist_->fillHist1D("TelescopeAnalysis","nTrack_fiducial", selectedTk.size());	
     //Find mean of residuals, scanning zDUT      
     if (selectedTk.size()!=1) continue;
     //cout << "NHits: d0, "<<d0c0.size()<<" ; d1, "<<d1c0.size()<<endl;
     if (d0c0.size()==1) {
       for (unsigned int ih=0; ih<d0c0.size(); ih++){
         float xDUT = (d0c0.at(ih) - nstrips()/2) * dutpitch();
+#ifdef NOV_15
+        xDUT = -1*xDUT;//for nov 15
+#endif
         selectedTk_d0_1Hit.push_back(selectedTk[0]);
         d0_DutXpos.push_back(xDUT);
 	float xTkAtDUT = selectedTk[0].xPos + (DUT_z- al.FEI4z())*selectedTk[0].dxdz;
@@ -176,6 +190,9 @@ void AlignmentMultiDimAnalysis::eventLoop()
     if (d1c0.size()==1){
       for (unsigned int ih=0; ih<d1c0.size(); ih++){
         float xDUT = (d1c0.at(ih) - nstrips()/2) * dutpitch();
+#ifdef NOV_15
+        xDUT = -1*xDUT;//for nov 15
+#endif
         selectedTk_d1_1Hit.push_back(selectedTk[0]);
         d1_DutXpos.push_back(xDUT);
 	float xTkAtDUT = selectedTk[0].xPos + (DUT_z- al.FEI4z())*selectedTk[0].dxdz;
@@ -189,40 +206,50 @@ void AlignmentMultiDimAnalysis::eventLoop()
       double D1xDUT;
       for(auto& cl : dutRecoClmap()->at("det0C0") ) {
         D0xDUT = (cl.x-nstrips()/2)*dutpitch();
+#ifdef NOV_15
+        D0xDUT = -1*D0xDUT;//for nov15
+#endif
       }
       for(auto& cl : dutRecoClmap()->at("det1C0") ) {
         D1xDUT = (cl.x-nstrips()/2)*dutpitch();
+#ifdef NOV_15
+        D1xDUT = -1*D1xDUT;//for nov15
+#endif
       }
       float xTkAtDUT = selectedTk[0].xPos + (DUT_z-al.FEI4z())*selectedTk[0].dxdz;
+      float yTkAtDUT = selectedTk[0].yPos + (DUT_z-al.FEI4z())*selectedTk[0].dydz;
       selectedTk_bothPlanes_1Cls.push_back(selectedTk[0]);
       bothPlanes_DutXposD0.push_back(D0xDUT);
       bothPlanes_DutXposD1.push_back(D1xDUT);
+      std::cout << "Selected Tk:xpos=" << xTkAtDUT << "//ypos=" << yTkAtDUT  
+      << "//cls0=" <<  D0xDUT << "//cls1=" << D1xDUT << std::endl;
       hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_ter", D0xDUT-xTkAtDUT);
       hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_ter", D1xDUT-xTkAtDUT);
     }
   }//End of First Loop
 
   TH1* hTmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d0_1tk1Hit_diffX_bis"));
-  TF1* fGausExtractedX = new TF1("fGausExtractedX", Utility::FuncPol1Gaus, -10, 10, 5);
+  TF1* fGausExtractedX = new TF1("fGausExtractedX", Utility::FuncPol1Gaus, -100., 100., 5);
   double offset_init_d0 = ((float)hTmp->GetMaximumBin())*(hTmp->GetXaxis()->GetXmax()-hTmp->GetXaxis()->GetXmin())/((float)hTmp->GetNbinsX()) + hTmp->GetXaxis()->GetXmin();//hTmp->GetMean();
   hTmp->SetAxisRange(offset_init_d0-1., offset_init_d0+1., "X");
   double cte = (hTmp->GetBinContent(hTmp->FindBin(offset_init_d0-1.))+hTmp->GetBinContent(hTmp->FindBin(offset_init_d0+1.)))/2.;
+  
   fGausExtractedX->SetParameter(0, hTmp->GetMaximum());
-  fGausExtractedX->SetParLimits(1, -5., 5.);
+  //fGausExtractedX->SetParLimits(1, -50., 50.);
   fGausExtractedX->SetParameter(1, offset_init_d0);
-  fGausExtractedX->SetParLimits(2, 0, 0.3);
+  //fGausExtractedX->SetParLimits(2, 0, 0.3);
   fGausExtractedX->SetParameter(2, 0.03);
-  fGausExtractedX->SetParLimits(3, 0, 1000.);
+  //fGausExtractedX->SetParLimits(3, 0, 1000.);
   fGausExtractedX->SetParameter(3, cte);
   fGausExtractedX->SetParameter(4, 0);
   hTmp->Fit("fGausExtractedX", "WW");
   offset_init_d0 = fGausExtractedX->GetParameter(1);
-  cout << "offset_init_d0="<<offset_init_d0<<endl; 
 
   hTmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d1_1tk1Hit_diffX_bis"));
   double offset_init_d1 = ((float)hTmp->GetMaximumBin())*(hTmp->GetXaxis()->GetXmax()-hTmp->GetXaxis()->GetXmin())/((float)hTmp->GetNbinsX()) + hTmp->GetXaxis()->GetXmin();//hTmp->GetMean();
   hTmp->SetAxisRange(offset_init_d1-1., offset_init_d1+1., "X");
   cte = (hTmp->GetBinContent(hTmp->FindBin(offset_init_d1-1.))+hTmp->GetBinContent(hTmp->FindBin(offset_init_d1+1.)))/2.;
+  
   fGausExtractedX->SetParameter(0, hTmp->GetMaximum());
   fGausExtractedX->SetParameter(1, offset_init_d1);
   fGausExtractedX->SetParameter(2, 0.03);
@@ -230,13 +257,22 @@ void AlignmentMultiDimAnalysis::eventLoop()
   fGausExtractedX->SetParameter(4, 0);
   hTmp->Fit("fGausExtractedX", "WW");
   offset_init_d1 = fGausExtractedX->GetParameter(1);
-  cout << "offset_init_d1="<<offset_init_d1<<endl;
 
+  cout << "offset_init_d0="<<offset_init_d0<<endl; 
+  cout << "offset_init_d1="<<offset_init_d1<<endl;
+  
+  
   doD0 = true;
   doD1 = false;
   double chi2 = 0;
+
+#ifdef MAY_16
   minimizer->SetLimitedVariable(0, "offset", offset_init_d0, 0.0001, -5., 5.);
   minimizer->SetLimitedVariable(1, "zDUT", 435., 0.01, 200., 800.);
+#elif NOV_15
+  minimizer->SetLimitedVariable(0, "offset", offset_init_d0, 0.0001, -100., 100.);
+  minimizer->SetLimitedVariable(1, "zDUT", 1350., 0.01, 1200., 1600.);
+#endif
   minimizer->SetLimitedVariable(2, "theta", 0.*TMath::Pi()/180., 0.01, -90.*TMath::Pi()/180., 90.*TMath::Pi()/180.);
 
   cout << "DUT d0: Start chi2 minimization"<<endl;
@@ -247,21 +283,24 @@ void AlignmentMultiDimAnalysis::eventLoop()
   resultD0[1] = resultMinimizerD0[1];
   resultD0[2] = resultMinimizerD0[2];
   double chi2D0 = ComputeChi2(resultD0);
-  cout << "D0 offset="<< resultD0[0]<<" zDUT="<<resultD0[1]<<" theta="<<resultD0[2]*180./TMath::Pi()<<" chi2="<<chi2D0<<endl;
-
   for (unsigned int i=0; i<selectedTk_d0_1Hit.size(); i++){
     double xDUT_d0 =   d0_DutXpos.at(i);
     double xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d0_1Hit.at(i), al.FEI4z(), resultD0[0], resultD0[1], resultD0[2]);
     double resDUT_d0 = xDUT_d0 - xTkAtDUT_d0;
     hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_aligned", resDUT_d0);
   }  
-
+  
 
   doD0 = false;
   doD1 = true;
   minimizer->Clear();
+#ifdef MAY_16
   minimizer->SetLimitedVariable(0, "offset", offset_init_d1, 0.0001, -5., 5.);
   minimizer->SetLimitedVariable(1, "zDUT", 435., 0.01, 200., 800.);
+#elif NOV_15
+  minimizer->SetLimitedVariable(0, "offset", offset_init_d1, 0.0001, -100., 100.);
+  minimizer->SetLimitedVariable(1, "zDUT", 1350., 0.01, 1200., 1600.);
+#endif
   minimizer->SetLimitedVariable(2, "theta", 0.*TMath::Pi()/180., 0.01, -90.*TMath::Pi()/180., 90.*TMath::Pi()/180.);
 
   cout << "DUT d1: Start chi2 minimization"<<endl;
@@ -272,7 +311,10 @@ void AlignmentMultiDimAnalysis::eventLoop()
   resultD1[1] = resultMinimizerD1[1];
   resultD1[2] = resultMinimizerD1[2];
   double chi2D1 = ComputeChi2(resultD1);
+
+ cout << "D0 offset="<< resultD0[0]<<" zDUT="<<resultD0[1]<<" theta="<<resultD0[2]*180./TMath::Pi()<<" chi2="<<chi2D0<<endl;
   cout << "D1 offset="<< resultD1[0]<<" zDUT="<<resultD1[1]<<" theta="<<resultD1[2]*180./TMath::Pi()<<" chi2="<<chi2D1<<endl;
+
 
   for (unsigned int i=0; i<selectedTk_d1_1Hit.size(); i++){
     double xDUT_d1 =   d1_DutXpos.at(i);
@@ -286,10 +328,17 @@ void AlignmentMultiDimAnalysis::eventLoop()
   doD0 = true;
   doD1 = true;
   minimizerBothPlanes->Clear();
+#ifdef MAY_16
   minimizerBothPlanes->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -5., 5.);
   minimizerBothPlanes->SetLimitedVariable(1, "zDUT_d0", 435., 0.01, 200., 800.);
   minimizerBothPlanes->SetLimitedVariable(2, "offset_d1", offset_init_d1, 0.0001, -5., 5.);
   minimizerBothPlanes->SetLimitedVariable(3, "zDUT_d1", 435., 0.01, 200., 800.);
+#elif NOV_15
+  minimizerBothPlanes->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -100., 100.);
+  minimizerBothPlanes->SetLimitedVariable(1, "zDUT_d0", 1400., 0.01, 1200., 1600.);
+  minimizerBothPlanes->SetLimitedVariable(2, "offset_d1", offset_init_d1, 0.0001, -100., 100.);
+  minimizerBothPlanes->SetLimitedVariable(3, "zDUT_d1", 1400., 0.01, 1200., 1600.);
+#endif
   minimizerBothPlanes->SetLimitedVariable(4, "theta", 0., 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
 
   cout << "DUT both planes: Start chi2 minimization"<<endl;
@@ -316,19 +365,22 @@ void AlignmentMultiDimAnalysis::eventLoop()
     hist_->fillHist1D("TrackFit","d1_1tk1ClusterBothPlanes_diffX_aligned", resDUT_d1);
   }
 
-
+  
   doConstrainDeltaOffset = true;
   doD0 = true;
   doD1 = true;
   minimizerBothPlanesConstraint->Clear();
+
+#ifdef MAY_16
   minimizerBothPlanesConstraint->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -5., 5.);
-  //minimizerBothPlanesConstraint->SetLimitedVariable(0, "offset_d0", resultBothPlanes[0], 0.0001, -5., 5.);
-  minimizerBothPlanesConstraint->SetLimitedVariable(1, "zDUT_d0", 435., 0.01, 200., 800.);
-  //minimizerBothPlanesConstraint->SetLimitedVariable(1, "zDUT_d0", resultBothPlanes[1], 0.01, 200., 800.);
+  minimizerBothPlanesConstraint->SetLimitedVariable(1, "zDUT_d0", resultBothPlanes[1], 0.01, 200., 800.);
+
+#elif NOV_15
+  minimizerBothPlanesConstraint->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -100., 100.);
+  minimizerBothPlanesConstraint->SetLimitedVariable(1, "zDUT_d0", 1400., 0.01, 1200., 1600.);
+#endif
   minimizerBothPlanesConstraint->SetLimitedVariable(2, "deltaZ", 2.65, 0.01, 0., 8.);
-  //minimizerBothPlanesConstraint->SetFixedVariable(2, "deltaZ", 2.6);
   minimizerBothPlanesConstraint->SetLimitedVariable(3, "theta", TMath::ATan((offset_init_d1-offset_init_d0)/2.6), 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
-  //minimizerBothPlanesConstraint->SetLimitedVariable(3, "theta", resultBothPlanes[4], 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
 
   cout << "DUT both planes with deltaOffset constraint: Start chi2 minimization"<<endl;
   minimizerBothPlanesConstraint->Minimize();
@@ -352,8 +404,9 @@ void AlignmentMultiDimAnalysis::eventLoop()
     hist_->fillHist1D("TrackFit","d0_1tk1ClusterBothPlanesConstraint_diffX_aligned", resDUT_d0);
     hist_->fillHist1D("TrackFit","d1_1tk1ClusterBothPlanesConstraint_diffX_aligned", resDUT_d1);
   }
+  
   //Fit Residuals Gaussian convulated with Step Function
-  TF1* fGausResiduals = new TF1("fGausResiduals", "gaus", -10, 10);
+  TF1* fGausResiduals = new TF1("fGausResiduals", "gaus", -100, 100);
   TH1* htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d0_1tk1Hit_diffX_aligned"));   
   float center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
@@ -378,7 +431,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   fStepGaus->SetParameter(3, 0);
   
   htmp->Fit(fStepGaus);
-
+  
   htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d1_1tk1Hit_diffX_aligned"));   
   center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
@@ -397,6 +450,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
 
   htmp->Fit(fStepGaus);
 
+  
   htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d0_1tk1ClusterBothPlanes_diffX_aligned"));
   center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
@@ -469,7 +523,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
 
   htmp->Fit(fStepGaus);
 
-  bool doMinimizerChecks = false;
+  bool doMinimizerChecks = true;
   if (doMinimizerChecks){
 
     doConstrainDeltaOffset = false; 
@@ -542,6 +596,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
                   << ":angle=" << resultBothPlanesConstraint[3]*180./TMath::Pi() << endl;
     fileAlignment.close();
   } else std::cout << "Dump File could not be opened!!" << std::endl;
+  
 }
 
 double AlignmentMultiDimAnalysis::ComputeChi2(const double* x) const{

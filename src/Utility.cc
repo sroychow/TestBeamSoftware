@@ -250,7 +250,6 @@ namespace Utility {
     //Compute distance between DUT center and track impact at DUT along X 
     double xTkAtDUT = track.xPos + (zDUT - FEI4_z) * track.dxdz;
     xTkAtDUT = (xTkAtDUT + offset)/ (cos(theta)*(1.-track.dxdz*tan(theta)));
-
     return xTkAtDUT; 
   }
 
