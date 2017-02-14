@@ -70,6 +70,7 @@ void AlignmentAnalysis::bookHistograms() {
 void AlignmentAnalysis::eventLoop()
 {
   if (!doTelMatching() || !hasTelescope()) return;
+  al = aLparameteres();
   
   float DUT_z = 460.0;//oct16=460;//may16=435
   float DUT_z_try = 400;
@@ -128,7 +129,7 @@ void AlignmentAnalysis::eventLoop()
     //std::vector<double> xSelectedTk, ySelectedTk, slopeSelectedTk;
     //Utility::cutTrackFei4Residuals(&xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap, fei4Ev()->col, fei4Ev()->row, &xSelectedTk, &ySelectedTk, &slopeSelectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y());
     std::vector<tbeam::Track>  selectedTk;
-    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y(), true); 
+    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, al.offsetFEI4x(), al.offsetFEI4y(), al.residualSigmaFEI4x(), al.residualSigmaFEI4y(), true); 
     //cout << "NselectedTk="<<selectedTk.size()<<endl;    
 
     //Find mean of residuals, scanning zDUT      
@@ -136,14 +137,14 @@ void AlignmentAnalysis::eventLoop()
     //cout << "NHits: d0, "<<d0c0.size()<<" ; d1, "<<d1c0.size()<<endl;
     if (d0c0.size()==1) {
       for (unsigned int ih=0; ih<d0c0.size(); ih++){
-	float xTkAtDUT = selectedTk[0].yPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;
+	float xTkAtDUT = selectedTk[0].yPos + (DUT_z-al.FEI4z())*selectedTk[0].dydz;
 	float xDUT = (d0c0.at(ih) - nstrips()/2) * dutpitch();
         xTkAtDUT = -1.*xTkAtDUT;
 	hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX", xDUT-xTkAtDUT);
 	DUT_z_try = zMin; //300
 	for (int iz=0; iz<zNsteps; iz++){
 	  DUT_z_try += zStep;
-	  xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;
+	  xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-al.FEI4z())*selectedTk[0].dydz;
           xTkAtDUT = -1.*xTkAtDUT;
 	  hist_->fillHist1D("TrackFit",Form("d0_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
 	}
@@ -151,14 +152,14 @@ void AlignmentAnalysis::eventLoop()
     }
     if (d1c0.size()==1){
       for (unsigned int ih=0; ih<d1c0.size(); ih++){
-	float xTkAtDUT = selectedTk[0].yPos + (DUT_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;
+	float xTkAtDUT = selectedTk[0].yPos + (DUT_z-al.FEI4z())*selectedTk[0].dydz;
         xTkAtDUT = -1.*xTkAtDUT;
 	float xDUT = (d1c0.at(ih) - nstrips()/2) * dutpitch();
 	hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX", xDUT-xTkAtDUT);
 	DUT_z_try = zMin;//300;
 	for (int iz=0; iz<zNsteps; iz++){
 	  DUT_z_try += zStep;
-	  xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;
+	  xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-al.FEI4z())*selectedTk[0].dydz;
           xTkAtDUT = -1.*xTkAtDUT;
 	  hist_->fillHist1D("TrackFit",Form("d1_1tk1Hit_diffX_iz%i", iz), xDUT-xTkAtDUT);
 	}
@@ -218,7 +219,7 @@ void AlignmentAnalysis::eventLoop()
     //Utility::cutTrackFei4Residuals(&xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap, fei4Ev()->col, fei4Ev()->row, &xSelectedTk, &ySelectedTk, &slopeSelectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y());
 
     std::vector<tbeam::Track>  selectedTk;
-    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y(), true); 
+    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, al.offsetFEI4x(), al.offsetFEI4y(), al.residualSigmaFEI4x(), al.residualSigmaFEI4y(), true); 
 
     //Select events with one track to compute chi2(z)
     if (selectedTk.size() != 1) continue;
@@ -233,7 +234,7 @@ void AlignmentAnalysis::eventLoop()
       for (int iz=0; iz<zNsteps; iz++){
 	DUT_z_try = zMin + (float)(iz*zStep);
 	float offset = line_d0.first * DUT_z_try + line_d0.second;
-	float xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + offset;
+	float xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-al.FEI4z())*selectedTk[0].dydz;// + offset;
         xTkAtDUT = -1.*xTkAtDUT + offset;
         //xTkAtDUT = xTkAtDUT + offset;
 	if (fabs(xTkAtDUT-xDUT) < 3*sigma_d0[iz]) {
@@ -248,7 +249,7 @@ void AlignmentAnalysis::eventLoop()
       for (int iz=0; iz<zNsteps; iz++){
 	DUT_z_try = zMin + (float)(iz*zStep);
 	float offset = line_d1.first * DUT_z_try + line_d1.second;
-	float xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + offset;
+	float xTkAtDUT = selectedTk[0].yPos + (DUT_z_try-al.FEI4z())*selectedTk[0].dydz;// + offset;
         xTkAtDUT = -1.*xTkAtDUT + offset;
         //xTkAtDUT = xTkAtDUT + offset;
 	if (fabs(xTkAtDUT-xDUT) < 3*sigma_d1[iz]) {
@@ -327,7 +328,7 @@ void AlignmentAnalysis::eventLoop()
     //Utility::cutTrackFei4Residuals(&xTkNoOverlap, &yTkNoOverlap, &slopeTkNoOverlap, fei4Ev()->col, fei4Ev()->row, &xSelectedTk, &ySelectedTk, &slopeSelectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y());
     
     std::vector<tbeam::Track>  selectedTk;
-    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, offsetfei4x(), offsetfei4y(), resfei4x(), resfei4y(), true); 
+    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, al.offsetFEI4x(), al.offsetFEI4y(), al.residualSigmaFEI4x(), al.residualSigmaFEI4y(), true); 
 
     if (selectedTk.size()!=1) continue;
     setDetChannelVectors();
@@ -338,14 +339,14 @@ void AlignmentAnalysis::eventLoop()
     
     if (d0c0.size()==1){
       float xDUT = (d0c0.at(0) - nstrips()/2) * dutpitch();
-      float xTkAtDUT = selectedTk[0].yPos + (d0_chi2_min_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + d0_Offset_aligned;
+      float xTkAtDUT = selectedTk[0].yPos + (d0_chi2_min_z-al.FEI4z())*selectedTk[0].dydz;// + d0_Offset_aligned;
       xTkAtDUT = -1.*xTkAtDUT + d0_Offset_aligned;
       //xTkAtDUT = xTkAtDUT + d0_Offset_aligned;
       hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);
     }
     if (d1c0.size()==1){
       float xDUT = (d1c0.at(0) - nstrips()/2) * dutpitch();
-      float xTkAtDUT = selectedTk[0].yPos + (d1_chi2_min_z-aLparameteres().FEI4_z)*selectedTk[0].dydz;// + d1_Offset_aligned;
+      float xTkAtDUT = selectedTk[0].yPos + (d1_chi2_min_z-al.FEI4z())*selectedTk[0].dydz;// + d1_Offset_aligned;
       xTkAtDUT = -1.*xTkAtDUT + d1_Offset_aligned;
       //xTkAtDUT = xTkAtDUT + d1_Offset_aligned;
       hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_aligned", xDUT-xTkAtDUT);

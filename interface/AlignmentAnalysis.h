@@ -41,5 +41,6 @@ class AlignmentAnalysis : public BeamAnaBase {
   float zMin;
   float zStep;
   int zNsteps;
+  tbeam::alignmentPars al;
 };
 #endif
