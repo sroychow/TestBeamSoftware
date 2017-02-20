@@ -1,0 +1,17 @@
+#START
+Run=722;
+inputFile=root://eoscms.cern.ch///eos/cms/store/group/upgrade/Tracker/TestBeam/BTMay2016/AnalysisTuple_ReReco/AnalysisTree_722.root
+outputFile=ThrScanIRR_400V_0deg_722.root
+fei4Z=724
+readAlignmentFromfile=1
+doTelescopeMatching=1
+doChannelMasking=1
+channelMaskFile=interface/maskedChannelsMay16.txt
+residualSigmaDUT=0.026
+nStrips=254
+pitchDUT=0.09
+maximumEVT=10000
+#only needed by Alignment Analysis
+isProductionmode=1
+alignmentOutputFile=alignmentparOutput_722.txt
+#END
