@@ -90,58 +90,9 @@ void BasePGAnalysis::eventLoop()
    int nMatchedCluster = 0;
 
    long int runSub = -1;
+   int trkChip;
 
 
-
-
-   /////////////////////////
-
-
-   TFile* myout=new TFile(Form("/afs/cern.ch/user/r/rossia/workspace/CMSSW_7_3_0_pre1/BeamTestAna/TDR_Code/TestBeamSoftware/CBCsel/Subsel_run%d.root",run_),"RECREATE");
-   TTree* outTree=new TTree("ntp","ntp");
-   Int_t hdet0[200];
-   Int_t hdet1[200];
-   Int_t cdet0[200];
-   Int_t cdet1[200];
-   Int_t cSdet0[200];
-   Int_t cSdet1[200];
-   Int_t nHdet0,nHdet1;
-   Int_t nCdet0,nCdet1;
-   Int_t cbcStub;
-   Int_t nCbcStub;
-   Int_t recoStub;
-   Int_t recostubMatch;
-   Int_t tdcPh;
-   Int_t trkChip;
-   Int_t cbcChip;
-   Double_t trkAtDet0;
-   Double_t trkAtDet1;
-   outTree->Branch("tdcPh",&tdcPh,"tdcPh/I");
-   outTree->Branch("nHitsDet0",&nHdet0,"nHitsDet0/I");
-   outTree->Branch("HitsDet0",hdet0,"HitsDet0[200]/I");
-   outTree->Branch("nHitsDet1",&nHdet1,"nHitsDet1/I");
-   outTree->Branch("HitsDet1",hdet1,"HitsDet1[200]/I");
-   outTree->Branch("nClusDet0",&nCdet0,"nClusDet0/I");
-   outTree->Branch("ClusDet0",cdet0,"ClusDet0[200]/I");
-   outTree->Branch("ClusSizeDet0",cSdet0,"ClusSizeDet0[200]/I");
-   outTree->Branch("nClusDet1",&nCdet1,"nClusDet1/I");
-   outTree->Branch("ClusDet1",cdet1,"ClusDet1[200]/I");
-   outTree->Branch("ClusSizeDet1",cSdet1,"ClusSizeDet1[200]/I");
-   outTree->Branch("cbcStub",&cbcStub,"cbcStub/I");
-   outTree->Branch("nCbcStub",&nCbcStub,"nCbcStub/I");
-   outTree->Branch("recoStub",&recoStub,"recoStub/I");
-   outTree->Branch("recoStubMatch",&recostubMatch,"recoStubMatch/I");
-   outTree->Branch("trkChip",&trkChip,"trkChip/I");
-   outTree->Branch("cbcChip",&cbcChip,"cbcChip/I");
-   outTree->Branch("trkAtDet0",&trkAtDet0,"trkAtDet0/D");
-   outTree->Branch("trkAtDet1",&trkAtDet1,"trkAtDet1/D");
-
-
-   /////////////////////////
-
-
-
-   
    for (Long64_t jentry=0; jentry<nEntries_ && jentry<maxEvent;jentry++) {
      clearEvent();
      Long64_t ientry = analysisTree()->GetEntry(jentry);
@@ -277,59 +228,6 @@ void BasePGAnalysis::eventLoop()
             if(trkChip == scbc) cbcmatchD1=true;
 	    //else cout << (x1/dutpitch()+nstrips()/2) << " - CBC Chip " << scbc <<endl;
 	  }
-
-	  ////////////////////////////////
-	  if(nStubscbcSword()>=1 || smatchD1){
-	    nHdet0=d0c0.size();
-	    nHdet1=d1c0.size();
-	    nCdet0=dutRecoClmap()->at("det0C0").size();
-	    nCdet1=dutRecoClmap()->at("det1C0").size();
-	    int mycon=0;
-	    for(auto& h : d0c0){
-	      hdet0[mycon]=h;
-	      mycon++;
-	      if(mycon>=200) break;
-	    }
-	    mycon=0;
-	    for(auto& h : d1c0){
-	      hdet1[mycon]=h;
-	      mycon++;
-	      if(mycon>=200) break;
-	    }
-	    mycon=0;
-	    for(auto& cl : dutRecoClmap()->at("det0C0") ) {
-	      cdet0[mycon]=cl.x;
-	      cSdet0[mycon]=cl.size;
-	      mycon++;
-	      if(mycon>=200) break;
-	    }
-	    mycon=0;
-	    for(auto& cl : dutRecoClmap()->at("det1C0") ) {
-	      cdet1[mycon]=cl.x;
-	      cSdet1[mycon]=cl.size;
-	      mycon++;
-	      if(mycon>=200) break;
-	    }
-	    if(nStubscbcSword()>=1){
-	      cbcStub=1;
-	      cbcChip=cbcstubChipids()->at("C0").at(0);
-	    }
-	    else{
-	      cbcStub=0;
-	      cbcChip=-1;
-	    }
-	    if(smatchD1) recoStub=1;
-	    else recoStub=0;
-	    tdcPh=static_cast<int>(condEv()->tdcPhase);
-	    recostubMatch=minStubStripC0;
-	    nCbcStub=nStubscbcSword();
-	    trkAtDet0=x0/dutpitch() + nstrips()/2;
-	    trkAtDet1=x1/dutpitch() + nstrips()/2;
-
-	    outTree->Fill();
-	  }
-	  ////////////////////////////////
-
 
 
           hist_->fillHist1D("TrackMatch","hminposClsDUT1",minclsposD1);
@@ -517,8 +415,6 @@ void BasePGAnalysis::eventLoop()
              << "\n#RECO Abs Stub Efficiency=" << double(recostubMatchD1)/double(trkFid) << "\tError=" << TMath::Sqrt(recostubMatchD1*(1.- double(recostubMatchD1)/double(trkFid) ))/double(trkFid)
              << "\n#CBC Abs Stub Efficiency=" << double(cbcstubMatchD1)/double(trkFid) << "\tError=" << TMath::Sqrt(cbcstubMatchD1*(1.- double(cbcstubMatchD1)/double(trkFid) ))/double(trkFid)
 	     << std::endl;
-   myout->Write();
-   myout->Close();
 }
 
 void BasePGAnalysis::clearEvent() {
