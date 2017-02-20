@@ -131,6 +131,7 @@ void Histogrammer::bookTrackMatchHistograms() {
 
   new TH2D("minstubTrkPoscorrD1_all","Closest-Stub xTrk Pos Correlation;trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
   new TH2D("minstubTrkPoscorrD1_matched","Closest-Stub xTrk Pos Correlation(matched);trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
+  new TH2D("minstubTrkPoscorrD1_CBC","Closest-Stub xTrk Pos Correlation(matched);trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
   h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1_all"));
   h2d->SetOption("colz");
   h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1_matched"));
@@ -138,7 +139,7 @@ void Histogrammer::bookTrackMatchHistograms() {
 
   new TH1D("sminresidualC0_1trkfid","Stub Residual at DUT1 plane(fiducial)(#trk=1)",1000,-10.,10.);
 
-  new TH1I("trkcluseff","",11,-0.5,10.5);
+  new TH1I("trkcluseff","",12,-0.5,11.5);
   TH1I* h = dynamic_cast<TH1I*>(Utility::getHist1D("trkcluseff"));
   h->GetXaxis()->SetBinLabel(1,"xtkNodupl(=1)");
   h->GetXaxis()->SetBinLabel(2,"xtkFidD0");
@@ -151,9 +152,27 @@ void Histogrammer::bookTrackMatchHistograms() {
   h->GetXaxis()->SetBinLabel(9,"xtkStubMatchC0");
   h->GetXaxis()->SetBinLabel(10,"xtkCBCStubMatchC0");
   h->GetXaxis()->SetBinLabel(11,"xtkCBCStubWrongC0");
-  
+  h->GetXaxis()->SetBinLabel(12,"xtkCBCStub>1");
+
+  new TH1I("trkCBCeff","",7,-0.5,6.5);
+  TH1I* hc = dynamic_cast<TH1I*>(Utility::getHist1D("trkCBCeff"));
+  hc->GetXaxis()->SetBinLabel(1,"xtkFidChip0");
+  hc->GetXaxis()->SetBinLabel(2,"StubMatchChip0");
+  hc->GetXaxis()->SetBinLabel(3,"xtkFidChip1");
+  hc->GetXaxis()->SetBinLabel(4,"StubMatchChip1");
+  hc->GetXaxis()->SetBinLabel(5,"xtkFidChip0 && StubChip1");
+  hc->GetXaxis()->SetBinLabel(6,"xtkFidChip1 && StubChip0");
+  hc->GetXaxis()->SetBinLabel(7,"CBCStub>1");
+
+
   new TH1I("effVtdc_num",";TDC;#Events",17,-0.5,16.5);
+  new TH1I("effCBCVtdc_num",";TDC;#Events",17,-0.5,16.5);
+  new TH1I("effChip0Vtdc_num",";TDC;#Events",17,-0.5,16.5);
+  new TH1I("effChip1Vtdc_num",";TDC;#Events",17,-0.5,16.5);
+  new TH1I("effRECOVtdc_num",";TDC;#Events",17,-0.5,16.5);
   new TH1I("effVtdc_den",";TDC;#Events",17,-0.5,16.5);
+  new TH1I("effChip0Vtdc_den",";TDC;#Events",17,-0.5,16.5);
+  new TH1I("effChip1Vtdc_den",";TDC;#Events",17,-0.5,16.5);
 
   new TH1F("deltaXPos_trkfei4", "Difference in matched Track impact and Hit X Position", 40000, -20.0, 20.0);
   new TH1F("deltaYPos_trkfei4", "Difference in matched Track Impact and Hit Y Position", 40000, -20.0, 20.0);
@@ -164,6 +183,56 @@ void Histogrammer::bookTrackMatchHistograms() {
   new TH1I("clsD1Stability","",300,0,300);
   new TH1I("clsBothStability","",300,0,300);
   new TH1I("stubStability","",300,0,300);
+  new TH1I("cbcStability","",300,0,300);
+
+  fout_->mkdir("TrackMatch/CBCcheck");
+  fout_->cd("TrackMatch/CBCcheck");
+  new TH1I("EventN","EventN;Event Number",300000,0,300000);
+  new TH1D("NClusterDUT0","NClusterDUT0;#Clusters;#Events",51,-0.5,50.5);
+  new TH1D("NClusterDUT1","NClusterDUT1;#Clusters;#Events",51,-0.5,50.5);
+  new TH1D("ClusterPosDUT0","ClusterPosDUT0;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("ClusterPosDUT1","ClusterPosDUT1;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("RECOStubPosDUT1","RECOStubPos;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("RECOStubResDUT1","RECOStubRes;Strip Number;#Events",5000,-8,8);
+  new TH1D("ClusterDiff","ClusterDiff;Strip Number;#Events",20,0,20);
+  new TH2D("ClusDifvsRes","ClusDifvsRes;Strip Number;Res. (mm)",40,-20,20,500,-4,4);
+
+  fout_->mkdir("TrackMatch/RECOcheck");
+  fout_->cd("TrackMatch/RECOcheck");
+  new TH1I("EventN","EventN;Event Number",300000,0,300000);
+  new TH1D("NClusterDUT0","NClusterDUT0;#Clusters;#Events",51,-0.5,50.5);
+  new TH1D("NClusterDUT1","NClusterDUT1;#Clusters;#Events",51,-0.5,50.5);
+  new TH1D("ClusterPosDUT0","ClusterPosDUT0;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("ClusterPosDUT1","ClusterPosDUT1;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("RECOStubPosDUT1","RECOStubPos;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("RECOStubResDUT1","RECOStubRes;Strip Number;#Events",5000,-8,8);
+  new TH1D("ClusterDiff","ClusterDiff;Strip Number;#Events",20,0,20);
+  new TH2D("ClusDifvsRes","ClusDifvsRes;Strip Number;Res. (mm)",40,-20,20,500,-4,4);
+
+  fout_->mkdir("TrackMatch/Bothcheck");
+  fout_->cd("TrackMatch/Bothcheck");
+  new TH1I("EventN","EventN;Event Number",300000,0,300000);
+  new TH1D("NClusterDUT0","NClusterDUT0;#Clusters;#Events",51,-0.5,50.5);
+  new TH1D("NClusterDUT1","NClusterDUT1;#Clusters;#Events",51,-0.5,50.5);
+  new TH1D("ClusterPosDUT0","ClusterPosDUT0;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("ClusterPosDUT1","ClusterPosDUT1;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("RECOStubPosDUT1","RECOStubPos;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("RECOStubResDUT1","RECOStubRes;Strip Number;#Events",5000,-8,8);
+  new TH1D("ClusterDiff","ClusterDiff;Strip Number;#Events",20,0,20);
+  new TH2D("ClusDifvsRes","ClusDifvsRes;Strip Number;Res. (mm)",40,-20,20,500,-4,4);
+
+  fout_->mkdir("TrackMatch/CBCOnlycheck");
+  fout_->cd("TrackMatch/CBCOnlycheck");
+  new TH1I("EventN","EventN;Event Number",300000,0,300000);
+  new TH1D("NClusterDUT0","NClusterDUT0;#Clusters;#Events",51,-0.5,50.5);
+  new TH1D("NClusterDUT1","NClusterDUT1;#Clusters;#Events",51,-0.5,50.5);
+  new TH1D("ClusterPosDUT0","ClusterPosDUT0;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("ClusterPosDUT1","ClusterPosDUT1;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("RECOStubPosDUT1","RECOStubPos;Strip Number;#Events",1016,-0.5,1015.5);
+  new TH1D("RECOStubResDUT1","RECOStubRes;Strip Number;#Events",5000,-8,8);
+  new TH1D("ClusterDiff","ClusterDiff;Strip Number;#Events",20,0,20);
+  new TH2D("ClusDifvsRes","ClusDifvsRes;Strip Number;Res. (mm)",40,-20,20,500,-4,4);
+
 }
 
 void Histogrammer::bookTelescopeAnalysisHistograms() {
@@ -194,6 +263,8 @@ void Histogrammer::bookTelescopeAnalysisHistograms() {
   new TH1F("deltaYPos_trkfei4", "Difference in Track Impact and Hit Y Position after alignment", 40000, -20.0, 20.0);
   new TH1F("deltaXPos_trkfei4M", "Difference in matched Track impact and Hit X Position", 40000, -20.0, 20.0);
   new TH1F("deltaYPos_trkfei4M", "Difference in matched Track Impact and Hit Y Position", 40000, -20.0, 20.0);
+
+
 
 }
 

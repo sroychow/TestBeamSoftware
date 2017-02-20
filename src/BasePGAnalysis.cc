@@ -90,6 +90,57 @@ void BasePGAnalysis::eventLoop()
    int nMatchedCluster = 0;
 
    long int runSub = -1;
+
+
+
+
+   /////////////////////////
+
+
+   TFile* myout=new TFile(Form("/afs/cern.ch/user/r/rossia/workspace/CMSSW_7_3_0_pre1/BeamTestAna/TDR_Code/TestBeamSoftware/CBCsel/Subsel_run%d.root",run_),"RECREATE");
+   TTree* outTree=new TTree("ntp","ntp");
+   Int_t hdet0[200];
+   Int_t hdet1[200];
+   Int_t cdet0[200];
+   Int_t cdet1[200];
+   Int_t cSdet0[200];
+   Int_t cSdet1[200];
+   Int_t nHdet0,nHdet1;
+   Int_t nCdet0,nCdet1;
+   Int_t cbcStub;
+   Int_t nCbcStub;
+   Int_t recoStub;
+   Int_t recostubMatch;
+   Int_t tdcPh;
+   Int_t trkChip;
+   Int_t cbcChip;
+   Double_t trkAtDet0;
+   Double_t trkAtDet1;
+   outTree->Branch("tdcPh",&tdcPh,"tdcPh/I");
+   outTree->Branch("nHitsDet0",&nHdet0,"nHitsDet0/I");
+   outTree->Branch("HitsDet0",hdet0,"HitsDet0[200]/I");
+   outTree->Branch("nHitsDet1",&nHdet1,"nHitsDet1/I");
+   outTree->Branch("HitsDet1",hdet1,"HitsDet1[200]/I");
+   outTree->Branch("nClusDet0",&nCdet0,"nClusDet0/I");
+   outTree->Branch("ClusDet0",cdet0,"ClusDet0[200]/I");
+   outTree->Branch("ClusSizeDet0",cSdet0,"ClusSizeDet0[200]/I");
+   outTree->Branch("nClusDet1",&nCdet1,"nClusDet1/I");
+   outTree->Branch("ClusDet1",cdet1,"ClusDet1[200]/I");
+   outTree->Branch("ClusSizeDet1",cSdet1,"ClusSizeDet1[200]/I");
+   outTree->Branch("cbcStub",&cbcStub,"cbcStub/I");
+   outTree->Branch("nCbcStub",&nCbcStub,"nCbcStub/I");
+   outTree->Branch("recoStub",&recoStub,"recoStub/I");
+   outTree->Branch("recoStubMatch",&recostubMatch,"recoStubMatch/I");
+   outTree->Branch("trkChip",&trkChip,"trkChip/I");
+   outTree->Branch("cbcChip",&cbcChip,"cbcChip/I");
+   outTree->Branch("trkAtDet0",&trkAtDet0,"trkAtDet0/D");
+   outTree->Branch("trkAtDet1",&trkAtDet1,"trkAtDet1/D");
+
+
+   /////////////////////////
+
+
+
    
    for (Long64_t jentry=0; jentry<nEntries_ && jentry<maxEvent;jentry++) {
      clearEvent();
@@ -221,10 +272,65 @@ void BasePGAnalysis::eventLoop()
             }
           }
 	  for(auto& scbc: cbcstubChipids()->at("C0")) {
-	    int chipfired =(int) (x1/dutpitch()+nstrips()/2)/128;
-            if(chipfired == scbc)  cbcmatchD1=true;
-	    else cout << (x1/dutpitch()+nstrips()/2) << " - CBC Chip " << scbc <<endl;
+	    trkChip =(int) (x1/dutpitch()+nstrips()/2)/128;
+	    cout<<(x1/dutpitch()+nstrips()/2)<<" "<<trkChip<<endl;
+            if(trkChip == scbc) cbcmatchD1=true;
+	    //else cout << (x1/dutpitch()+nstrips()/2) << " - CBC Chip " << scbc <<endl;
 	  }
+
+	  ////////////////////////////////
+	  if(nStubscbcSword()>=1 || smatchD1){
+	    nHdet0=d0c0.size();
+	    nHdet1=d1c0.size();
+	    nCdet0=dutRecoClmap()->at("det0C0").size();
+	    nCdet1=dutRecoClmap()->at("det1C0").size();
+	    int mycon=0;
+	    for(auto& h : d0c0){
+	      hdet0[mycon]=h;
+	      mycon++;
+	      if(mycon>=200) break;
+	    }
+	    mycon=0;
+	    for(auto& h : d1c0){
+	      hdet1[mycon]=h;
+	      mycon++;
+	      if(mycon>=200) break;
+	    }
+	    mycon=0;
+	    for(auto& cl : dutRecoClmap()->at("det0C0") ) {
+	      cdet0[mycon]=cl.x;
+	      cSdet0[mycon]=cl.size;
+	      mycon++;
+	      if(mycon>=200) break;
+	    }
+	    mycon=0;
+	    for(auto& cl : dutRecoClmap()->at("det1C0") ) {
+	      cdet1[mycon]=cl.x;
+	      cSdet1[mycon]=cl.size;
+	      mycon++;
+	      if(mycon>=200) break;
+	    }
+	    if(nStubscbcSword()>=1){
+	      cbcStub=1;
+	      cbcChip=cbcstubChipids()->at("C0").at(0);
+	    }
+	    else{
+	      cbcStub=0;
+	      cbcChip=-1;
+	    }
+	    if(smatchD1) recoStub=1;
+	    else recoStub=0;
+	    tdcPh=static_cast<int>(condEv()->tdcPhase);
+	    recostubMatch=minStubStripC0;
+	    nCbcStub=nStubscbcSword();
+	    trkAtDet0=x0/dutpitch() + nstrips()/2;
+	    trkAtDet1=x1/dutpitch() + nstrips()/2;
+
+	    outTree->Fill();
+	  }
+	  ////////////////////////////////
+
+
 
           hist_->fillHist1D("TrackMatch","hminposClsDUT1",minclsposD1);
           hist_->fillHist1D("TrackMatch","minresidualDUT1_1trkfid", minclsresD1);
@@ -235,7 +341,38 @@ void BasePGAnalysis::eventLoop()
           hist_->fillHist1D("TrackMatch","hminposStub",minStubposC0);
           hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_all", x1/dutpitch() + nstrips()/2, minStubStripC0);
           if(smatchD1)  hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_matched", x1/dutpitch() + nstrips()/2, minStubStripC0);  
+	  if(nStubscbcSword()>=1) hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_CBC", x1/dutpitch() + nstrips()/2, minStubStripC0);  
        }
+
+	int trkchip=-1;
+	cout<<"AFTER : "<< (fidTrkcoll.at(0).xtkDut1/dutpitch()+nstrips()/2) << endl;
+	if( (int)((fidTrkcoll.at(0).xtkDut1/dutpitch()+nstrips()/2)/128) == 0 ){
+	  hist_->fillHist1D("TrackMatch", "trkCBCeff", 0);
+	  hist_->fillHist1D("TrackMatch","effChip0Vtdc_den",static_cast<unsigned int>(condEv()->tdcPhase));
+	  trkchip=0;
+	}
+        if((int)((fidTrkcoll.at(0).xtkDut1/dutpitch()+nstrips()/2)/128) == 1 ){
+	  hist_->fillHist1D("TrackMatch", "trkCBCeff", 2);
+	  hist_->fillHist1D("TrackMatch","effChip1Vtdc_den",static_cast<unsigned int>(condEv()->tdcPhase));
+	  trkchip=1;
+	}
+	if(cbcstubChipids()->at("C0").size()==1){
+	  if(cbcstubChipids()->at("C0").at(0) == 0 && trkchip==0){
+	    hist_->fillHist1D("TrackMatch", "trkCBCeff", 1);
+	    hist_->fillHist1D("TrackMatch","effChip0Vtdc_num",static_cast<unsigned int>(condEv()->tdcPhase));
+	  }
+	  if(cbcstubChipids()->at("C0").at(0) == 1  && trkchip==1){
+	    hist_->fillHist1D("TrackMatch", "trkCBCeff", 3);
+	    hist_->fillHist1D("TrackMatch","effChip1Vtdc_num",static_cast<unsigned int>(condEv()->tdcPhase));
+	  }
+	  if(cbcstubChipids()->at("C0").at(0) == 1  && trkchip==0){
+	    hist_->fillHist1D("TrackMatch", "trkCBCeff", 4);
+	  }
+	  if(cbcstubChipids()->at("C0").at(0) == 0  && trkchip==1){
+	    hist_->fillHist1D("TrackMatch", "trkCBCeff", 5);
+	  }
+	}
+	if(cbcstubChipids()->at("C0").size()>1) hist_->fillHist1D("TrackMatch", "trkCBCeff", 6);
 
         hist_->fillHist1D("TrackMatch", "trkcluseff", 3);
 	trkFid++;
@@ -262,17 +399,109 @@ void BasePGAnalysis::eventLoop()
           recostubMatchD1++;
           hist_->fillHist1D("TrackMatch", "trkcluseff", 8);
           hist_->fillHist1D("TrackMatch", "stubStability", runSub);
+          hist_->fillHist1D("TrackMatch","effRECOVtdc_num",static_cast<unsigned int>(condEv()->tdcPhase));
         }
         if(!trkClsmatchD0 && !trkClsmatchD1)  {
           hist_->fillHist1D("TrackMatch", "trkcluseff", 7);
         }
-	if(nStubscbcSword()>=1 && cbcmatchD1){
+	if(nStubscbcSword()==1 && cbcmatchD1){
 	  cbcstubMatchD1++;
 	  hist_->fillHist1D("TrackMatch", "trkcluseff", 9);
+          hist_->fillHist1D("TrackMatch", "cbcStability", runSub);
+          hist_->fillHist1D("TrackMatch","effCBCVtdc_num",static_cast<unsigned int>(condEv()->tdcPhase));
 	}
-	else if(nStubscbcSword()>=1 && !cbcmatchD1){
+	else if(nStubscbcSword()==1 && !cbcmatchD1){
 	  cbcstubWrongD1++;
 	  hist_->fillHist1D("TrackMatch", "trkcluseff", 10);
+          hist_->fillHist1D("TrackMatch", "cbcStability", runSub);
+          hist_->fillHist1D("TrackMatch","effCBCVtdc_num",static_cast<unsigned int>(condEv()->tdcPhase));
+	}
+	else if(nStubscbcSword()>1)  hist_->fillHist1D("TrackMatch", "trkcluseff", 11);
+
+	if(nStubscbcSword()==1 && dutRecoClmap()->at("det0C0").size()==1 && dutRecoClmap()->at("det1C0").size()==1){
+	  hist_->fillHist1D("TrackMatch/CBCcheck", "EventN", jentry);
+	  hist_->fillHist1D("TrackMatch/CBCcheck", "NClusterDUT0", dutRecoClmap()->at("det0C0").size());
+	  hist_->fillHist1D("TrackMatch/CBCcheck", "NClusterDUT1", dutRecoClmap()->at("det1C0").size());
+	  for(auto& cl : dutRecoClmap()->at("det0C0") ) {
+	    hist_->fillHist1D("TrackMatch/CBCcheck", "ClusterPosDUT0", cl.x);
+	  }
+	  for(auto& cl : dutRecoClmap()->at("det1C0") ) {
+	    hist_->fillHist1D("TrackMatch/CBCcheck", "ClusterPosDUT1", cl.x);
+	  }
+	  for(auto& s : dutRecoStubmap()->at("C0"))  {
+	    hist_->fillHist1D("TrackMatch/CBCcheck", "RECOStubPosDUT1", s.x);
+	    hist_->fillHist1D("TrackMatch/CBCcheck", "RECOStubResDUT1", fidTrkcoll.at(0).xtkDut1 - (s.x-nstrips()/2)*dutpitch());
+	  }
+	  for(auto& cl0 : dutRecoClmap()->at("det0C0") ) {
+	    for(auto& cl1 : dutRecoClmap()->at("det1C0") ) {
+	      hist_->fillHist1D("TrackMatch/CBCcheck", "ClusterDiff", abs(cl1.x-cl0.x));
+	      hist_->fillHist2D("TrackMatch/CBCcheck", "ClusDifvsRes",cl1.x-cl0.x,fidTrkcoll.at(0).xtkDut1 - (cl1.x-nstrips()/2)*dutpitch());
+	    }
+	  }
+
+	}
+       	if(smatchD1){
+	  hist_->fillHist1D("TrackMatch/RECOcheck", "EventN", jentry);
+	  hist_->fillHist1D("TrackMatch/RECOcheck", "NClusterDUT0", dutRecoClmap()->at("det0C0").size());
+	  hist_->fillHist1D("TrackMatch/RECOcheck", "NClusterDUT1", dutRecoClmap()->at("det1C0").size());
+	  for(auto& cl : dutRecoClmap()->at("det0C0") ) {
+	    hist_->fillHist1D("TrackMatch/RECOcheck", "ClusterPosDUT0", cl.x);
+	  }
+	  for(auto& cl : dutRecoClmap()->at("det1C0") ) {
+	    hist_->fillHist1D("TrackMatch/RECOcheck", "ClusterPosDUT1", cl.x);
+	  }
+	  for(auto& s : dutRecoStubmap()->at("C0"))  {
+	    hist_->fillHist1D("TrackMatch/RECOcheck", "RECOStubPosDUT1", s.x);
+	    hist_->fillHist1D("TrackMatch/RECOcheck", "RECOStubResDUT1", fidTrkcoll.at(0).xtkDut1 - (s.x-nstrips()/2)*dutpitch());
+	  }	  
+	  for(auto& cl0 : dutRecoClmap()->at("det0C0") ) {
+	    for(auto& cl1 : dutRecoClmap()->at("det1C0") ) {
+	      hist_->fillHist1D("TrackMatch/RECOcheck", "ClusterDiff", abs(cl1.x-cl0.x));
+	      hist_->fillHist2D("TrackMatch/RECOcheck", "ClusDifvsRes",cl1.x-cl0.x,fidTrkcoll.at(0).xtkDut1 - (cl1.x-nstrips()/2)*dutpitch());
+	    }
+	  }
+	}
+	if(smatchD1 && nStubscbcSword()==1){
+	  hist_->fillHist1D("TrackMatch/Bothcheck", "EventN", jentry);
+	  hist_->fillHist1D("TrackMatch/Bothcheck", "NClusterDUT0", dutRecoClmap()->at("det0C0").size());
+	  hist_->fillHist1D("TrackMatch/Bothcheck", "NClusterDUT1", dutRecoClmap()->at("det1C0").size());
+	  for(auto& cl : dutRecoClmap()->at("det0C0") ) {
+	    hist_->fillHist1D("TrackMatch/Bothcheck", "ClusterPosDUT0", cl.x);
+	  }
+	  for(auto& cl : dutRecoClmap()->at("det1C0") ) {
+	    hist_->fillHist1D("TrackMatch/Bothcheck", "ClusterPosDUT1", cl.x);
+	  }
+	  for(auto& s : dutRecoStubmap()->at("C0"))  {
+	    hist_->fillHist1D("TrackMatch/Bothcheck", "RECOStubPosDUT1", s.x);
+	    hist_->fillHist1D("TrackMatch/Bothcheck", "RECOStubResDUT1", fidTrkcoll.at(0).xtkDut1 - (s.x-nstrips()/2)*dutpitch());
+	  }	  
+	  for(auto& cl0 : dutRecoClmap()->at("det0C0") ) {
+	    for(auto& cl1 : dutRecoClmap()->at("det1C0") ) {
+	      hist_->fillHist1D("TrackMatch/Bothcheck", "ClusterDiff", abs(cl1.x-cl0.x));
+	      hist_->fillHist2D("TrackMatch/Bothcheck", "ClusDifvsRes",cl1.x-cl0.x,fidTrkcoll.at(0).xtkDut1 - (cl1.x-nstrips()/2)*dutpitch());
+	    }
+	  }
+	}
+	if(!smatchD1 && nStubscbcSword()==1){
+	  hist_->fillHist1D("TrackMatch/CBCOnlycheck", "EventN", jentry);
+	  hist_->fillHist1D("TrackMatch/CBCOnlycheck", "NClusterDUT0", dutRecoClmap()->at("det0C0").size());
+	  hist_->fillHist1D("TrackMatch/CBCOnlycheck", "NClusterDUT1", dutRecoClmap()->at("det1C0").size());
+	  for(auto& cl : dutRecoClmap()->at("det0C0") ) {
+	    hist_->fillHist1D("TrackMatch/CBCOnlycheck", "ClusterPosDUT0", cl.x);
+	  }
+	  for(auto& cl : dutRecoClmap()->at("det1C0") ) {
+	    hist_->fillHist1D("TrackMatch/CBCOnlycheck", "ClusterPosDUT1", cl.x);
+	  }
+	  for(auto& s : dutRecoStubmap()->at("C0"))  {
+	    hist_->fillHist1D("TrackMatch/CBCOnlycheck", "RECOStubPosDUT1", s.x);
+	    hist_->fillHist1D("TrackMatch/CBCOnlycheck", "RECOStubResDUT1", fidTrkcoll.at(0).xtkDut1 - (s.x-nstrips()/2)*dutpitch());
+	  }	  
+	  for(auto& cl0 : dutRecoClmap()->at("det0C0") ) {
+	    for(auto& cl1 : dutRecoClmap()->at("det1C0") ) {
+	      hist_->fillHist1D("TrackMatch/CBCOnlycheck", "ClusterDiff", abs(cl1.x-cl0.x));
+	      hist_->fillHist2D("TrackMatch/CBCOnlycheck", "ClusDifvsRes",cl1.x-cl0.x,fidTrkcoll.at(0).xtkDut1 - (cl1.x-nstrips()/2)*dutpitch());
+	    }
+	  }
 	}
       }   
    }//event loop
@@ -288,6 +517,8 @@ void BasePGAnalysis::eventLoop()
              << "\n#RECO Abs Stub Efficiency=" << double(recostubMatchD1)/double(trkFid) << "\tError=" << TMath::Sqrt(recostubMatchD1*(1.- double(recostubMatchD1)/double(trkFid) ))/double(trkFid)
              << "\n#CBC Abs Stub Efficiency=" << double(cbcstubMatchD1)/double(trkFid) << "\tError=" << TMath::Sqrt(cbcstubMatchD1*(1.- double(cbcstubMatchD1)/double(trkFid) ))/double(trkFid)
 	     << std::endl;
+   myout->Write();
+   myout->Close();
 }
 
 void BasePGAnalysis::clearEvent() {
