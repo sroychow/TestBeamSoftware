@@ -57,6 +57,9 @@ void BaselineAnalysis::eventLoop()
 #elif NOV_15
   std::cout << "Processing Nov15 data" << std::endl;
 #endif
+  unsigned int nfidtrk_1k = 0; 
+  unsigned int nmatchedstub_1k = 0; 
+  unsigned int eventCounter_1k = 1;
   long int trkFid = 0;
   long int det0clsMatch = 0;
   long int det1clsMatch = 0;
@@ -74,6 +77,15 @@ void BaselineAnalysis::eventLoop()
       cout << " Events processed. " << std::setw(8) << jentry 
 	   << endl;
     }
+    if ( jentry != 0 && (jentry-1)%1000 == 0) {
+      hist_->fillHistProfile("TrackMatch", "nfidtrk_1k", eventCounter_1k , nfidtrk_1k);
+      hist_->fillHistProfile("TrackMatch", "nmatchedStub_1k", eventCounter_1k , nmatchedstub_1k);
+      std::cout << "Counter=" << eventCounter_1k << "\t#Fid tracks=" << nfidtrk_1k << "\t#Matched stubs=" <<  nmatchedstub_1k << std::endl;
+      nfidtrk_1k = 0;
+      nmatchedstub_1k = 0;
+      eventCounter_1k++;
+    } 
+    if(eventCounter_1k > 231) break;
     if(jentry==0) {
       hist_->fillHist1D("EventInfo","hvSettings", condEv()->HVsettings);
       hist_->fillHist1D("EventInfo","dutAngle", condEv()->DUTangle);
@@ -136,6 +148,7 @@ void BaselineAnalysis::eventLoop()
       double minHitresStripD0 = 999.;
       double minHitresStripD1 = 999.;
       
+      int trkposDet1 = -1;
       for(auto &tk : fidTrkcoll) {
 	double x0 = tk.xtkDut0; 
 	hist_->fillHist1D("TrackMatch","hposxTkDUT0",x0);
@@ -232,8 +245,13 @@ void BaselineAnalysis::eventLoop()
 	hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_all", x1/dutpitch() + nstrips()/2, minStubStripC0);
 	if(smatchD1)  hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_matched", x1/dutpitch() + nstrips()/2, minStubStripC0); 
 #elif NOV_15
+        trkposDet1 = -1.*x1/dutpitch() + nstrips()/2;
+	hist_->fillHist1D("TrackMatch","trackPos_all", trkposDet1);
 	hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_all", -1.*x1/dutpitch() + nstrips()/2, minStubStripC0);
-	if(smatchD1)  hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_matched", -1.*x1/dutpitch() + nstrips()/2, minStubStripC0);  
+	if(smatchD1) {
+          hist_->fillHist2D("TrackMatch","minstubTrkPoscorrD1_matched", -1.*x1/dutpitch() + nstrips()/2, minStubStripC0);  
+          hist_->fillHist1D("TrackMatch","trackPos_matched", trkposDet1);
+        }
 #endif
       }
       
@@ -256,12 +274,16 @@ void BaselineAnalysis::eventLoop()
       }
       if(smatchD1) {
 	recostubMatchD1++;
+        nmatchedstub_1k++;
 	hist_->fillHist1D("TrackMatch", "trkcluseff", 8);
       }
       if(!trkClsmatchD0 && !trkClsmatchD1)  {
 	hist_->fillHist1D("TrackMatch", "trkcluseff", 7);
       }
-    }   
+      nfidtrk_1k++;
+    }
+
+   
   }//event loop
   //error(1/N )sqrt( k(1 − k/N )).
   std::cout << "\n#events with 1 fid trk(both)=" << trkFid

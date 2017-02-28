@@ -22,6 +22,7 @@ class Histogrammer {
     void bookTrackMatchHistograms();
     void bookTrackFitHistograms(float, float, int);
     void bookTelescopeAnalysisHistograms();
+    void bookFeI4Histograms();
     TH1* GetHistoByName(const char*, const char* );
     TH1* GetHistoByName(const std::string& dir, const std::string& hname);
     void FillAlignmentOffsetVsZ(const char*, const char*, int, float, float, float);

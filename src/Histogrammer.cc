@@ -143,6 +143,9 @@ void Histogrammer::bookTrackMatchHistograms() {
   new TH1D("stubPos_all","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
   new TH1D("stubPos_matched","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
 
+  new TH1D("trackPos_all","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
+  new TH1D("trackPos_matched","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
+
   new TH1I("trkcluseff","",9,-0.5,8.5);
   TH1I* h = dynamic_cast<TH1I*>(Utility::getHist1D("trkcluseff"));
   h->GetXaxis()->SetBinLabel(1,"xtkNodupl(=1)");
@@ -160,6 +163,10 @@ void Histogrammer::bookTrackMatchHistograms() {
 
   new TH1F("deltaXPos_trkfei4", "Difference in matched Track impact and Hit X Position", 40000, -100.0, 100.0);
   new TH1F("deltaYPos_trkfei4", "Difference in matched Track Impact and Hit Y Position", 40000, -100.0, 100.0);
+
+  new TProfile("nfidtrk_1k","#Events with 1 Fiducial Tracks;Event Number (#times 1000);Entries for 1000 events",10000,0.5,10000.5);
+  new TProfile("nmatchedStub_1k","#Events with Stub Matched;Event Number (#times 1000);Entries for 1000 events",10000,-0.5,10000.5);
+
 
 }
 
@@ -236,6 +243,53 @@ void Histogrammer::bookTrackFitHistograms(float zMin, float zStep, int zNsteps){
   new TH1F("bothPlanesConstraint_chi2VsDeltaZ","chi2 vs injected #deltaZ", 41, 0.-0.125, 10.25-0.125);
 
 }
+
+void Histogrammer::bookFeI4Histograms()
+{
+  fout_->mkdir("FeI4");
+  fout_->cd("FeI4");
+  new TH1D("x0_Residual_Evnt",";Event number; Number of Mismatched Clusters",(300e3/5) , -0.5, 300e3 -0.5);
+  new TH1D("lv1","Number of level1 accept;Level1 Accept; [a.u.]; Count [a.u]",(100/1.0),-0.5,99.5);
+  new TH1D("lv1_M","Number of level1 accept;Level1 Accept; [a.u.]; Count [a.u]",(100/1.0),-0.5,99.5);
+  
+  new TH1I("nHits","Number of FeI4 hits per event;Pixels in Cluster; [Hits]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nClusters","Number of FeI4 custers per event; [Clusters];Count [a.u]", 100 ,-0.5,99.5);
+  new TH1I("hTotFei4","Total ToT FeI4 Cluster; [Clusters];Count [a.u]", 100 ,-0.5,99.5);
+  new TH1D("hQFeI4","Charge Deposited in FeI4 per Event; Q [kElectrons]; Number of Events",(1000/1.5) , -0.5,  1000-0.5);
+  new TH1I("nPixels","Number of Pixels per cluster in Fei4 plane;Pixels in Cluster; Count[a.u]",100,-0.5,99.5);
+  
+  new TH1I("nTracks","Number of Tracks per event; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_event","Number of Tracks within acceptance window per event; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_cluster","Number of Tracks within acceptance window per cluster in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  
+  new TH1I("nTracks_1Cluster","Number of Tracks for events with 1 cluster in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_2Cluster","Number of Tracks for events with 2 clusters in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_3Cluster","Number of Tracks for events with 3 clusters in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_4Cluster","Number of Tracks for events with 4 clusters in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_5Cluster","Number of Tracks for events with 5 clusters in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_6Cluster","Number of Tracks for events with 6 clusters in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  
+  new TH1D("tk_dYdZ","dydz of tracks matched to FeI4 clusters;dydz; [a.u.]; Count [a.u]",(20e-4/1e-5),-10e-4,10e-4);
+  new TH1D("tk_dXdZ","dxdz of tracks matched to FeI4 clusters;dxdz; [a.u.]; Count [a.u]",(20e-4/1e-5),-10e-4,10e-4);
+  new TH2D("x0_Correlation","; x_{FeI4,Cluster} [mm]; x_{DUT0,Cluster}",36/(50e-3/1), -18.,18. , (36/(0.09/1)), -18.0, 18.0);
+  new TH2D("x1_Correlation","; x_{FeI4,Cluster} [mm]; x_{DUT1,Cluster}",36/(50e-3/1), -18.,18. , (36/(0.09/1)), -18.0, 18.0);
+  new TH2D("nClusters0_Correlation","; n_{FeI4,Cluster} [mm]; n_{DUT0,Cluster}",100,-0.5,99.5 , 100,-0.5,99.5);
+  new TH2D("nClusters1_Correlation","; n_{FeI4,Cluster} [mm]; n_{DUT1,Cluster}",100,-0.5,99.5 , 100,-0.5,99.5);
+  new TH2F("HitMap","FEI4 Hit Map; x_{FeI4} [mm]; y_{FeI4} [mm]" , (int)(40.0/250e-3) , -20.0, 20.0,  (int)(40.0/50e-3) , -20.0, 20.0);
+  
+  new TH2F("HitMap_Raw","FEI4 Hit Map; x_{FeI4} [mm]; y_{FeI4} [mm]" , (int)(40.0/250e-3) , -20.0, 20.0,  (int)(40.0/50e-3) , -20.0, 20.0);
+  
+  
+  double Min_FeI4 = -10.0;
+  double Max_FeI4 =  10.0; 
+  double Range_FeI4 = (Max_FeI4-Min_FeI4);
+  int nResX_binSize = (int)(Range_FeI4/(25e-3));
+  int nResY_binSize = (int)(Range_FeI4/(25e-3));
+  new TH2D("Residuals", "Difference in Track Impact and FeI4 Cluster; x_{FeI4} - x_{Track} [mm]; y_{FeI4} - y_{Track} [mm]", nResX_binSize, Min_FeI4 , Max_FeI4,  nResY_binSize,  Min_FeI4 , Max_FeI4);
+  
+  new TH1D("x0_Residual","; x_{FeI4,Cluster} - x_{DUT0,Cluster} [mm]; Counts [a.u]", 36/(50e-3/5), -18.0, 18.0);  
+  new TH1D("x1_Residual","; x_{FeI4,Cluster} - x_{DUT1,Cluster} [mm]; Counts [a.u]", 36/(50e-3/5), -18.0, 18.0);  
+} 
 
 TH1* Histogrammer::GetHistoByName(const char* dir, const char* hname){
   fout_->cd(dir);
