@@ -291,6 +291,49 @@ void Histogrammer::bookFeI4Histograms()
   new TH1D("x1_Residual","; x_{FeI4,Cluster} - x_{DUT1,Cluster} [mm]; Counts [a.u]", 36/(50e-3/5), -18.0, 18.0);  
 } 
 
+void Histogrammer::bookCBCHistograms(std::string cbc)
+{
+  TString d(cbc);
+  fout_->cd();
+  fout_->mkdir(d);
+  fout_->cd(d);
+  double xMin = -1.0*0.09*150; 
+  double xMax = 1.0*0.09*150;
+  double xBin = 0.09/1.0;  
+  double xOffset = 0.0;//xBin/2.0;
+  new TH1D("fidTracks_num", ";# Fiducial Tracks Per Event; Number of Events" , 100 , 0.0-0.5, 100.0-0.5 );
+  new TH1D("fidTracks_impact_mm", ";x_{Track} [mm]; Number of Events" , (xMax-xMin)/xBin, xMin , xMax );
+  new TH1D("fidTracks_impact_strips", ";x_{Track} [mm]; Number of Events" , 255,-0.5,254.5);
+  new TH1D("matchedCluster_mm", ";x_{Cluster} [mm]; Number of Events" , (xMax-xMin)/xBin, xMin , xMax );
+  
+  new TH1D("fidTracks_impact_mm_CentralRegion", ";x_{Track} [mm]; Number of Events" , (xMax-xMin)/(0.1*xBin) , xMin , xMax );
+  new TH1D("matchedCluster_mm_CentralRegion", ";x_{Track} [mm]; Number of Events" , (xMax-xMin)/(0.1*xBin) , xMin , xMax );
+  new TH2D("fidTracks_impact_mm_CentralRegion_2D", ";x_{Track} [mm]; Cluster Width [Strips]" , (xMax-xMin)/(0.1*xBin) , xMin , xMax , 5 , -0.5 , 5-0.5) ;
+  new TH2D("matchedCluster_mm_CentralRegion_2D", ";x_{Track} [mm]; Cluster Width [Strips]" , (xMax-xMin)/(0.1*xBin) , xMin , xMax ,5  , -0.5 , 5-0.5 );
+  
+  new TH1D("matchedCluster_strips", ";x_{Cluster} [mm]; Number of Events" , 255,-0.5,254.5);
+  new TH2D("matchedCluster_CW", ";x_{Cluster} [mm]; Cluster Width [Strips]" ,  255,-0.5,254.5 , 10 , -0.5 , 9.5);
+  new TH2D("matchedCluster_CW_mm", ";x_{Track} [mm]; Cluster Width [Strips]" , (xMax-xMin)/xBin, xMin , xMax, 10 , -0.5 , 9.5);
+  new TProfile("matchedClusterWidth_mm", ";x_{Track} [mm]; Average Cluster Width [Strips]" , (xMax-xMin)/xBin, xMin , xMax );
+  
+  new TH1D("matchedStub_mm", ";x_{Stub} [mm]; Number of Events" , (xMax-xMin)/xBin, xMin , xMax );
+  new TH2D("matchedStub_mm_2D", ";x_{Track} [mm]; TDC Phase" , (xMax-xMin)/xBin, xMin , xMax , 20 , -0.5 , 19.5);
+  new TH1D("candidateStubs_impact_mm", ";x_{Track} [mm]; Number of Events" , (xMax-xMin)/xBin, xMin , xMax );
+  new TH2D("candidateStubs_impact_mm_2D", ";x_{Track} [mm]; TDC Phase" , (xMax-xMin)/xBin, xMin , xMax , 20 , -0.5 , 19.5);
+  //new TH2D("candidateStubs_impact_mm_CW", ";x_{Track} [mm]; TDC Phase" , (xMax-xMin)/xBin, xMin , xMax , 20 , -0.5 , 19.5);
+  
+  new TH1D("nCandidateClusters", ";TDC Phase; Number of Events", 17 , -0.5 , 16.5);
+  new TH1D("nClusters_ANA", ";TDC Phase; Number of Clusters", 17 , -0.5 , 16.5);
+  new TH1D("nCandidateStubs", ";TDC Phase; Number of Events", 17 , -0.5 , 16.5);
+  new TH1D("nStubs_CHIP", ";TDC Phase; Number of Events", 17 , -0.5 , 16.5);
+  new TH1D("nStubs_RECO", ";TDC Phase; Number of Events", 17 , -0.5 , 16.5);
+  new TH1D("nStubs_ANA", ";TDC Phase; Number of Events", 17 , -0.5 , 16.5);
+  new TH1D("stubMatching", "; ; Number of Events" , 5 , -0.5 , 5.0 -0.5);
+  new TH2D("stubMatching_2D", "; ; Number of Events" , 5 , -0.5 , 5.0 -0.5 ,(xMax-xMin)/xBin, xMin , xMax );
+  new TH2D("stubMatching_CW", "; ; Number of Events" , 5 , -0.5 , 5.0 -0.5 , 20 , -0.5 , 19.5);
+  new TH2D("stubMatching_TDC", "; ; Number of Events" , 5 , -0.5 , 5.0 -0.5 , 20 , -0.5 , 19.5);
+}
+
 TH1* Histogrammer::GetHistoByName(const char* dir, const char* hname){
   fout_->cd(dir);
   return Utility::getHist1D(hname);
@@ -300,6 +343,25 @@ TH1* Histogrammer::GetHistoByName(const std::string& dir, const std::string& hna
   fout_->cd(dir.c_str());
   return Utility::getHist1D(hname);
 
+}
+
+TH2* Histogrammer::Get2DHistoByName(const char* dir, const char* hname){
+  fout_->cd(dir);
+  return Utility::getHist2D(hname);
+}
+
+TH2* Histogrammer::Get2DHistoByName(const std::string& dir, const std::string& hname) {
+  fout_->cd(dir.c_str());
+  return Utility::getHist2D(hname);
+}
+
+TProfile* Histogrammer::GetProfileByName(const std::string& dir, const std::string& hname) {
+  fout_->cd(dir.c_str());
+  return Utility::getHistProfile(hname);
+}
+TProfile* Histogrammer::GetProfileByName(const char* dir, const char* hname){
+  fout_->cd(dir);
+  return Utility::getHistProfile(hname);
 }
 
 void Histogrammer::FillAlignmentOffsetVsZ(const char* det, const char* histo, int iz, float z, float x, float x_err){
