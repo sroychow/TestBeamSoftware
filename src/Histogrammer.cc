@@ -109,13 +109,13 @@ void Histogrammer::bookTrackMatchHistograms() {
   fout_->cd("TrackMatch");
   new TH1D("nTrackParams","#Tracks Telescope;#tracks;#events",30,-0.5,29.5);
   new TH1D("nTrackParamsNodupl","#Tracks Telescope after duplicate removal;#tracks;#events",30,-0.5,29.5);
-  new TH1D("hposxTkDUT0","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk=1)",100,-20.,20.);
-  new TH1D("hposxTkDUT1","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk=1)",100,-20.,20.);
-  new TH1D("hminposClsDUT0","Xpos of the cluster hit at DUT0 plane with min dist from track(#fid trk=1)",100,-20.,20.);
-  new TH1D("hminposClsDUT1","Xpos of the cluster hit at DUT1 plane with min dist from track(#fid trk=1)",100,-20.,20.);
-  new TH1D("hminposStub","Xpos of the stub hit with min dist from trk(#fid trk=1)",100,-20.,20.);
-  new TH2D("minclsTrkPoscorrD0","Cluster xTrk Pos Correlation;trk;cluster",255,-0.5,254.5, 255,-0.5,254.5);
-  new TH2D("minclsTrkPoscorrD1","Cluster xTrk Pos Correlation;trk;cluster",255,-0.5,254.5, 255,-0.5,254.5);
+  new TH1D("hposxTkDUT0","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk=1)",500,-100.,100.);
+  new TH1D("hposxTkDUT1","Xpos of extrapolated track at DUT0 plane after alignment(#fid trk=1)",500,-100.,100.);
+  new TH1D("hminposClsDUT0","Xpos of the cluster hit at DUT0 plane with min dist from track(#fid trk=1)",500,-100.,100.);
+  new TH1D("hminposClsDUT1","Xpos of the cluster hit at DUT1 plane with min dist from track(#fid trk=1)",500,-100.,100.);
+  new TH1D("hminposStub","Xpos of the stub hit with min dist from trk(#fid trk=1)",500,-100.,100.);
+  new TH2D("minclsTrkPoscorrD0","Cluster xTrk Pos Correlation;trk;cluster",1016,-0.5,1015.5, 1016,-0.5,1015.5);
+  new TH2D("minclsTrkPoscorrD1","Cluster xTrk Pos Correlation;trk;cluster",1016,-0.5,1015.5, 1016,-0.5,1015.5);
   TH2D* h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minclsTrkPoscorrD0"));
   h2d->SetOption("colz");
   h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minclsTrkPoscorrD1"));
@@ -124,20 +124,20 @@ void Histogrammer::bookTrackMatchHistograms() {
 
   //new TH1D("residualDUT0multitrkfidNodupl","ClusterResidual at DUT0 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
   //new TH1D("residualDUT1multitrkfidNodupl","ClusterResidual at DUT1 plane(fiducial)(#trk>1, no duplicate tracks)",400,-20.,20.);
-  new TH1D("minresidualDUT0_1trkfid","ClusterResidual at DUT0 plane(fiducial)(#trk=1)",1000,-10.,10.);
-  new TH1D("minresidualDUT1_1trkfid","ClusterResidual at DUT1 plane(fiducial)(#trk=1)",1000,-10.,10.);
+  new TH1D("minresidualDUT0_1trkfid","ClusterResidual at DUT0 plane(fiducial)(#trk=1)",10000,-100.,100.);
+  new TH1D("minresidualDUT1_1trkfid","ClusterResidual at DUT1 plane(fiducial)(#trk=1)",10000,-100.,100.);
   new TH1D("clswidthDUT0_1trkfid","ClusterWidth(cluster matched to track) at DUT0 plane(fiducial)(#trk=1)",50,-0.5,49.5);
   new TH1D("clswidthDUT1_1trkfid","ClusterWidth(cluster matched to track) at DUT1 plane(fiducial)(#trk=1)",50,-0.5,49.5);
 
-  new TH2D("minstubTrkPoscorrD1_all","Closest-Stub xTrk Pos Correlation;trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
-  new TH2D("minstubTrkPoscorrD1_matched","Closest-Stub xTrk Pos Correlation(matched);trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
-  new TH2D("minstubTrkPoscorrD1_CBC","Closest-Stub xTrk Pos Correlation(matched);trk;stub",255,-0.5,254.5, 255,-0.5,254.5);
+  new TH2D("minstubTrkPoscorrD1_all","Closest-Stub xTrk Pos Correlation;trk;stub",1016,-0.5,1015.5, 1016,-0.5,1015.5);
+  new TH2D("minstubTrkPoscorrD1_matched","Closest-Stub xTrk Pos Correlation(matched);trk;stub",1016,-0.5,1015.5, 1016,-0.5,1015.5);
+  new TH2D("minstubTrkPoscorrD1_CBC","Closest-Stub xTrk Pos Correlation(matched);trk;stub",1016,-0.5,1015.5, 1016,-0.5,1015.5);
   h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1_all"));
   h2d->SetOption("colz");
   h2d = dynamic_cast<TH2D*>(Utility::getHist2D("minstubTrkPoscorrD1_matched"));
   h2d->SetOption("colz");
 
-  new TH1D("sminresidualC0_1trkfid","Stub Residual at DUT1 plane(fiducial)(#trk=1)",1000,-10.,10.);
+  new TH1D("sminresidualC0_1trkfid","Stub Residual at DUT1 plane(fiducial)(#trk=1)",10000,-100.,100.);
 
   new TH1D("stubPos_all","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
   new TH1D("stubPos_matched","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
@@ -145,7 +145,7 @@ void Histogrammer::bookTrackMatchHistograms() {
   new TH1D("trackPos_all","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
   new TH1D("trackPos_matched","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
 
-  new TH1I("trkcluseff","",9,-0.5,11.5);
+  new TH1I("trkcluseff","",12,-0.5,11.5);
 
   TH1I* h = dynamic_cast<TH1I*>(Utility::getHist1D("trkcluseff"));
   h->GetXaxis()->SetBinLabel(1,"xtkNodupl(=1)");
@@ -181,8 +181,8 @@ void Histogrammer::bookTrackMatchHistograms() {
   new TH1I("effChip0Vtdc_den",";TDC;#Events",17,-0.5,16.5);
   new TH1I("effChip1Vtdc_den",";TDC;#Events",17,-0.5,16.5);
 
-  new TH1F("deltaXPos_trkfei4", "Difference in matched Track impact and Hit X Position", 40000, -20.0, 20.0);
-  new TH1F("deltaYPos_trkfei4", "Difference in matched Track Impact and Hit Y Position", 40000, -20.0, 20.0);
+  new TH1F("deltaXPos_trkfei4", "Difference in matched Track impact and Hit X Position", 40000, -100.0, 100.0);
+  new TH1F("deltaYPos_trkfei4", "Difference in matched Track Impact and Hit Y Position", 40000, -100.0, 100.0);
 
 
   new TH1I("trkFidStability","",300,0,300);
@@ -286,18 +286,18 @@ void Histogrammer::bookTrackFitHistograms(float zMin, float zStep, int zNsteps){
   fout_->mkdir("TrackFit");
   fout_->cd("TrackFit");
 
-  new TH1I("d0_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d0",10000, -10, 10);
-  new TH1I("d1_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d1",10000, -10, 10);
+  new TH1I("d0_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d0",100000, -100, 100);
+  new TH1I("d1_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d1",100000, -100, 100);
 
-  new TH1I("d0_1tk1Hit_diffX_bis","X_{TkAtDUT}-X_{DUT}, d0",10000, -10, 10);
-  new TH1I("d1_1tk1Hit_diffX_bis","X_{TkAtDUT}-X_{DUT}, d1",10000, -10, 10);
+  new TH1I("d0_1tk1Hit_diffX_bis","X_{TkAtDUT}-X_{DUT}, d0",100000, -100, 100);
+  new TH1I("d1_1tk1Hit_diffX_bis","X_{TkAtDUT}-X_{DUT}, d1",100000, -100, 100);
 
-  new TH1I("d0_1tk1Hit_diffX_ter","X_{TkAtDUT}-X_{DUT}, d0",10000, -10, 10);
-  new TH1I("d1_1tk1Hit_diffX_ter","X_{TkAtDUT}-X_{DUT}, d1",10000, -10, 10);
+  new TH1I("d0_1tk1Hit_diffX_ter","X_{TkAtDUT}-X_{DUT}, d0",100000, -100, 100);
+  new TH1I("d1_1tk1Hit_diffX_ter","X_{TkAtDUT}-X_{DUT}, d1",100000, -100, 100);
 
   for (int iz=0; iz<zNsteps; iz++){
-    new TH1I(Form("d0_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",10000, -10, 10);
-    new TH1I(Form("d1_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",10000, -10, 10);
+    new TH1I(Form("d0_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",100000, -100, 100);
+    new TH1I(Form("d1_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",100000, -100, 100);
   }
 
   float zMax = zMin + ((float)zNsteps) * zStep;
@@ -309,12 +309,12 @@ void Histogrammer::bookTrackFitHistograms(float zMin, float zStep, int zNsteps){
   new TH1F("d0_chi2VsZ","chi2 vs injected z_{DUT}, d0", zNsteps, zMin-shift, zMax-shift);
   new TH1F("d1_chi2VsZ","chi2 vs injected z_{DUT}, d1", zNsteps, zMin-shift, zMax-shift);
 
-  new TH1I("d0_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d0",10000, -10, 10);
-  new TH1I("d1_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d1",10000, -10, 10);
-  new TH1I("d0_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",10000, -10, 10);
-  new TH1I("d1_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",10000, -10, 10);
-  new TH1I("d0_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",10000, -10, 10);
-  new TH1I("d1_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",10000, -10, 10);
+  new TH1I("d0_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d0",100000, -100, 100);
+  new TH1I("d1_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d1",100000, -100, 100);
+  new TH1I("d0_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",100000, -100, 100);
+  new TH1I("d1_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",100000, -100, 100);
+  new TH1I("d0_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",100000, -100, 100);
+  new TH1I("d1_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",100000, -100, 100);
 
   new TH1F("bothPlanes_chi2VsTheta","chi2 vs injected #theta", 41, -20.-0.5, 21.-0.5);
   new TH1F("bothPlanesConstraint_chi2VsTheta","chi2 vs injected #theta", 41, -20.-0.5, 21.-0.5);

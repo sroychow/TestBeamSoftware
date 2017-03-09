@@ -224,7 +224,7 @@ void BasePGAnalysis::eventLoop()
           }
 	  for(auto& scbc: cbcstubChipids()->at("C0")) {
 	    trkChip =(int) (x1/dutpitch()+nstrips()/2)/128;
-	    cout<<(x1/dutpitch()+nstrips()/2)<<" "<<trkChip<<endl;
+	    //	    cout<<(x1/dutpitch()+nstrips()/2)<<" "<<trkChip<<endl;
             if(trkChip == scbc) cbcmatchD1=true;
 	    //else cout << (x1/dutpitch()+nstrips()/2) << " - CBC Chip " << scbc <<endl;
 	  }
@@ -243,7 +243,6 @@ void BasePGAnalysis::eventLoop()
        }
 
 	int trkchip=-1;
-	cout<<"AFTER : "<< (fidTrkcoll.at(0).xtkDut1/dutpitch()+nstrips()/2) << endl;
 	if( (int)((fidTrkcoll.at(0).xtkDut1/dutpitch()+nstrips()/2)/128) == 0 ){
 	  hist_->fillHist1D("TrackMatch", "trkCBCeff", 0);
 	  hist_->fillHist1D("TrackMatch","effChip0Vtdc_den",static_cast<unsigned int>(condEv()->tdcPhase));
