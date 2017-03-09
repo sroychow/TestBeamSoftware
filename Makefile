@@ -1,5 +1,5 @@
 UNAME    = $(shell uname)
-EXE      = baselineReco deltaClusAnalysis alignmentReco telescopeAna
+EXE      = baselineReco deltaClusAnalysis alignmentReco telescopeAna eAlignment
  
 VPATH  = .:./interface
 vpath %.h ./interface
@@ -23,7 +23,8 @@ CXXFLAGS += -g -std=c++11 -D$(BT_ERA)
 
 HDRS_DICT = interface/DataFormats.h interface/LinkDef.h
 
-bin: baselineReco basePGReco deltaClusAnalysis alignmentReco telescopeAna
+bin: baselineReco basePGReco deltaClusAnalysis alignmentReco telescopeAna eAlignment
+
 all: 
 	gmake cint 
 	gmake bin 
@@ -57,6 +58,11 @@ DeltaClusterAnalysis.o : src/DeltaClusterAnalysis.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
 
+EventAlignment.o : src/EventAlignment.cc
+	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+	mv $@ ../src/
+
+
 baselineReco:   src/baselineReco.cc $(OBJS) src/BaselineAnalysis.o src/Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
@@ -70,6 +76,9 @@ alignmentReco:   src/alignmentReco.cc $(OBJS) src/AlignmentMultiDimAnalysis.o sr
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs ` -lMinuit2
 
 deltaClusAnalysis: src/dclusAnalysis.cc $(OBJS) src/DeltaClusterAnalysis.o src/Dict.o
+	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
+
+eAlignment: src/eAlignment.cc $(OBJS) src/EventAlignment.o  src/Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 # Create object files

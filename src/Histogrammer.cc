@@ -139,7 +139,14 @@ void Histogrammer::bookTrackMatchHistograms() {
 
   new TH1D("sminresidualC0_1trkfid","Stub Residual at DUT1 plane(fiducial)(#trk=1)",1000,-10.,10.);
 
-  new TH1I("trkcluseff","",12,-0.5,11.5);
+  new TH1D("stubPos_all","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
+  new TH1D("stubPos_matched","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
+
+  new TH1D("trackPos_all","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
+  new TH1D("trackPos_matched","Stub Pos;stub pos (strip)",1016,-0.5,1015.5);
+
+  new TH1I("trkcluseff","",9,-0.5,11.5);
+
   TH1I* h = dynamic_cast<TH1I*>(Utility::getHist1D("trkcluseff"));
   h->GetXaxis()->SetBinLabel(1,"xtkNodupl(=1)");
   h->GetXaxis()->SetBinLabel(2,"xtkFidD0");
@@ -233,6 +240,10 @@ void Histogrammer::bookTrackMatchHistograms() {
   new TH1D("ClusterDiff","ClusterDiff;Strip Number;#Events",20,0,20);
   new TH2D("ClusDifvsRes","ClusDifvsRes;Strip Number;Res. (mm)",40,-20,20,500,-4,4);
 
+  new TProfile("nfidtrk_1k","#Events with 1 Fiducial Tracks;Event Number (#times 1000);Entries for 1000 events",10000,0.5,10000.5);
+  new TProfile("nmatchedStub_1k","#Events with Stub Matched;Event Number (#times 1000);Entries for 1000 events",10000,-0.5,10000.5);
+
+
 }
 
 void Histogrammer::bookTelescopeAnalysisHistograms() {
@@ -311,6 +322,96 @@ void Histogrammer::bookTrackFitHistograms(float zMin, float zStep, int zNsteps){
 
 }
 
+void Histogrammer::bookFeI4Histograms()
+{
+  fout_->mkdir("FeI4");
+  fout_->cd("FeI4");
+  new TH1D("x0_Residual_Evnt",";Event number; Number of Mismatched Clusters",(300e3/5) , -0.5, 300e3 -0.5);
+  new TH1D("lv1","Number of level1 accept;Level1 Accept; [a.u.]; Count [a.u]",(100/1.0),-0.5,99.5);
+  new TH1D("lv1_M","Number of level1 accept;Level1 Accept; [a.u.]; Count [a.u]",(100/1.0),-0.5,99.5);
+  
+  new TH1I("nHits","Number of FeI4 hits per event;Pixels in Cluster; [Hits]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nClusters","Number of FeI4 custers per event; [Clusters];Count [a.u]", 100 ,-0.5,99.5);
+  new TH1I("hTotFei4","Total ToT FeI4 Cluster; [Clusters];Count [a.u]", 100 ,-0.5,99.5);
+  new TH1D("hQFeI4","Charge Deposited in FeI4 per Event; Q [kElectrons]; Number of Events",(1000/1.5) , -0.5,  1000-0.5);
+  new TH1I("nPixels","Number of Pixels per cluster in Fei4 plane;Pixels in Cluster; Count[a.u]",100,-0.5,99.5);
+  
+  new TH1I("nTracks","Number of Tracks per event; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_event","Number of Tracks within acceptance window per event; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_cluster","Number of Tracks within acceptance window per cluster in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  
+  new TH1I("nTracks_1Cluster","Number of Tracks for events with 1 cluster in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_2Cluster","Number of Tracks for events with 2 clusters in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_3Cluster","Number of Tracks for events with 3 clusters in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_4Cluster","Number of Tracks for events with 4 clusters in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_5Cluster","Number of Tracks for events with 5 clusters in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  new TH1I("nTracks_6Cluster","Number of Tracks for events with 6 clusters in Fei4 plane; [Tracks]; Count [a.u]",100,-0.5,99.5);
+  
+  new TH1D("tk_dYdZ","dydz of tracks matched to FeI4 clusters;dydz; [a.u.]; Count [a.u]",(20e-4/1e-5),-10e-4,10e-4);
+  new TH1D("tk_dXdZ","dxdz of tracks matched to FeI4 clusters;dxdz; [a.u.]; Count [a.u]",(20e-4/1e-5),-10e-4,10e-4);
+  new TH2D("x0_Correlation","; x_{FeI4,Cluster} [mm]; x_{DUT0,Cluster}",36/(50e-3/1), -18.,18. , (36/(0.09/1)), -18.0, 18.0);
+  new TH2D("x1_Correlation","; x_{FeI4,Cluster} [mm]; x_{DUT1,Cluster}",36/(50e-3/1), -18.,18. , (36/(0.09/1)), -18.0, 18.0);
+  new TH2D("nClusters0_Correlation","; n_{FeI4,Cluster} [mm]; n_{DUT0,Cluster}",100,-0.5,99.5 , 100,-0.5,99.5);
+  new TH2D("nClusters1_Correlation","; n_{FeI4,Cluster} [mm]; n_{DUT1,Cluster}",100,-0.5,99.5 , 100,-0.5,99.5);
+  new TH2F("HitMap","FEI4 Hit Map; x_{FeI4} [mm]; y_{FeI4} [mm]" , (int)(40.0/250e-3) , -20.0, 20.0,  (int)(40.0/50e-3) , -20.0, 20.0);
+  
+  new TH2F("HitMap_Raw","FEI4 Hit Map; x_{FeI4} [mm]; y_{FeI4} [mm]" , (int)(40.0/250e-3) , -20.0, 20.0,  (int)(40.0/50e-3) , -20.0, 20.0);
+  
+  
+  double Min_FeI4 = -10.0;
+  double Max_FeI4 =  10.0; 
+  double Range_FeI4 = (Max_FeI4-Min_FeI4);
+  int nResX_binSize = (int)(Range_FeI4/(25e-3));
+  int nResY_binSize = (int)(Range_FeI4/(25e-3));
+  new TH2D("Residuals", "Difference in Track Impact and FeI4 Cluster; x_{FeI4} - x_{Track} [mm]; y_{FeI4} - y_{Track} [mm]", nResX_binSize, Min_FeI4 , Max_FeI4,  nResY_binSize,  Min_FeI4 , Max_FeI4);
+  
+  new TH1D("x0_Residual","; x_{FeI4,Cluster} - x_{DUT0,Cluster} [mm]; Counts [a.u]", 36/(50e-3/5), -18.0, 18.0);  
+  new TH1D("x1_Residual","; x_{FeI4,Cluster} - x_{DUT1,Cluster} [mm]; Counts [a.u]", 36/(50e-3/5), -18.0, 18.0);  
+} 
+
+void Histogrammer::bookCBCHistograms(std::string cbc)
+{
+  TString d(cbc);
+  fout_->cd();
+  fout_->mkdir(d);
+  fout_->cd(d);
+  double xMin = -1.0*0.09*150; 
+  double xMax = 1.0*0.09*150;
+  double xBin = 0.09/1.0;  
+  double xOffset = 0.0;//xBin/2.0;
+  new TH1D("fidTracks_num", ";# Fiducial Tracks Per Event; Number of Events" , 100 , 0.0-0.5, 100.0-0.5 );
+  new TH1D("fidTracks_impact_mm", ";x_{Track} [mm]; Number of Events" , (xMax-xMin)/xBin, xMin , xMax );
+  new TH1D("fidTracks_impact_strips", ";x_{Track} [mm]; Number of Events" , 255,-0.5,254.5);
+  new TH1D("matchedCluster_mm", ";x_{Cluster} [mm]; Number of Events" , (xMax-xMin)/xBin, xMin , xMax );
+  
+  new TH1D("fidTracks_impact_mm_CentralRegion", ";x_{Track} [mm]; Number of Events" , (xMax-xMin)/(0.1*xBin) , xMin , xMax );
+  new TH1D("matchedCluster_mm_CentralRegion", ";x_{Track} [mm]; Number of Events" , (xMax-xMin)/(0.1*xBin) , xMin , xMax );
+  new TH2D("fidTracks_impact_mm_CentralRegion_2D", ";x_{Track} [mm]; Cluster Width [Strips]" , (xMax-xMin)/(0.1*xBin) , xMin , xMax , 5 , -0.5 , 5-0.5) ;
+  new TH2D("matchedCluster_mm_CentralRegion_2D", ";x_{Track} [mm]; Cluster Width [Strips]" , (xMax-xMin)/(0.1*xBin) , xMin , xMax ,5  , -0.5 , 5-0.5 );
+  
+  new TH1D("matchedCluster_strips", ";x_{Cluster} [mm]; Number of Events" , 255,-0.5,254.5);
+  new TH2D("matchedCluster_CW", ";x_{Cluster} [mm]; Cluster Width [Strips]" ,  255,-0.5,254.5 , 10 , -0.5 , 9.5);
+  new TH2D("matchedCluster_CW_mm", ";x_{Track} [mm]; Cluster Width [Strips]" , (xMax-xMin)/xBin, xMin , xMax, 10 , -0.5 , 9.5);
+  new TProfile("matchedClusterWidth_mm", ";x_{Track} [mm]; Average Cluster Width [Strips]" , (xMax-xMin)/xBin, xMin , xMax );
+  
+  new TH1D("matchedStub_mm", ";x_{Stub} [mm]; Number of Events" , (xMax-xMin)/xBin, xMin , xMax );
+  new TH2D("matchedStub_mm_2D", ";x_{Track} [mm]; TDC Phase" , (xMax-xMin)/xBin, xMin , xMax , 20 , -0.5 , 19.5);
+  new TH1D("candidateStubs_impact_mm", ";x_{Track} [mm]; Number of Events" , (xMax-xMin)/xBin, xMin , xMax );
+  new TH2D("candidateStubs_impact_mm_2D", ";x_{Track} [mm]; TDC Phase" , (xMax-xMin)/xBin, xMin , xMax , 20 , -0.5 , 19.5);
+  //new TH2D("candidateStubs_impact_mm_CW", ";x_{Track} [mm]; TDC Phase" , (xMax-xMin)/xBin, xMin , xMax , 20 , -0.5 , 19.5);
+  
+  new TH1D("nCandidateClusters", ";TDC Phase; Number of Events", 17 , -0.5 , 16.5);
+  new TH1D("nClusters_ANA", ";TDC Phase; Number of Clusters", 17 , -0.5 , 16.5);
+  new TH1D("nCandidateStubs", ";TDC Phase; Number of Events", 17 , -0.5 , 16.5);
+  new TH1D("nStubs_CHIP", ";TDC Phase; Number of Events", 17 , -0.5 , 16.5);
+  new TH1D("nStubs_RECO", ";TDC Phase; Number of Events", 17 , -0.5 , 16.5);
+  new TH1D("nStubs_ANA", ";TDC Phase; Number of Events", 17 , -0.5 , 16.5);
+  new TH1D("stubMatching", "; ; Number of Events" , 5 , -0.5 , 5.0 -0.5);
+  new TH2D("stubMatching_2D", "; ; Number of Events" , 5 , -0.5 , 5.0 -0.5 ,(xMax-xMin)/xBin, xMin , xMax );
+  new TH2D("stubMatching_CW", "; ; Number of Events" , 5 , -0.5 , 5.0 -0.5 , 20 , -0.5 , 19.5);
+  new TH2D("stubMatching_TDC", "; ; Number of Events" , 5 , -0.5 , 5.0 -0.5 , 20 , -0.5 , 19.5);
+}
+
 TH1* Histogrammer::GetHistoByName(const char* dir, const char* hname){
   fout_->cd(dir);
   return Utility::getHist1D(hname);
@@ -320,6 +421,25 @@ TH1* Histogrammer::GetHistoByName(const std::string& dir, const std::string& hna
   fout_->cd(dir.c_str());
   return Utility::getHist1D(hname);
 
+}
+
+TH2* Histogrammer::Get2DHistoByName(const char* dir, const char* hname){
+  fout_->cd(dir);
+  return Utility::getHist2D(hname);
+}
+
+TH2* Histogrammer::Get2DHistoByName(const std::string& dir, const std::string& hname) {
+  fout_->cd(dir.c_str());
+  return Utility::getHist2D(hname);
+}
+
+TProfile* Histogrammer::GetProfileByName(const std::string& dir, const std::string& hname) {
+  fout_->cd(dir.c_str());
+  return Utility::getHistProfile(hname);
+}
+TProfile* Histogrammer::GetProfileByName(const char* dir, const char* hname){
+  fout_->cd(dir);
+  return Utility::getHistProfile(hname);
 }
 
 void Histogrammer::FillAlignmentOffsetVsZ(const char* det, const char* histo, int iz, float z, float x, float x_err){

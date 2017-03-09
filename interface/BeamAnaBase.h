@@ -85,7 +85,16 @@ class BeamAnaBase {
     std::map<std::string,std::string> jobCardmap() const { return jobCardmap_;}
     std::string inFile() { return iFilename_; }    
     unsigned long int getMaxEvt() { return maxEvent_; }
-
+    bool CheckFiducial( double xTrk , int pStripMin , int pStripMax ,  const std::string det) 
+    {
+      int iStrip = xTrk/dutpitch() + nstrips()/2.0; 
+      bool isFiducial = true; 
+      if( iStrip > nstrips() || iStrip < pStripMin || iStrip > pStripMax ) isFiducial = false; 
+      //if( iStrip > nstrips() ) isFiducial = false; 
+      if( doChannelMasking_ ) isFiducial =  std::find(dut_maskedChannels_->at(det).begin(), dut_maskedChannels_->at(det).end(), iStrip) ==    dut_maskedChannels_->at(det).end();
+      return isFiducial;
+    }
+    
   private :
     std::string iFilename_;
     std::string outFilename_;

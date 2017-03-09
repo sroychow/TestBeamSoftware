@@ -366,7 +366,7 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
   if( (std::fabs(xtrk0Pos) > pitchDUT_*nStrips_/2.) 
      || (std::fabs(xtrk1Pos) > pitchDUT_*nStrips_/2.))  return false;
   //DUT y acceptance
-  if(std::fabs(ytrk0Pos) > 5. || std::fabs(ytrk1Pos) > 5.)  return false; 
+  //if(std::fabs(ytrk0Pos) > 5. || std::fabs(ytrk1Pos) > 5.)  return false; 
 
   if(doChannelMasking_) {
     int xtkdutStrip0 = xtrk0Pos/pitchDUT_ + nStrips_/2; 
