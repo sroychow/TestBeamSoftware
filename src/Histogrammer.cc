@@ -48,8 +48,10 @@ void Histogrammer::bookEventHistograms() {
 void Histogrammer::bookDUTHistograms(std::string det) 
 {
   int nStrips = 254; 
-  if( NOV_15 )
-    nStrips = nStrips*4;
+
+#ifdef NOV_15
+  nStrips = nStrips*4;
+#endif
 
   TString d(det);
   fout_->cd();
@@ -319,9 +321,9 @@ void Histogrammer::bookCorrelationHistoForColumn(TString c) {
 void Histogrammer::bookTrackMatchHistograms() 
 {
   int nStrips = 254; 
-  if( NOV_15 )
-    nStrips = nStrips*4;
-
+#ifdef NOV_15 
+  nStrips = nStrips*4;
+#endif
   fout_->mkdir("TrackMatch");
   fout_->cd("TrackMatch");
   new TH1D("nTrackParams","#Tracks Telescope;#tracks;#events",30,-0.5,29.5);
@@ -424,7 +426,7 @@ void Histogrammer::bookTrackMatchHistograms()
   h->GetXaxis()->SetBinLabel(6,"xtkClsMatchD1");
   h->GetXaxis()->SetBinLabel(7,"xtkClsMatchD0_&&_D1");
   h->GetXaxis()->SetBinLabel(8,"no-match_D0&&_D1");
-  h->GetXaxis()->SetBinLabel(9,"xtkStubMatchC0")
+  h->GetXaxis()->SetBinLabel(9,"xtkStubMatchC0");
   h->GetXaxis()->SetBinLabel(10,"xtkCBCStubMatchC0");
   h->GetXaxis()->SetBinLabel(11,"xtkCBCStubWrongC0");
   h->GetXaxis()->SetBinLabel(12,"xtkCBCStub>1");
@@ -747,16 +749,12 @@ void Histogrammer::bookTelescopeAnalysisHistograms() {
   
 
   int nBins = (20e-3/20);
-  if( NOV_15 )
-  {
+  new TH1D("deltaXPos", "Difference in Track impact and FeI4 Cluster X Position; x_{FeI4} - x_{Track}; Counts", (40.0)/5e-3 , -20.0, 20.0);
+  new TH1D("deltaYPos", "Difference in Track Impact and FeI4 Cluster Y Position; y_{FeI4} - y_{Track}; Counts", (40.0)/5e-3 , -20.0, 20.0);
+#ifdef NOV_15 
     new TH1D("deltaXPos", "Difference in Track Impact and FeI4 Cluster X Position; -x_{FeI4} - y_{Track}; Counts", (40.0)/5e-3 , -20.0, 20.0);
     new TH1D("deltaYPos", "Difference in Track impact and FeI4 Cluster Y Position; y_{FeI4} - x_{Track}; Counts", (40.0)/5e-3 , -20.0, 20.0);
-  }
-  else
-  {
-    new TH1D("deltaXPos", "Difference in Track impact and FeI4 Cluster X Position; x_{FeI4} - x_{Track}; Counts", (40.0)/5e-3 , -20.0, 20.0);
-    new TH1D("deltaYPos", "Difference in Track Impact and FeI4 Cluster Y Position; y_{FeI4} - y_{Track}; Counts", (40.0)/5e-3 , -20.0, 20.0);
-  }
+#endif
   new TH1F("deltaDistance", "Distance between track and hit",  40000, -20.0, 20.0);
   new TH1F("deltaXPos_SinglePixel", "Difference in Track impact and Hit X Position (Single Pixel Hit)", 40000 , -20.0, 20.0);
   new TH1F("deltaXPos_SinglePixel_BSub", "Difference in Track impact and Hit X Position (Single Pixel Hit)", 40000 , -20.0, 20.0);
@@ -928,9 +926,9 @@ void Histogrammer::bookCBCHistograms(std::string cbc)
   fout_->mkdir(d);
   fout_->cd(d);
   int nStrips = 254; 
-  if( NOV_15 )
-    nStrips = nStrips*4;
-
+#ifdef NOV_15 
+  nStrips = nStrips*4;
+#endif
   double xMin = -1.0*0.09*1.5*nStrips; 
   double xMax = 1.0*0.09*1.5*nStrips;
   double xBin = 0.09/1.0;  
