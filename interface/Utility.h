@@ -159,8 +159,8 @@ namespace Utility {
     double pitch = par[7];
     double xx_s = x[0] +  xOffset_s;
     double xx = x[0];
-    double f0 = (a0/pitch)*0.5*( TMath::Erf((xx_s + 0.5*pitch)/sigma_s) -  TMath::Erf((xx_s-0.5*pitch)/sigma_s) );
-    double f1 = b0 +  (b1/(std::sqrt(2*TMath::Pi())*sigma_b))*TMath::Exp( -1*std::pow(xx-xOffset_b,2.0)/(2*std::pow(sigma_b,2)) );
+    double f0 = (b0/pitch)*0.5*( TMath::Erf((xx_s + 0.5*pitch)/sigma_s) -  TMath::Erf((xx_s-0.5*pitch)/sigma_s) );
+    double f1 = a0 +  (b1/(std::sqrt(2*TMath::Pi())*sigma_b))*TMath::Exp( -1*std::pow(xx-xOffset_b,2.0)/(2*std::pow(sigma_b,2)) );
     double f = f0 + f1; 
     return f;
   }
@@ -208,6 +208,10 @@ namespace Utility {
     double f_Background = backgroundFunction( x , &par[4]);
     double f = f_Signal + f_Background ;
     return f;
+  }
+  static double correlationFunction(Double_t* x , Double_t* par)
+  {
+    return x[0]*par[1] + par[0];
   }
   //--------------------------------------------------------------------//
 

@@ -64,9 +64,14 @@ class EventAlignment : public BeamAnaBase
 	    double fFeI4_Q_sigma;
 
 
+		double fFeI4_Correlation_y0;
+		double fFeI4_Correlation_m;
+		double fFeI4_Correlation_y0_unc;
+		double fFeI4_Correlation_m_unc;
+
+
 		double fTkPointing_x;
 		double fTkPointing_y;
-
 
 		double fFeI4_Window_x;
 		double fFeI4_Window_y;
@@ -134,6 +139,7 @@ class EventAlignment : public BeamAnaBase
     	void CorrelateFeI4Tracks(int groupID, int evOffset );
 		void CorrelateDetFeI4(int groupID, int evOffset );
 		int MatchDetFeI4(int groupID, int prevOffset, double acceptanceWindow);
+		int MatchDetFeI4_v2(int groupID, int prevOffset , double pCorrelation = 10 , double minCorrelation = 0.0 );
     
         double returnStrip(double xHit , double pitch = 0 );
         double returnHit( double iStrip, double pitch = 0 );
@@ -153,9 +159,10 @@ class EventAlignment : public BeamAnaBase
         void clearDUThistograms(const char* buffer);//modified from 
         void clearHistograms();
         bool checkHitIsFid( double xHit, int pDetectorID );
-        double ExtrapolateFeI4Hit_DUT( double yFeI4Hit,  int itrk ,int pDetectorID );
+        double ExtrapolateFeI4Hit_DUT( int itrk ,int pDetectorID );
         bool checkHits(int pDetectorID , vector<int> detHits, double xTrk , int& pNumHits , std::vector<double>& residualsAbs , std::vector<double>& residuals );
-        void CalculateResolution(int pDetectorID);
+        void CalculateHitResidual(AllExtrapolatedHits pExtrapolatedHits);
+		void CalculateResolution(int pDetectorID);
         void CalculateEfficiency_Hits( AllExtrapolatedHits pExtrapolatedHits, double acceptanceWindow = 2.0*0.09 );
   		AllExtrapolatedHits MatchFeI4Hits(int groupID, int evOffset , double windowSize); 
 		void alignX(std::vector<SingleGroup_Offset> gOffsets, double windowSize=1.0);
@@ -165,13 +172,13 @@ class EventAlignment : public BeamAnaBase
   		TFitResultPtr fitFeI4_Signal( TH1D* htmp , double pitch  );
   		TFitResultPtr fitFeI4_Background( TH1D* htmp , double pitch  );
   		void doFeI4TrackFit_HighIntensity();
-
+  		
   		void estimateBackground(TFitResult* fitResult , double xMin , double xMax , double& meanIntegral , double& errorIntegral );
   		void estimateTrackContamination(double windowSize);
         void CalculateDUTefficiency( AllExtrapolatedHits pExtrapolatedHits, double acceptanceWindow = 0 , double correlationWindow  = 5);
   		void CalculateEfficiency(double matchingWindowSize=1.0);
         
-		
+		void FindDetFeI4CorrelationWindow(int nEvents=2000);
 	public:
 		std::vector<SingleGroup_Offset> alignEvents(std::string eAlignmentFile );
         private:

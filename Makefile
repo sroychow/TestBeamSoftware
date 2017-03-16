@@ -9,7 +9,7 @@ HSUF   = h
 DICTC  = Dict.$(CSUF)
 DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
 
-SRCS   = src/argvparser.cc src/DataFormats.cc src/BeamAnaBase.cc src/Utility.cc src/Histogrammer.cc   
+SRCS   = src/DataFormats.cc src/BeamAnaBase.cc src/Utility.cc src/Histogrammer.cc   
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
 
