@@ -23,7 +23,8 @@ CXXFLAGS += -g -std=c++11 -D$(BT_ERA)
 
 HDRS_DICT = interface/DataFormats.h interface/LinkDef.h
 
-bin: baselineReco deltaClusAnalysis alignmentReco telescopeAna eAlignment
+bin: baselineReco basePGReco deltaClusAnalysis alignmentReco telescopeAna eAlignment
+
 all: 
 	gmake cint 
 	gmake bin 
@@ -38,6 +39,10 @@ $(DICTC): $(HDRS_DICT)
 	mv $(DICTH) interface/
 
 BaselineAnalysis.o : src/BaselineAnalysis.cc
+	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+	mv $@ ../src/
+
+BasePGAnalysis.o : src/BasePGAnalysis.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
 
@@ -59,6 +64,9 @@ EventAlignment.o : src/EventAlignment.cc
 
 
 baselineReco:   src/baselineReco.cc $(OBJS) src/BaselineAnalysis.o src/Dict.o
+	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
+
+basePGReco:   src/basePGReco.cc $(OBJS) src/BasePGAnalysis.o src/Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 telescopeAna:   src/telescopeAna.cc $(OBJS) src/TelescopeAnalysis.o src/Dict.o
