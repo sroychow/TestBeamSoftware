@@ -77,6 +77,11 @@ void BaselineAnalysis::eventLoop()
       cout << " Events processed. " << std::setw(8) << jentry 
 	   << endl;
     }
+
+#ifdef NOV_15
+    //cut on TDC phase:apply for NOV15
+    if(static_cast<unsigned int>(condEv()->tdcPhase) > 8)    continue; 
+#endif
     if ( jentry != 0 && (jentry-1)%1000 == 0) {
       hist_->fillHistProfile("TrackMatch", "nfidtrk_1k", eventCounter_1k , nfidtrk_1k);
       hist_->fillHistProfile("TrackMatch", "nmatchedStub_1k", eventCounter_1k , nmatchedstub_1k);
@@ -85,7 +90,9 @@ void BaselineAnalysis::eventLoop()
       nmatchedstub_1k = 0;
       eventCounter_1k++;
     } 
-    if(eventCounter_1k > 231) break;
+#ifdef NOV_15
+    if(eventCounter_1k > 112) break;
+#endif
     if(jentry==0) {
       hist_->fillHist1D("EventInfo","hvSettings", condEv()->HVsettings);
       hist_->fillHist1D("EventInfo","dutAngle", condEv()->DUTangle);

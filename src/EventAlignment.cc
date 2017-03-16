@@ -38,6 +38,7 @@ EventAlignment::EventAlignment(int pNumberEvents_perGroup , int pMaxOffset ) :
 {
   fNumberEvents_perGroup = pNumberEvents_perGroup;
   fMaxEventOffset = pMaxOffset;
+  fL1_sigma=1;
 }
 
 void EventAlignment::eventLoop()
@@ -634,6 +635,8 @@ std::vector<double> EventAlignment::getRecoStubPositions( )
     for(auto& stub : dutRecoStubmap()->at("C0"))  
     {
       double xStubPos = (stub.x-nstrips()/2)*dutpitch(); 
+      if( NOV_15 ) 
+        xStubPos = -1*xStubPos;
       stubPositions.push_back( xStubPos );
     }
     return stubPositions;
@@ -644,6 +647,9 @@ std::vector<double> EventAlignment::getCbcStubPositions( )
     for(auto& stub : dutEv()->stubs)  
     {
       double xStubPos = (stub->x-nstrips()/2)*dutpitch(); 
+      if( NOV_15 ) 
+        xStubPos = -1*xStubPos;
+      
       stubPositions.push_back( xStubPos );
     }
     return stubPositions;
@@ -660,6 +666,8 @@ std::vector<double> EventAlignment::getClusterPositions( int pDetectorID , int m
    for(auto& cl : dutRecoClmap()->at(cDetectorName) ) 
    {
       double xClusterPos = (cl.x-nstrips()/2)*dutpitch(); 
+      if( NOV_15 ) 
+        xClusterPos = -1*xClusterPos;
       if( cl.size <= maxClusterWidth && cl.size > 0 ) clusterPositions.push_back( xClusterPos );
    }
    return clusterPositions;
@@ -683,6 +691,8 @@ std::vector<double> EventAlignment::getHitPositions( vector<int> detHits )
   for( auto cHitDet  : detHits )
   {
     double xHitPos =  (cHitDet - nstrips()/2.0 )*dutpitch() ;
+    if( NOV_15 ) 
+      xHitPos = (nstrips()/2.0 - cHitDet )*dutpitch() ;
     hitPositions.push_back( xHitPos );
   }
   return hitPositions;
@@ -984,7 +994,119 @@ void EventAlignment::removeDuplicateTracks(std::vector<int>& idTks)
     }
   }
 }
+void EventAlignment::FindDetFeI4CorrelationWindow(int nEventsToUse )
+{
+  int groupID = 0;
+  int evOffset = 0; 
 
+  double rotation = 0;
+ //default pitch and dimensions of fei4 plane
+  double cColPitch_fei4 = 250.0 ; // um 
+  double cRowPitch_fei4 =  50.0 ; // um 
+  int nPixels = 2; 
+  double minDistance = std::sqrt( std::pow(nPixels*cColPitch_fei4*1e-3 ,2.0) + std::pow(nPixels*cRowPitch_fei4*1e-3, 2.0 ) ) ;
+  // where did these come from?!
+  double x0_FEI4 = -9.875; // mm
+  double y0_FEI4 = -8.375; // mm 
+
+  int nEvents = 0 ;
+  int nClusters = 0; 
+  char buffer[256];
+  int nGoodEvents = 0 ;
+
+  for (Long64_t jentry=(groupID*nEventsToUse) ; jentry<(groupID+1)*nEventsToUse ;jentry++) 
+  {
+      clearEvent();
+      Long64_t ientry = analysisTree()->GetEntry(jentry);
+
+      if (ientry < 0) break;
+      
+      // if there are no tracks in the telecscope ... ignore the event!
+      //if(telEv()->xPos->empty())    continue;
+      // if there are no hits in the Fei4 plane ... ignore  the event!
+      //if(fei4Ev()->nPixHits==0  )    continue;
+
+      if(!isGoodEvent()) continue ;
+
+      
+      setDetChannelVectors();
+      const auto& d0c0 = *det0C0();
+      const auto& d0c1 = *det0C1();
+      const auto& d1c0 = *det1C0();
+      const auto& d1c1 = *det1C1();   
+
+      std::vector<double> xHits_Det0 = getHitPositions( d0c0 );
+      std::vector<double> xHits_Det1 = getHitPositions( d1c0 );
+      std::vector<double> x_Clusters_Det0 = getClusterPositions(0);
+      std::vector<double> x_Clusters_Det1 = getClusterPositions(1);
+      std::vector<double> x_Stubs = getStubPositions();
+
+      clearEvent();
+      Long64_t fei4_Entry = jentry;
+      fei4_Entry =  jentry + (Long64_t)evOffset;
+      ientry = analysisTree()->GetEntry(fei4_Entry);
+      if (ientry < 0) break;
+
+      // remove track duplicates 
+      std::vector<int> idTks;
+      removeDuplicateTracks(idTks);
+      
+      std::vector<double> xPos_FeI4Clusters, yPos_FeI4Clusters , size_FeI4Clusters , tot_FeI4Clusters , lv1_FeI4Clusters ;
+      int cMinWidth_FeI4Cluster = 3 ; 
+      tbeam::FeIFourEvent* cFei4Ev_sorted = sortFei4Hits(fei4Ev());
+      if( cFei4Ev_sorted->row->size() == 0 ) continue ; 
+      clusterFeI4Hits(cFei4Ev_sorted , xPos_FeI4Clusters, yPos_FeI4Clusters , size_FeI4Clusters , tot_FeI4Clusters , lv1_FeI4Clusters ,   cMinWidth_FeI4Cluster );
+      
+      for( unsigned int i = 0 ; i < x_Clusters_Det0.size() ; i++ )
+      {
+        
+        double xDet0 = x_Clusters_Det0[i] - alParsLocal_.d0Offset();
+
+        std::vector<double> HitResidual; HitResidual.clear(); 
+        std::vector<int> HitIndex; HitIndex.clear();
+        for( int j = 0 ; j < xPos_FeI4Clusters.size()  ; j++ )
+        {
+          if( std::fabs(lv1_FeI4Clusters[j] - fL1_mean) > fL1_sigma ) continue;
+          double Q = FeI4_ToT_to_Q( tot_FeI4Clusters[j])*1e-3;
+          //if( std::fabs(Q - fFeI4_Q_mpv) > 3*fFeI4_Q_sigma) continue ; 
+
+          double xval = xPos_FeI4Clusters[j];//*std::cos(rotation*pi/180) - yPos_FeI4Clusters[j]*std::sin(rotation*pi/180) ;
+          double yval = yPos_FeI4Clusters[j]; //*std::cos(rotation*pi/180) + xPos_FeI4Clusters[j]*std::sin(rotation*pi/180); 
+          yval = -1*yval; 
+          HitResidual.push_back( std::fabs( yval - xDet0)  );
+          HitIndex.push_back( j );
+        }
+        if( HitResidual.size() == 0 ) continue; 
+
+        std::vector<double>::iterator minLocator = std::min_element(std::begin(HitResidual), std::end(HitResidual));
+        int id = (int)(std::distance(std::begin(HitResidual), minLocator));
+        id = HitIndex[id];
+
+        double xval = xPos_FeI4Clusters[id];//*std::cos(rotation*pi/180) - yPos_FeI4Clusters[j]*std::sin(rotation*pi/180) ;
+        double yval = yPos_FeI4Clusters[id]; //*std::cos(rotation*pi/180) + xPos_FeI4Clusters[j]*std::sin(rotation*pi/180); 
+        yval = -1*yval; 
+        double residual =  yval - xDet0 ;
+        double residual_abs = std::fabs(residual);
+        
+        hist_->fillHist2D("FeI4", "x0_Correlation_Search", yval , xDet0 )  ; 
+        hist_->fillHist1D("FeI4", "x0_Residual_Search", residual ) ; 
+      }
+  }
+
+  TH2D* h = dynamic_cast<TH2D*>(hist_->Get2DHistoByName("FeI4","x0_Correlation_Search"));
+  h->GetXaxis()->SetRangeUser(-10,10);
+  h->GetYaxis()->SetRangeUser(-10,10);
+
+  TF1* f_Correlation = new TF1("f_Correlation", Utility::correlationFunction , -10.0 , 10.0 , 2 );
+  std::cout << "Finding correlation between FeI4 clusters and DUT clusters using the first " << nEventsToUse << " events\n.";
+  f_Correlation->SetLineStyle(2);
+  f_Correlation->SetParameter(1,1);
+  h->Fit(f_Correlation);
+  fFeI4_Correlation_y0 = f_Correlation->GetParameter(0);
+  fFeI4_Correlation_m = f_Correlation->GetParameter(1);
+  fFeI4_Correlation_y0_unc = f_Correlation->GetParError(0);
+  fFeI4_Correlation_m_unc = f_Correlation->GetParError(1);
+}
 void EventAlignment::CorrelateDetFeI4(int groupID, int evOffset )
 {
   double rotation = 0;
@@ -1108,23 +1230,27 @@ void EventAlignment::CorrelateDetFeI4(int groupID, int evOffset )
           double Q = FeI4_ToT_to_Q( tot_FeI4Clusters[j])*1e-3;
           //if( std::fabs(Q - fFeI4_Q_mpv) > 3*fFeI4_Q_sigma) continue ; 
 
-          double yval = yPos_FeI4Clusters[j]*std::cos(rotation*pi/180) + xPos_FeI4Clusters[j]*std::sin(rotation*pi/180); 
+          double xval = xPos_FeI4Clusters[j];//*std::cos(rotation*pi/180) - yPos_FeI4Clusters[j]*std::sin(rotation*pi/180) ;
+          double yval = yPos_FeI4Clusters[j]; //*std::cos(rotation*pi/180) + xPos_FeI4Clusters[j]*std::sin(rotation*pi/180); 
           yval = -1*yval; 
-          HitResidual.push_back( std::fabs( yval - xDet0)  );
+          double residual; 
+          residual = yval - xDet0;
+            
+          HitResidual.push_back( std::fabs( residual)  );
           HitIndex.push_back( j );
-          hist_->fillHist1D("TrackMatch", "nClusters_Fei4", HitResidual.size() );
         }
         if( HitResidual.size() == 0 ) continue; 
-
         hist_->fillHist1D("TrackMatch", "nClusters_Fei4", HitResidual.size() );
       
         std::vector<double>::iterator minLocator = std::min_element(std::begin(HitResidual), std::end(HitResidual));
         int id = (int)(std::distance(std::begin(HitResidual), minLocator));
         id = HitIndex[id];
 
-        double yval = yPos_FeI4Clusters[id]*std::cos(rotation*pi/180) + xPos_FeI4Clusters[id]*std::sin(rotation*pi/180);
+        double xval = xPos_FeI4Clusters[id];//*std::cos(rotation*pi/180) - yPos_FeI4Clusters[j]*std::sin(rotation*pi/180) ;
+        double yval = yPos_FeI4Clusters[id]; //*std::cos(rotation*pi/180) + xPos_FeI4Clusters[j]*std::sin(rotation*pi/180); 
         yval = -1*yval; 
-        double residual =  yval - xDet0 ;
+        double residual; 
+        residual =  yval - xDet0 ;
         double residual_abs = std::fabs(residual);
         
         // if the closest cluster in the event is 
@@ -1132,6 +1258,7 @@ void EventAlignment::CorrelateDetFeI4(int groupID, int evOffset )
 
         hist_->fillHist1D("FeI4", "lv1_M", (double)(lv1_FeI4Clusters[id]) );
         hist_->fillHist2D("FeI4", "x0_Correlation", yval , xDet0 )  ; 
+        //std::cout << "FeI4 cluster at " << yval << " track impact at " << xDet0 << std::endl;
         hist_->fillHist1D("FeI4", "x0_Residual", residual ) ; 
 
 
@@ -1236,14 +1363,27 @@ void EventAlignment::CorrelateFeI4Tracks(int groupID, int evOffset )
         for( int j = 0 ; j < idTks.size() ; j++ )
         {
           unsigned int itk = idTks[j];
-          double tkX =  -1*telEv()->xPos->at(itk); 
+          double tkX =  -1*telEv()->xPos->at(itk); //-1*telEv()->xPos->at(itk); 
           double tkY =  telEv()->yPos->at(itk); 
           double chi2 = telEv()->chi2->at(itk); 
           double distance = std::sqrt( std::pow(xval-tkX,2.0) + std::pow(yval - tkY,2.0) ) ;
 
           matchedTrackID.push_back( itk );
-          matchedTrackResidualX.push_back(xval-tkX);
-          matchedTrackResidualY.push_back(yval-tkY);
+          if( NOV_15 )
+          {
+            distance = std::sqrt( std::pow(-1*xval-tkY,2.0) + std::pow(yval - tkX,2.0) ) ;
+            matchedTrackResidualX.push_back(-1*xval-tkY);
+            //distance = std::sqrt( std::pow(-1*xval-tkY,2.0) + std::pow(yval - tkX,2.0) ) ;
+            //matchedTrackResidualX.push_back(-1*xval-tkY);
+            matchedTrackResidualY.push_back(yval-tkX);
+          }
+          //original
+          else
+          {
+            distance = std::sqrt( std::pow(xval-tkX,2.0) + std::pow(yval - tkY,2.0) ) ;
+            matchedTrackResidualX.push_back(xval-tkX);
+            matchedTrackResidualY.push_back(yval-tkY);
+          }
           matchedTrackResidual.push_back(distance);
           matchedTrackChi2.push_back(chi2);
 
@@ -1398,19 +1538,188 @@ int EventAlignment::MatchDetFeI4( int groupID , int prevOffset , double acceptan
   int optimalOffset = offsets[id];
   return (int)(optimalOffset);
 }
+int EventAlignment::MatchDetFeI4_v2( int groupID , int prevOffset , double pCorrelation , double minCorrelation )
+{
+  double rotation = 0;
+ //default pitch and dimensions of fei4 plane
+  double cColPitch_fei4 = 250.0 ; // um 
+  double cRowPitch_fei4 =  50.0 ; // um 
+  int nPixels = 2; 
+  double minDistance = std::sqrt( std::pow(nPixels*cColPitch_fei4*1e-3 ,2.0) + std::pow(nPixels*cRowPitch_fei4*1e-3, 2.0 ) ) ;
+  // where did these come from?!
+  double x0_FEI4 = -9.875; // mm
+  double y0_FEI4 = -8.375; // mm 
 
+  int nEvents = 0 ;
+  int nClusters = 0; 
+  char buffer[256];
+  int nGoodEvents = 0 ;
+  
+
+  int totalNumClusters = 0; 
+  std::vector<int> offsets{prevOffset-3,prevOffset-2,prevOffset-1,prevOffset,prevOffset+1,prevOffset+2,prevOffset+3};
+  std::vector<int> correlated_hits; correlated_hits.clear();
+  std::vector<double> fraction_correlated_hits ; fraction_correlated_hits.clear(); 
+  for( int index = 0 ; index < offsets.size() ; index++)
+  {
+    int evOffset = offsets[index];
+    int nCorrelatedEntries =0 ;
+    int nEntries = 0 ; 
+    for (Long64_t jentry=(groupID*fNumberEvents_perGroup + 1) ; jentry<(groupID+1)*fNumberEvents_perGroup + 1 ;jentry++) 
+    {
+      clearEvent();
+      Long64_t ientry = analysisTree()->GetEntry(jentry);
+
+      if (ientry < 0) break;
+      
+      // if there are no tracks in the telecscope ... ignore the event!
+      if(telEv()->xPos->empty())    continue;
+      // if there are no hits in the Fei4 plane ... ignore  the event!
+      if(fei4Ev()->nPixHits==0  )    continue;
+
+      if(!isGoodEvent()) continue ;
+
+      
+      setDetChannelVectors();
+      const auto& d0c0 = *det0C0();
+      const auto& d0c1 = *det0C1();
+      const auto& d1c0 = *det1C0();
+      const auto& d1c1 = *det1C1();   
+
+      std::vector<double> xHits_Det0 = getHitPositions( d0c0 );
+      std::vector<double> xHits_Det1 = getHitPositions( d1c0 );
+      std::vector<double> x_Clusters_Det0 = getClusterPositions(0);
+      std::vector<double> x_Clusters_Det1 = getClusterPositions(1);
+      std::vector<double> x_Stubs = getStubPositions();
+
+
+      // remove track duplicates 
+      std::vector<int> idTks;
+      // can also use the built-in duplicate track removal function here 
+      removeDuplicateTracks(idTks);
+      if( idTks.size() == 0 ) continue; 
+    
+      clearEvent();
+      Long64_t fei4_Entry = jentry;
+      fei4_Entry =  jentry + (Long64_t)evOffset;
+
+      ientry = analysisTree()->GetEntry(fei4_Entry);
+      if (ientry < 0) break;
+      
+      // I group the FeI4 hits into clusters 
+      std::vector<double> xPos_FeI4Clusters, yPos_FeI4Clusters , size_FeI4Clusters , tot_FeI4Clusters , lv1_FeI4Clusters ;
+      int cMinWidth_FeI4Cluster = 3 ; 
+      tbeam::FeIFourEvent* cFei4Ev_sorted = sortFei4Hits(fei4Ev());
+      if( cFei4Ev_sorted->row->size() == 0 ) continue ; 
+      clusterFeI4Hits(cFei4Ev_sorted , xPos_FeI4Clusters, yPos_FeI4Clusters , size_FeI4Clusters , tot_FeI4Clusters , lv1_FeI4Clusters ,   cMinWidth_FeI4Cluster );
+      
+      for( unsigned int i = 0 ; i < x_Clusters_Det0.size() ; i++ )
+      {
+        std::vector<double> HitResidual; HitResidual.clear(); 
+        double xDet0 = x_Clusters_Det0[i] - alParsLocal_.d0Offset();
+        for( int j = 0 ; j < xPos_FeI4Clusters.size()  ; j++ )
+        {
+          if( std::fabs(lv1_FeI4Clusters[j] - fL1_mean) > fL1_sigma ) continue;
+          //double Q = FeI4_ToT_to_Q( tot_FeI4Clusters[j])*1e-3;
+          //if( std::fabs(Q - fFeI4_Q_mpv) > 3*fFeI4_Q_sigma) continue ; 
+          
+          double xval = xPos_FeI4Clusters[j];//*std::cos(rotation*pi/180) - yPos_FeI4Clusters[j]*std::sin(rotation*pi/180) ;
+          double yval = yPos_FeI4Clusters[j]*std::cos(rotation*pi/180) + xPos_FeI4Clusters[j]*std::sin(rotation*pi/180); 
+          yval = -1*yval;
+          double expected_HitPosition = fFeI4_Correlation_y0 + fFeI4_Correlation_m*yval; 
+          double residual = expected_HitPosition - xDet0 ; 
+          double residual_abs = std::fabs(residual);
+          HitResidual.push_back( residual_abs );
+          
+        }
+        if( HitResidual.size() == 0 ) continue ; 
+
+        std::vector<double>::iterator minLocator = std::min_element(std::begin(HitResidual), std::end(HitResidual));
+        int id = (int)(std::distance(std::begin(HitResidual), minLocator));
+        double xval = xPos_FeI4Clusters[id];//*std::cos(rotation*pi/180) - yPos_FeI4Clusters[j]*std::sin(rotation*pi/180) ;
+        double yval = yPos_FeI4Clusters[id];
+        yval = -1*yval; 
+        double expected_HitPosition = fFeI4_Correlation_y0 + fFeI4_Correlation_m*yval; 
+        double minExpected_HitPosition = (fFeI4_Correlation_y0-pCorrelation*fFeI4_Correlation_y0_unc) + (fFeI4_Correlation_m+pCorrelation*fFeI4_Correlation_m_unc)*yval; 
+        double maxExpected_HitPosition = (fFeI4_Correlation_y0+pCorrelation*fFeI4_Correlation_y0_unc) + (fFeI4_Correlation_m-pCorrelation*fFeI4_Correlation_m_unc)*yval; 
+        //double minExpected_HitPosition = (fFeI4_Correlation_y0-k*fFeI4_Correlation_y0_unc) + (fFeI4_Correlation_m-k*fFeI4_Correlation_m_unc)*yval; 
+        //double maxExpected_HitPosition = (fFeI4_Correlation_y0+k*fFeI4_Correlation_y0_unc) + (fFeI4_Correlation_m+k*fFeI4_Correlation_m_unc)*yval; 
+        double acceptanceWindow = std::fabs( maxExpected_HitPosition - minExpected_HitPosition);
+        //std::cout << "DUT hit = " << xDet0 << " extrapolated from FeI4 hit " << expected_HitPosition << " -acceptance window = " << acceptanceWindow << std::endl;
+          
+        double residual = expected_HitPosition - xDet0 ; 
+        double residual_abs = std::fabs(residual);
+        
+        if( residual_abs > acceptanceWindow )
+        { 
+          hist_->fillHist1D("FeI4", "x0_Residual_Evnt", (int)jentry , 1 );
+        }
+        else
+        {  
+          hist_->fillHist1D("FeI4", "x0_Residual_Evnt", (int)jentry , 0 );
+        }
+
+        if( residual_abs <= acceptanceWindow )
+        { 
+          nCorrelatedEntries++;
+        }
+        nEntries++; 
+      }
+      //if( nGoodEvents%10000 == 0 ) std::cout << "Events processed = " << nGoodEvents << std::endl; 
+      nGoodEvents++;
+    }
+    if( nEntries == 0 ) continue ; 
+    //std::cout << "\tFor offset = " << offsets[index] << " , number of correlated clusters = " << nCorrelatedEntries << std::endl;
+    //std::cout  << " which is " << fraction_correlated_hits[fraction_correlated_hits.size()-1] << " percent of the FeI4 clusters." << std::endl; 
+    correlated_hits.push_back( nCorrelatedEntries );
+    fraction_correlated_hits.push_back( (double)(nCorrelatedEntries)/nEntries );
+  }
+  if( fraction_correlated_hits.size() > 0 )
+  {
+    std::vector<int>::iterator maxLocator = std::max_element(std::begin(correlated_hits), std::end(correlated_hits));
+    int id = (int)(std::distance(std::begin(correlated_hits), maxLocator));
+    int optimalOffset = offsets[id];
+    double optimalCorrelation = fraction_correlated_hits[id];
+    //std::cout << "For group = " << groupID << " offset =  " << offsets[index] << " and " << 100.0*optimalCorrelation << " percent of the FeI4 clusters correlated with DUT hits." << std::endl; 
+    hist_->fillHistProfile("FeI4", "EventAlignment_Correlation", groupID, optimalCorrelation*100 ) ;
+    hist_->fillHistProfile("FeI4", "EventAlignment_Offset", groupID, optimalOffset ) ; 
+    sprintf(buffer,"For group %d : offset @ maximum correlation found to be %d , maximum correlation %.3f percent\n" , groupID , optimalOffset , 100*optimalCorrelation) ;
+    if( optimalCorrelation == 0 || optimalCorrelation <  minCorrelation )
+    { 
+      sprintf(buffer,"\t!!! For group %d : maximum correlation %.3f percent !!!\n" , groupID  , 100*optimalCorrelation) ;
+      std::cout << buffer ; 
+      return -100;
+    }
+    else
+    { 
+      return (int)(optimalOffset);
+    }
+  }
+  else
+  {
+    sprintf(buffer,"\t!!! For group %d : ZERO good events found !!!\n" , groupID  ) ;
+    std::cout << buffer ; 
+    return -100;
+  } 
+}
 double EventAlignment::returnStrip( double xHit, double pitch )
 {
 
   if( pitch == 0 ) pitch = dutpitch();
-  double iStrip = xHit/pitch + nstrips()/2.0; 
+  double iStrip = xHit/pitch - nstrips()/2.0; 
+  if( NOV_15 )
+     iStrip = -1*xHit/pitch + nstrips()/2.0; 
   return iStrip;
 }
 double EventAlignment::returnHit( double iStrip, double pitch )
 {
 
   if( pitch == 0 ) pitch = dutpitch();
-  double xHit = (iStrip - nstrips()/2.0)*pitch; 
+  double xHit;
+  if( NOV_15) 
+    xHit = (nstrips()/2.0 - iStrip)*pitch; 
+  else
+    xHit = (iStrip - nstrips()/2.0)*pitch; 
   return xHit;
 }
 void EventAlignment::clusterCbcHits(std::vector<double> xHits, std::vector<double>& xPosClusters, std::vector<double>& sizeClusters , double maxClusterWidth )
@@ -1775,69 +2084,70 @@ void EventAlignment::dut_RecoStubEfficiency( int pGroupID , int cWindow )
 }
 TF1*  EventAlignment::alignFeI4(TH1D* htmp , double pitch , double xExtra)
 {
-
+  xExtra = 100;
   htmp->GetXaxis()->SetRangeUser(-20,20);
   double center = ((double)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((double)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();
-  
-  double xMin = center-xExtra;
-  double xMax = center-1.05*pitch;
+  std::cout << "Center of FeI4 residual [X/Y] = " << center << std::endl;
+  double xMin = std::max( htmp->GetXaxis()->GetXmin(), center-xExtra);
+  double xMax = center-2*pitch;
   htmp->GetXaxis()->SetRangeUser(xMin,xMax);
   double max0 = htmp->GetMaximum();
 
-  xMin = center+pitch;
-  xMax = center+xExtra; 
+  xMin = center+2*pitch;
+  xMax = std::min( htmp->GetXaxis()->GetXmax() , center+xExtra ); 
   htmp->GetXaxis()->SetRangeUser(xMin,xMax);
   double max1 = htmp->GetMaximum();
 
-  xMin = (max0 > max1) ? center-xExtra : center+ 1*pitch;
-  xMax = (max0 > max1) ? center-1*pitch : center+xExtra;
-  htmp->GetXaxis()->SetRangeUser(xMin,xMax);
+  xMin = (max0 > max1) ? center-xExtra : center+ 2*pitch;
+  xMax = (max0 > max1) ? center-2*pitch : center+xExtra;
   
+  htmp->GetXaxis()->SetRangeUser(xMin,xMax);
+  std::cout << "Fitting background [FeI4 residual] between " << xMin << " and " << xMax << std::endl;
   TF1* f_b = new TF1("f_Background", Utility::normBackgroundFunction , xMin , xMax , 4 );
-  f_b->SetParameter(0, 0.1*htmp->GetMaximum()); f_b->SetParLimits(0, 0 , 100);
+  f_b->FixParameter(0, 0.0*htmp->GetMaximum()); //f_b->SetParLimits(0, 0 , 100);
   f_b->SetParameter(1, htmp->GetMaximum());
   f_b->FixParameter(2, 0.0 );
   f_b->SetParameter(3, htmp->GetRMS() ); f_b->SetParLimits(3 , 0 , 10.0 );
   f_b->SetLineColor(kMagenta); f_b->SetLineStyle(2);
-  htmp->Fit(f_b,"qB");
-  
-  xMin = center - pitch; 
-  xMax = center + pitch; 
+  htmp->Fit(f_b,"B");
+
+  xMin = center - 2*pitch; 
+  xMax = center + 2*pitch; 
+  htmp->GetXaxis()->SetRangeUser(xMin,xMax);
+  //std::cout << "Fitting central region [FeI4 residual] between " << xMin << " and " << xMax << std::endl;
+  //TF1* f_c = new TF1("f_Central", Utility::signalFunction  , xMin , xMax , 4 );
+  //f_c->SetParameter(0, htmp->GetMaximum());
+  //f_c->FixParameter(1, pitch); f_c->SetParLimits(1 , 0 , 2.0*pitch );
+  //f_c->SetParameter(2, -1*center );
+  //f_c->SetParameter(3, 20e-3 ); f_c->SetParLimits(3 , 0 , 1.0 );
+  //f_c->SetLineColor(kRed); f_c->SetLineStyle(2);
+  //htmp->Fit(f_c,"B");
+
+  xMin = std::max(htmp->GetXaxis()->GetXmin(), center - 2.0) ;//center-xExtra;
+  xMax = std::min(htmp->GetXaxis()->GetXmax(), center + 2.0) ;//center+xExtra;
   htmp->GetXaxis()->SetRangeUser(xMin,xMax);
   
-  TF1* f_c = new TF1("f_Central", Utility::signalFunction  , xMin , xMax , 4 );
-  f_c->SetParameter(0, htmp->GetMaximum());
-  f_c->SetParameter(1, pitch); f_c->SetParLimits(1 , 0 , 2.0*pitch );
-  f_c->SetParameter(2, -1*center );
-  f_c->SetParameter(3, 20e-3 ); f_c->SetParLimits(3 , 0 , 1.0 );
-  f_c->SetLineColor(kRed); f_c->SetLineStyle(2);
-  htmp->Fit(f_c,"qB");
-
-  xMin = center-xExtra;
-  xMax = center+xExtra;
-  htmp->GetXaxis()->SetRangeUser(xMin,xMax);
+  std::cout << "Fitting FeI4 residual between " << xMin << " and " << xMax << std::endl;
+  double a0 = 0.0;//f_c->GetParameter(0);
+  double b0 = htmp->GetMaximum()*0.5;
+  double b1 = f_b->GetParameter(1)*0.5;
   
-  double b0 = f_b->GetParameter(0);
-  double b1 = f_b->GetParameter(1);
-  double a0 = f_c->GetParameter(0);
-
   double xOffset_b = f_b->GetParameter(2);
-  double xOffset_s = f_c->GetParameter(2);
+  double xOffset_s = -1*center;
 
   double sigma_b = f_b->GetParameter(3);
-  double sigma_s = f_c->GetParameter(3);
+  double sigma_s = 20e-3;
 
-  pitch = f_c->GetParameter(1);
-
+  //pitch = f_c->GetParameter(1);
   TF1* f = new TF1("f_Total", Utility::residualFeI4Function , xMin , xMax , 8);
-  f->SetParameter(0 , 0.01*a0) ; f->SetParName(0,"b0");
+  f->SetParameter(0 , b0) ; f->SetParName(0,"b0");
   f->SetParameter(1 , b1) ; f->SetParName(1,"b1");
-  f->SetParameter(2 , a0) ; f->SetParName(2,"a0");
+  f->FixParameter(2 , a0) ; f->SetParName(2,"a0");
 
-  f->SetParameter(3 , sigma_b) ; f->SetParLimits(3 , 0.5*xOffset_b ,2.0*xOffset_b); f->SetParName(3,"offset_b");
+  f->SetParameter(3 , xOffset_b) ; f->SetParLimits(3 , 0.5*xOffset_b ,2.0*xOffset_b); f->SetParName(3,"offset_b");
   f->SetParameter(4 , xOffset_s) ; f->SetParLimits(4 , 0.5*xOffset_s ,2.0*xOffset_s); f->SetParName(4,"offset_s");
 
-  f->FixParameter(5 , sigma_b) ;  f->SetParLimits(5 , 0 ,10.0); f->SetParName(5,"sigma_b");
+  f->SetParameter(5 , sigma_b) ;  f->SetParLimits(5 , 0 ,10.0); f->SetParName(5,"sigma_b");
   f->SetParameter(6 , sigma_s) ;  f->SetParLimits(6 , 0 ,1.0); f->SetParName(6,"sigma_s");
 
   f->SetParameter(7, pitch); f->SetParLimits(7 , 0 , 2.0*pitch); f->SetParName(7,"pitch");
@@ -1915,7 +2225,7 @@ TFitResultPtr EventAlignment::fitFeI4Residual( TH1D* htmp ,  TH1D* htmp_bkg ,  d
   f->SetParameter(0,N_norm); f->SetParName(0,"N_norm");
   f->SetParameter(1,b0); f->SetParName(1,"b0"); f->SetParLimits(1,0,1);
   f->SetParameter(2,b1); f->SetParName(2,"b1"); f->SetParLimits(2,0,1);
-  f->SetParameter(3,xOffset_b); f->SetParName(3,"xOffset_b");
+  f->FixParameter(3,xOffset_b); f->SetParName(3,"xOffset_b");
   f->FixParameter(4,xOffset_s); f->SetParName(4,"xOffset_s");
   f->SetParameter(5,sigma_b); f->SetParName(5,"sigma_b"); f->SetParLimits(5, 0.75*sigma_b , 1.25*sigma_b);  //f->SetParLimits(1,0,1);
   f->SetParameter(6,sigma_s0); f->SetParName(6,"sigma_s0"); f->SetParLimits(6, 0.75*sigma_s0 , 1.25*sigma_s0 );
@@ -1975,22 +2285,28 @@ void EventAlignment::doFeI4TrackFit_HighIntensity()
   double yMin , yMax; 
   double cColPitch_fei4 = 250e-3; 
   double cRowPitch_fei4 = 50e-3; 
+
   double fitRange = 1.5*std::max(cColPitch_fei4,cRowPitch_fei4);
 
+  std::cout << "=========================================================" << std::endl;
+  std::cout << "Fitting FeI4 residual Y" << std::endl;
+  std::cout << "=========================================================" << std::endl;
   TH1D* htmpY = dynamic_cast<TH1D*>(hist_->GetHistoByName("TelescopeAnalysis","deltaYPos"));   
-  TF1* f_resY = alignFeI4( htmpY , cRowPitch_fei4 , 10*cRowPitch_fei4 ) ;
-  
+  TF1* f_resY = alignFeI4( htmpY , cRowPitch_fei4 , 20*cRowPitch_fei4 ) ;
+    
+  std::cout << "=========================================================" << std::endl;
+  std::cout << "Fitting FeI4 residual X" << std::endl;
+  std::cout << "=========================================================" << std::endl;
   TH1D* htmpX = dynamic_cast<TH1D*>(hist_->GetHistoByName("TelescopeAnalysis","deltaXPos"));   
-  TF1* f_resX = alignFeI4( htmpX , cColPitch_fei4 , 10*cColPitch_fei4) ;
+  TF1* f_resX = alignFeI4( htmpX , cColPitch_fei4 , 20*cColPitch_fei4) ;
 
   double xMin = std::min( -1*f_resY->GetParameter(4) - 5*f_resY->GetParameter(5) , -1*f_resX->GetParameter(4) - 5*f_resX->GetParameter(5) ); 
   double xMax = std::max( -1*f_resY->GetParameter(4) + 5*f_resY->GetParameter(5) , -1*f_resX->GetParameter(4) + 5*f_resX->GetParameter(5) );
   
-  double xExtra = xMax - (-1*f_resY->GetParameter(4) ); 
-  f_resY = alignFeI4( htmpY , cRowPitch_fei4 , xExtra ) ;
-  xExtra = xMax - (-1*f_resX->GetParameter(4) ); 
-  f_resX = alignFeI4( htmpX , cColPitch_fei4 , xExtra ) ;
-
+  //double xExtra = xMax - (-1*f_resY->GetParameter(4) ); 
+  //f_resY = alignFeI4( htmpY , cRowPitch_fei4 , xExtra ) ;
+  //xExtra = xMax - (-1*f_resX->GetParameter(4) ); 
+  //f_resX = alignFeI4( htmpX , cColPitch_fei4 , xExtra ) ;
   htmpX->GetXaxis()->SetRangeUser(xMin,xMax);
   htmpY->GetXaxis()->SetRangeUser(xMin,xMax);
   f_resY->SetRange(xMin,xMax);
@@ -2081,26 +2397,30 @@ void EventAlignment::doFeI4TrackFit_HighIntensity()
   std::cout << buffer;
   sprintf(buffer,"\t\t  Residual Y : Offset = %.3f mm , Sigma = %.3f mm , Smear = %.3f mm\n" , fResidualY.first , fResidualY.second , fTkPointing_y);
   std::cout << buffer;
-  std::cout << "Summary of expected number of background (out of sync) tracks in matching window :\n";
-  sprintf(buffer,"\t\t  In X : P(Tk is noise)  = %.3f percent. Size of matching window = %.3f um \n" , 100*fractionBackground_X, 1e3*fFeI4_Window_x );
-  std::cout << buffer;
-  sprintf(buffer,"\t\t  In Y : P(Tk is noise)  = %.3f percent. Size of matching window = %.3f um \n" , 100*fractionBackground_Y, 1e3*fFeI4_Window_y );
-  std::cout << buffer;
-  std::cout << "Summary of expected number of background (out of sync) tracks in matching window :\n";
-  TString out;
-  out.Form("\t\t Background = %.3e\n" , b); std::cout << out.Data();
-  out.Form("\t\t Signal = %.3e\n" , s); std::cout << out.Data();
-  out.Form("\t\t Purity = %.3e\n" , s/(b+s)); std::cout << out.Data();
+  // std::cout << "Summary of expected number of background (out of sync) tracks in matching window :\n";
+  // sprintf(buffer,"\t\t  In X : P(Tk is noise)  = %.3f percent. Size of matching window = %.3f um \n" , 100*fractionBackground_X, 1e3*fFeI4_Window_x );
+  // std::cout << buffer;
+  // sprintf(buffer,"\t\t  In Y : P(Tk is noise)  = %.3f percent. Size of matching window = %.3f um \n" , 100*fractionBackground_Y, 1e3*fFeI4_Window_y );
+  // std::cout << buffer;
+  // std::cout << "Summary of expected number of background (out of sync) tracks in matching window :\n";
+  // TString out;
+  // out.Form("\t\t Background = %.3e\n" , b); std::cout << out.Data();
+  // out.Form("\t\t Signal = %.3e\n" , s); std::cout << out.Data();
+  // out.Form("\t\t Purity = %.3e\n" , s/(b+s)); std::cout << out.Data();
 
 }
-double EventAlignment::ExtrapolateFeI4Hit_DUT( double yFeI4Hit,  int itrk ,int pDetectorID )
+double EventAlignment::ExtrapolateFeI4Hit_DUT( int itrk ,int pDetectorID )
 {
   double xOffset = (pDetectorID == 0 ) ? alParsLocal_.d0Offset() : alParsLocal_.d1Offset();
   double zOffset = (pDetectorID == 0 ) ? alParsLocal_.d0Z() : alParsLocal_.d1Z();
   char detName[250]; sprintf(detName,"det%d", pDetectorID);
 
-  double xExtrapolatedTkdut0 = yFeI4Hit + ( zOffset- alParsLocal_.FEI4z() )*telEv()->dydz->at(itrk);
-  double xTk0 =  -1.*xExtrapolatedTkdut0 + xOffset ; 
+  double xExtrapolatedTkdut0;
+  if( NOV_15 )
+     xExtrapolatedTkdut0 = telEv()->xPos->at(itrk) + ( zOffset- alParsLocal_.FEI4z() )*telEv()->dxdz->at(itrk);
+  else
+    xExtrapolatedTkdut0 = telEv()->yPos->at(itrk) + ( zOffset- alParsLocal_.FEI4z() )*telEv()->dydz->at(itrk);
+  double xTk0 =  xExtrapolatedTkdut0 + xOffset; 
   return xTk0; 
 }
 bool EventAlignment::checkHits(int pDetectorID , vector<int> detHits, double xTrk , int& pNumHits , std::vector<double>& residualsAbs , std::vector<double>& residuals )
@@ -2131,7 +2451,7 @@ bool EventAlignment::checkHitIsFid( double xHit, int pDetectorID )
   char detName[250]; sprintf(detName,"det%d", pDetectorID);
 
   int cStrip = 999.;
-  bool hit_fiducial = CheckFiducial( xHit , minStrip , maxStrip , detName );
+  bool hit_fiducial = CheckFiducial( xHit , 0 , nstrips() , detName );
   //bool hit_fiducial = isTrkfiducial(xHit ,cStrip,detName) ; 
   return hit_fiducial;
 }
@@ -2647,8 +2967,8 @@ AllExtrapolatedHits EventAlignment::MatchFeI4Hits(int groupID, int evOffset, dou
           hist_->fillHist2D("TrackMatch","TkHitMap", xval , yval );
 
           DutHits hits;
-          hits.first = ExtrapolateFeI4Hit_DUT( yval , itk  , 0 );
-          hits.second = ExtrapolateFeI4Hit_DUT( yval , itk , 1 );
+          hits.first = ExtrapolateFeI4Hit_DUT( itk  , 0 );
+          hits.second = ExtrapolateFeI4Hit_DUT( itk , 1 );
 
           DutHitsTracking hits_wTracking; 
           hits_wTracking.first = chi2/nDOF; 
@@ -2688,38 +3008,177 @@ AllExtrapolatedHits EventAlignment::MatchFeI4Hits(int groupID, int evOffset, dou
   }
   return cExtrapolatedHits;
 }
+void EventAlignment::CalculateHitResidual( AllExtrapolatedHits pExtrapolatedHits  )
+{
+  char buffer[250];
+  double chi2_cut  = 1.0; //0.20 ; 
+  for( unsigned int i = 0 ; i < (int)(pExtrapolatedHits.size()) ; i++ )
+  {
+    ExtrapolatedHits pExtrapolatedHits_forEntry = pExtrapolatedHits[i];
+   
+    Long64_t jentry = (Long64_t)(pExtrapolatedHits_forEntry.first);
+    std::vector<DutHitsTracking> hits = pExtrapolatedHits_forEntry.second;
+    
+    int nTracks = hits.size(); 
+    // only accept events with exactly one matched track
+    //if( nTracks > 3 ) continue;
+
+    clearEvent();
+    
+    Long64_t ientry = analysisTree()->GetEntry(jentry);
+    setDetChannelVectors();
+    const auto& d0c0 = *det0C0();
+    const auto& d0c1 = *det0C1();
+    const auto& d1c0 = *det1C0();
+    const auto& d1c1 = *det1C1();   
+
+    int tdcPhase  = condEv()->tdcPhase; 
+    std::vector<double> xHits_Det0 = getHitPositions( d0c0 );
+    std::vector<double> xHits_Det1 = getHitPositions( d1c0 );
+    std::vector<double> x_Clusters_Det0 = getClusterPositions(0,3);
+    std::vector<double> x_Clusters_Det1 = getClusterPositions(1,3);
+    std::vector<int> w_Clusters_Det0 = getClusterWidths(0,3);
+    std::vector<int> w_Clusters_Det1 = getClusterWidths(1,3);
+    std::vector<double> x_CbcStubs = getCbcStubPositions();
+    std::vector<double> x_RecoStubs = getRecoStubPositions();
+    std::vector<double> x_RecoSeeds = getRecoStubSeeds();
+    std::vector<double> x_RecoMatches = getRecoStubMatches();
+    std::vector<double> w_RecoSeeds = getRecoStubSeedWidths();
+    std::vector<double> w_RecoMatches = getRecoStubMatchWidths();
+
+    // identify the fiducial hits in detector 0 and detector 1 
+    // only consider events where exactly one hit was found 
+    //if( hits.size() != 1 ) continue; 
+    for( unsigned int j = 0 ; j < hits.size() ; j++ )
+    {
+      DutHitsTracking hitInfo_wTracking = hits[j]; 
+
+      double chi2_Tk = hitInfo_wTracking.first; 
+      //only consider tracks with a "good" chi2
+      if( chi2_Tk > chi2_cut ) continue ; 
+
+      DutHits tkImpact = hitInfo_wTracking.second; 
+
+      double xHit_Extrapolated_Det0 = tkImpact.first; 
+      double xHit_Extrapolated_Det1 = tkImpact.second;
+      
+      double trackHit_SeedLayer = returnStrip( xHit_Extrapolated_Det1 );
+      double trackHit_CorrelationLayer = returnStrip( xHit_Extrapolated_Det0 );
+
+      for( unsigned int k = 0 ; k < xHits_Det0.size(); k++ )
+      {
+        double xHit =  xHits_Det0[k]; 
+        double hit_nStrips = returnStrip( xHit );
+        //std::cout << "Xhit det = " << xHit <<  " impact " << xHit_Extrapolated_Det0 << std::endl ;
+        //std::cout << "\t\t Strip det =  "  << hit_nStrips << " impact " << trackHit_CorrelationLayer << std::endl ;
+        double residual = xHit - xHit_Extrapolated_Det0;
+        hist_->fillHist1D("det0","hitRes", residual ) ;
+      }
+
+      for( unsigned int k = 0 ; k < xHits_Det1.size(); k++ )
+      {
+        double xHit =  xHits_Det1[k]; 
+        double hit_nStrips = returnStrip( xHit );
+        //std::cout << "Xhit det = " << xHit <<  " impact " << xHit_Extrapolated_Det0 << std::endl ;
+        //std::cout << "\t\t Strip det =  "  << hit_nStrips << " impact " << trackHit_CorrelationLayer << std::endl ;
+        double residual = xHit - xHit_Extrapolated_Det0;
+        hist_->fillHist1D("det1","hitRes", residual ) ;
+      }
+
+    }
+  }
+}
 void EventAlignment::alignX(std::vector<SingleGroup_Offset> gOffsets , double windowSize )
 {
-  char buffer[256];
-  int nGroups_Alignment = 100; 
-  alParsLocal_.d0Offset(0.);
-  alParsLocal_.d1Offset(0.);
-  //align detectors in X 
-  //setd0XOffset(0);
-  //setd1XOffset(0);
-  std::cout << "Aligning in X :" << std::endl; 
-  for( int i = 0 ; i < std::min( (int)(nGroups_Alignment), (int)(gOffsets.size()) ) ; i++ )
-  {
-    int groupID = gOffsets[i].first;
-    int evOffset = gOffsets[i].second;
-    AllExtrapolatedHits cMatchedHits = MatchFeI4Hits(groupID, evOffset, windowSize );
+  double d0Offset_original = alParsLocal_.d0Offset();
+  double d1Offset_original = alParsLocal_.d1Offset();
 
-    CalculateEfficiency_Hits(cMatchedHits);
-    if( i%20 == 0 ) std::cout << "...." ; 
-    if( i%100 == 0 ) std::cout << std::endl; 
-  }
-  std::cout << std::endl;
-  CalculateResolution(0);
-  CalculateResolution(1);
-  sprintf(buffer, "Offset (X) :  Det0 = %.3f mm , Det1 = %.3f mm  \n", fDet0_Offset , fDet1_Offset );
-  std::cout << buffer ; 
-  sprintf(buffer, "Resolution :  Det0 = %.3f mm , Det1 = %.3f mm  \n", fDet0_Resolution , fDet1_Resolution );
-  std::cout << buffer;
+  int nGroups = 5; 
+  char buffer[256];
+  int nStrips = 4 ;
+  fDet0_Offset=0;
+  fDet1_Offset=1;
   alParsLocal_.d0Offset(fDet0_Offset);
   alParsLocal_.d1Offset(fDet1_Offset);  
+  
+  clearHistograms();
+  clearTrackMatchhistograms();
+  double matchingWindowSize_X = windowSize; 
+  double matchingWindowSize_Y = windowSize;
+  double area = matchingWindowSize_X*matchingWindowSize_X*(fResidualX.second)*(fResidualY.second);
+  double nHits_Det0 , nHits_Det1 , nClusters_Det0 , nClusters_Det1 , nStubs_Det; 
+  double nFidTracks_Det0 , nFidTracks_Det1 , nFidStubs ; 
+  for(unsigned int i = 0 ; i < nGroups ; i++ )
+  {
+    int groupID = gOffsets[i].first ;
+    int evOffset = gOffsets[i].second ;
+    
+    AllExtrapolatedHits cMatchedHits = CorrelateFeI4Tracks(groupID, evOffset, matchingWindowSize_X , matchingWindowSize_Y );
+    CalculateHitResidual(cMatchedHits);
+  }
+
+  int pDetectorID = 0 ; 
+  TH1D* res = dynamic_cast<TH1D*>(hist_->GetHistoByName("det0","hitRes"));
+  double center = ((double)res->GetMaximumBin())*(res->GetXaxis()->GetXmax()-res->GetXaxis()->GetXmin())/((double)res->GetNbinsX()) + res->GetXaxis()->GetXmin();
+  res->SetAxisRange(center-5*dutpitch(), center+5*dutpitch(), "X");
+  sprintf(buffer,"fResidual_dut%d", pDetectorID);
+  TF1* fResidual_Dut0 = new TF1(buffer, "gaus",center-5*dutpitch(), center+5*dutpitch() ); 
+  fResidual_Dut0->SetParameter(0, res->GetMaximum() );
+  fResidual_Dut0->SetParameter(1, center );
+  fResidual_Dut0->SetParameter(2, dutpitch() ); 
+  res->Fit(fResidual_Dut0,"q");
+  fDet0_Offset = fResidual_Dut0->GetParameter(1);
+
+  pDetectorID = 1 ; 
+  res = dynamic_cast<TH1D*>(hist_->GetHistoByName("det1","hitRes"));
+  center = ((double)res->GetMaximumBin())*(res->GetXaxis()->GetXmax()-res->GetXaxis()->GetXmin())/((double)res->GetNbinsX()) + res->GetXaxis()->GetXmin();
+  res->SetAxisRange(center-5*dutpitch(), center+5*dutpitch(), "X");
+  sprintf(buffer,"fResidual_dut%d", pDetectorID);
+  TF1* fResidual_Dut1 = new TF1(buffer, "gaus",center-5*dutpitch(), center+5*dutpitch() ); 
+  fResidual_Dut1->SetParameter(0, res->GetMaximum() );
+  fResidual_Dut1->SetParameter(1, center );
+  fResidual_Dut1->SetParameter(2, dutpitch() ); 
+  res->Fit(fResidual_Dut0,"q");
+  fDet1_Offset = fResidual_Dut1->GetParameter(1);
+
+  sprintf(buffer, "Offset (X) :  Det0 = %.3f mm [originally %.3f mm], Det1 = %.3f mm  [originally %.3f mm]\n", fDet0_Offset , d0Offset_original ,  fDet1_Offset , d1Offset_original);
+  std::cout << buffer ; 
+  alParsLocal_.d0Offset(fDet0_Offset);
+  alParsLocal_.d1Offset(fDet1_Offset);  
+  clearHistograms();
+
   //setd0XOffset(fDet0_Offset);
   //setd1XOffset(fDet1_Offset);
-  clearHistograms();
+
+  // int nGroups_Alignment = 100; 
+  // alParsLocal_.d0Offset(0.);
+  // alParsLocal_.d1Offset(0.);
+  // //align detectors in X 
+  // //setd0XOffset(0);
+  // //setd1XOffset(0);
+  // std::cout << "Aligning in X :" << std::endl; 
+  // for( int i = 0 ; i < std::min( (int)(nGroups_Alignment), (int)(gOffsets.size()) ) ; i++ )
+  // {
+  //   int groupID = gOffsets[i].first;
+  //   int evOffset = gOffsets[i].second;
+  //   AllExtrapolatedHits cMatchedHits = MatchFeI4Hits(groupID, evOffset, windowSize );
+
+  //   CalculateEfficiency_Hits(cMatchedHits);
+  //   if( i%20 == 0 ) std::cout << "...." ; 
+  //   if( i%100 == 0 ) std::cout << std::endl; 
+  // }
+  // std::cout << std::endl;
+  // CalculateResolution(0);
+  // CalculateResolution(1);
+  // sprintf(buffer, "Offset (X) :  Det0 = %.3f mm , Det1 = %.3f mm  \n", fDet0_Offset , fDet1_Offset );
+  // std::cout << buffer ; 
+  // sprintf(buffer, "Resolution :  Det0 = %.3f mm , Det1 = %.3f mm  \n", fDet0_Resolution , fDet1_Resolution );
+  // std::cout << buffer;
+  // alParsLocal_.d0Offset(fDet0_Offset);
+  // alParsLocal_.d1Offset(fDet1_Offset);  
+  // //setd0XOffset(fDet0_Offset);
+  // //setd1XOffset(fDet1_Offset);
+  // clearHistograms();
 }
 AllExtrapolatedHits EventAlignment::CorrelateFeI4Tracks(int groupID, int evOffset, double windowSizeX , double windowSizeY )
 {
@@ -2811,10 +3270,19 @@ AllExtrapolatedHits EventAlignment::CorrelateFeI4Tracks(int groupID, int evOffse
            double tkY =  telEv()->yPos->at(itk); 
            double chi2 = telEv()->chi2->at(itk); 
 
-           double residualX = (xval - fResidualX.first) - tkX ;
-           double residualY = (yval - fResidualY.first) - tkY ;
-
+           double residualX, residualY; 
+           if( NOV_15 )
+           {
+              residualX = (-1*xval - fResidualX.first) - tkY ;
+              residualY = (yval - fResidualY.first) - tkX ;
+           }
+           else
+           {
+              residualX = (xval - fResidualX.first) - tkX ;
+              residualY = (yval - fResidualY.first) - tkY ;
+           }
            double distance = std::sqrt( std::pow(residualX,2) + std::pow(residualY,2)); //std::fabs(residualX) ;
+           
            if( std::fabs(residualX) < windowSizeX*fFeI4_Window_x )
            {
               tkIDs.push_back( itk );
@@ -2824,8 +3292,18 @@ AllExtrapolatedHits EventAlignment::CorrelateFeI4Tracks(int groupID, int evOffse
 
            }
 
-           double residualX_else = (xval - (fResidualX.first-10*fResidualX.second)) - tkX ;
-           double residualY_else = (yval - fResidualY.first) - tkY ;
+           double residualX_else, residualY_else;
+           if( NOV_15 )
+           {
+              residualX_else = (-1*xval - (fResidualX.first-10*fResidualX.second)) - tkY ;
+              residualY_else = (yval - fResidualY.first) - tkX ;
+           }
+           else
+           {
+              residualX_else = (xval - (fResidualX.first-10*fResidualX.second)) - tkX ;
+              residualY_else = (yval - fResidualY.first) - tkY ;
+           }
+
            if( std::fabs(residualX_else) < windowSizeX*fFeI4_Window_x )
            {
               tkIDs_else.push_back( itk );
@@ -2859,22 +3337,34 @@ AllExtrapolatedHits EventAlignment::CorrelateFeI4Tracks(int groupID, int evOffse
               if( (find (matchedTkIDs_Y.begin(), matchedTkIDs_Y.end(), itk) == matchedTkIDs_Y.end()) ) 
               {
                 DutHits hits;
-                hits.first = ExtrapolateFeI4Hit_DUT( yval , itk  , 0 );
-                hits.second = ExtrapolateFeI4Hit_DUT( yval , itk , 1 );
+                hits.first = ExtrapolateFeI4Hit_DUT( itk  , 0 );
+                hits.second = ExtrapolateFeI4Hit_DUT( itk , 1 );
+                //hits.first = ExtrapolateFeI4Hit_DUT( yval , itk  , 0 );
+                //hits.second = ExtrapolateFeI4Hit_DUT( yval , itk , 1 );
+                bool hitFiducial_Det0 = checkHitIsFid( hits.first , 0 );
+                bool hitFiducial_Det1 = checkHitIsFid( hits.second , 0 );
+                // only consider tracks that are in the fiducial region of Det0 and Det1 
+                if( hitFiducial_Det0 && hitFiducial_Det1 )
+                {
+                  double iStrip_Det0 = returnStrip( hits.first );
+                  double iStrip_Det1 = returnStrip( hits.second );
 
-                DutHitsTracking hits_wTracking; 
-                hits_wTracking.first = chi2/nDOF; 
-                hits_wTracking.second = hits;
+                  hist_->fillHist1D("TrackMatch","trackImpact_Strips_Det0", (int)iStrip_Det0 ) ;
+                  hist_->fillHist1D("TrackMatch","trackImpact_Strips_Det1", (int)iStrip_Det1 ) ;
+    
+                  DutHitsTracking hits_wTracking; 
+                  hits_wTracking.first = chi2/nDOF; 
+                  hits_wTracking.second = hits;
+                    
+                  std::vector<DutHitsTracking> hitContainter = pMatch.second; 
+                  hitContainter.push_back(hits_wTracking );
+                  pMatch.second = hitContainter;
+              
+                  matchedTkIDs_Y.push_back( itk );
                   
-                std::vector<DutHitsTracking> hitContainter = pMatch.second; 
-                hitContainter.push_back(hits_wTracking );
-                pMatch.second = hitContainter;
-            
-                matchedTkIDs_Y.push_back( itk );
-                
-                hist_->fillHist1D("TrackMatch","deltaXPos_trkfei4_M", tkResidualX[id] ) ;
-                hist_->fillHist1D("TrackMatch","deltaYPos_trkfei4_M", tkResidualY[id] ) ;
-
+                  hist_->fillHist1D("TrackMatch","deltaXPos_trkfei4_M", tkResidualX[id] ) ;
+                  hist_->fillHist1D("TrackMatch","deltaYPos_trkfei4_M", tkResidualY[id] ) ;
+                }
               }
             }
           //}
@@ -2898,6 +3388,12 @@ AllExtrapolatedHits EventAlignment::CorrelateFeI4Tracks(int groupID, int evOffse
       if( matchedTkIDs_Y.size() == 0 ) continue; 
       goodEntries.push_back( jentry );   
       cExtrapolatedHits.push_back( pMatch );
+      int nFidTracks = pMatch.second.size();
+      if( nFidTracks > 0 ) 
+      {
+        hist_->fillHist1D("det0","nFiducialTracks", nFidTracks ) ;
+        hist_->fillHist1D("det1","nFiducialTracks", nFidTracks ) ;
+      }    
   }
   return cExtrapolatedHits;
 }
@@ -2942,7 +3438,7 @@ void EventAlignment::removeDuplicateHits( AllExtrapolatedHits& pExtrapolatedHits
 void EventAlignment::CalculateDUTefficiency( AllExtrapolatedHits pExtrapolatedHits , double acceptanceWindow , double correlationWindow )
 {
   double acceptanceWindow_Strips = 2.0 ; 
-  double cbcBoundary_Strips = 127; 
+  double cbcBoundary_Strips = nstrips()/2.0 ; 
   if( acceptanceWindow == 0 ) acceptanceWindow = acceptanceWindow_Strips*dutpitch();
 
   int cFidTrack_det0 = 0 ;
@@ -2965,8 +3461,9 @@ void EventAlignment::CalculateDUTefficiency( AllExtrapolatedHits pExtrapolatedHi
     std::vector<DutHitsTracking> hits = pExtrapolatedHits_forEntry.second;
     
     int nTracks = hits.size(); 
+
     // only accept events with exactly one matched track
-    //if( nTracks > 3 ) continue;
+    if( nTracks > 1 ) continue;
 
     clearEvent();
     
@@ -3015,7 +3512,7 @@ void EventAlignment::CalculateDUTefficiency( AllExtrapolatedHits pExtrapolatedHi
 
       double xHit_Extrapolated_Det0 = tkImpact.first; 
       double xHit_Extrapolated_Det1 = tkImpact.second;
-
+      
       bool hitFiducial_Det0 =  checkHitIsFid( xHit_Extrapolated_Det0 , 0 ); 
       bool hitFiducial_Det1 =  checkHitIsFid( xHit_Extrapolated_Det1 , 1 );
       cFidTrack_det0 += hitFiducial_Det0 ? 1 : 0 ;
@@ -3023,6 +3520,7 @@ void EventAlignment::CalculateDUTefficiency( AllExtrapolatedHits pExtrapolatedHi
       
       double trackHit_SeedLayer = returnStrip( xHit_Extrapolated_Det1 );
       double trackHit_CorrelationLayer = returnStrip( xHit_Extrapolated_Det0 );
+
       bool interestingEvent = false;
       if( hitFiducial_Det0 )
       {
@@ -3049,13 +3547,16 @@ void EventAlignment::CalculateDUTefficiency( AllExtrapolatedHits pExtrapolatedHi
         bool hitFound = false; 
         for( unsigned int k = 0 ; k < xHits_Det0.size(); k++ )
         {
-           double hit_nStrips = returnStrip( xHits_Det0[k] );
-           double residual = xHits_Det0[k] - xHit_Extrapolated_Det0;
-           hist_->fillHist1D("det0","hitRes", residual ) ;
-           if( std::fabs( residual ) <= acceptanceWindow_Strips*dutpitch() )
-           { 
-              hitFound = true; 
-            } 
+          double xHit =  xHits_Det0[k]; 
+          double hit_nStrips = returnStrip( xHit );
+          //std::cout << "Xhit det = " << xHit <<  " impact " << xHit_Extrapolated_Det0 << std::endl ;
+          //std::cout << "\t\t Strip det =  "  << hit_nStrips << " impact " << trackHit_CorrelationLayer << std::endl ;
+          double residual = xHit - xHit_Extrapolated_Det0;
+          hist_->fillHist1D("det0","hitRes", residual ) ;
+          if( std::fabs( residual ) <= acceptanceWindow_Strips*dutpitch() )
+          { 
+            hitFound = true; 
+          } 
         }
         if( hitFound ) fHits_Det0++;
 
@@ -3064,8 +3565,10 @@ void EventAlignment::CalculateDUTefficiency( AllExtrapolatedHits pExtrapolatedHi
         hist_->fillHist2D("det0", "fidTracks_impact_mm_2D" , xHit_Extrapolated_Det0 , expected_Strip ) ;   
         for( unsigned int k = 0 ; k < x_Clusters_Det0.size(); k++ )
         {
-          double hit_nStrips = returnStrip( x_Clusters_Det0[k] );
-          double residual = x_Clusters_Det0[k] - xHit_Extrapolated_Det0;
+          double xHit =  x_Clusters_Det0[k]; 
+          double hit_nStrips = returnStrip( xHit );
+          double residual = xHit - xHit_Extrapolated_Det0; 
+          //std::cout << "Cluster residual = " << residual << std::endl;
           hist_->fillHist1D("det0","clusterRes", residual ) ;
            
           hist_->fillHist2D("det0","clusterRes_Chi2", residual , chi2_Tk ) ;
@@ -3136,6 +3639,7 @@ void EventAlignment::CalculateDUTefficiency( AllExtrapolatedHits pExtrapolatedHi
         if( clusterFound ) fClusters_Det0++;
 
       }
+      
       if( hitFiducial_Det1 )
       {
         fFidTracks_Det1++;
@@ -3161,8 +3665,9 @@ void EventAlignment::CalculateDUTefficiency( AllExtrapolatedHits pExtrapolatedHi
         bool hitFound = false; 
         for( unsigned int k = 0 ; k < xHits_Det1.size(); k++ )
         {
-           double hit_nStrips = returnStrip( xHits_Det1[k] );
-           double residual = xHits_Det1[k] - xHit_Extrapolated_Det1;
+           double xHit =  xHits_Det1[k]; 
+           double hit_nStrips = returnStrip( xHit );
+           double residual = xHit - xHit_Extrapolated_Det1;
            hist_->fillHist1D("det1","hitRes", residual ) ;
            if( std::fabs( residual ) <= acceptanceWindow_Strips*dutpitch() )
            { 
@@ -3176,8 +3681,11 @@ void EventAlignment::CalculateDUTefficiency( AllExtrapolatedHits pExtrapolatedHi
         hist_->fillHist2D("det1", "fidTracks_impact_mm_2D" , xHit_Extrapolated_Det1 , expected_Strip ) ;   
         for( unsigned int k = 0 ; k < x_Clusters_Det1.size(); k++ )
         {
-           double hit_nStrips = returnStrip( x_Clusters_Det1[k] );
-           double residual = x_Clusters_Det1[k] - xHit_Extrapolated_Det1;
+           double xHit =  x_Clusters_Det1[k]; 
+           double hit_nStrips = returnStrip( xHit );
+           double residual = xHit - xHit_Extrapolated_Det1;
+           //double hit_nStrips = returnStrip( x_Clusters_Det1[k] );
+           //double residual = x_Clusters_Det1[k] - xHit_Extrapolated_Det1;
            hist_->fillHist1D("det1","clusterRes", residual ) ;
            hist_->fillHist2D("det1","clusterRes_Chi2", residual , chi2_Tk ) ;
            hist_->fillHist2D("det1","clusterRes_TDC", residual , tdcPhase ) ;
@@ -3470,9 +3978,9 @@ void EventAlignment::CalculateDUTefficiency( AllExtrapolatedHits pExtrapolatedHi
     if( cFidTracks_cbc0 != 0 ) hist_->fillHist1D("cbc0","fidTracks_num",cFidTracks_cbc0);
     if( cFidTracks_cbc1 != 0 ) hist_->fillHist1D("cbc1","fidTracks_num",cFidTracks_cbc1);
         
-    hist_->fillHist1D("det0","nFiducialTracks", cFidTrack_det0 ) ;
-    hist_->fillHist1D("det1","nFiducialTracks", cFidTrack_det1 ) ;
-    hist_->fillHist1D("det1","nFiducialTracks_Both", cFidTracks_both ) ;
+    //if( cFidTrack_det0 > 0 ) hist_->fillHist1D("det0","nFiducialTracks", cFidTrack_det0 ) ;
+    //if( cFidTrack_det1 > 0 ) hist_->fillHist1D("det1","nFiducialTracks", cFidTrack_det1 ) ;
+    //hist_->fillHist1D("det1","nFiducialTracks_Both", cFidTracks_both ) ;
     
   }
 }
@@ -3653,46 +4161,54 @@ void EventAlignment::CalculateEfficiency(double matchingWindowSize)
   double vcth = condEv()->vcth;
   sprintf(buffer,"./Efficiency.dat");   
   std::ofstream fileStream(buffer, std::ios_base::app | std::ios_base::out);
-  sprintf(buffer,"%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", vcth, 100*clusEfficiency_det0 , 100*err_clusEff_det0 , 100*clusEff_det0_corr , 100*err_clusEfficiency_det0_corr, 100*clusEfficiency_det1 , 100*err_clusEff_det1 , 100*clusEff_det1_corr , 100*err_clusEfficiency_det1_corr , 100*stubEfficiency , 100*err_stubEff, 100*stubEff_corr, 100*err_stubEff_corr, 100*fTrackContamination , 100*fTrackContamination_Err); 
+  sprintf(buffer,"%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", fL1_mean , vcth, 100*clusEfficiency_det0 , 100*err_clusEff_det0 , 100*clusEff_det0_corr , 100*err_clusEfficiency_det0_corr, 100*clusEfficiency_det1 , 100*err_clusEff_det1 , 100*clusEff_det1_corr , 100*err_clusEfficiency_det1_corr , 100*stubEfficiency , 100*err_stubEff, 100*stubEff_corr, 100*err_stubEff_corr, 100*fTrackContamination , 100*fTrackContamination_Err); 
   fileStream << buffer; 
   fileStream.close();
 
 }
 std::vector<SingleGroup_Offset> EventAlignment::alignEvents(std::string eAlignmentFile )
 {
-
+  std::vector<SingleGroup_Offset> gOffsets; gOffsets.clear();
   //double vcth = condEv()->vcth;
   //double cwd = condEv()->cwd;
   double cwd = 5;
   double vcth = 106.;
 
-  lv1FeI4();
+  // find MPV for trigger latency in FeI4
+  //lv1FeI4();
+  fL1_mean = 13.5; fL1_sigma=1;
+  std::cout << "L1 cut around " << fL1_mean << std::endl;
   //fL1_mean = 13.5; fL1_sigma = 1;
   int numberEvents_perGroup = fNumberEvents_perGroup;
-
+  
   char buffer[250];
   int NumEntries = nEntries_ ; //nEntries_;
   std::cout << "Vcth =  " << vcth << " Correlation Window = " << cwd << std::endl;
   std::cout << "Run has " << NumEntries << " triggers." << std::endl;
   std::vector<int> groupIDs; groupIDs.clear();
   std::vector<int> Offsets ; Offsets.clear(); 
+  int nGroups = 1 + nEntries_/numberEvents_perGroup; 
+  double cCorrelation=10; //10
+  double cMinCorrelation = 0.0;
   if( eAlignmentFile.empty() )
   {
-    
+    // now find correlation window between FeI4 and DUT 
+    std::cout << "Finding correct correlation window between FeI4 and DUT\n";
+    FindDetFeI4CorrelationWindow();
+  
     sprintf(buffer,"FeI4_EventAlignment.dat");   
     ofstream fileStream( buffer );
-    int nGroups = 1 + nEntries_/numberEvents_perGroup; 
     std::cout << "Have to analyse : " << nGroups << " groups." << std::endl;
     int prevOptimalOffset = 0 ; 
-    nGroups = nGroups/1.0;
     double acceptanceWindow = 1.00;  // for  0° 0.25 mm is ok
-    
     //find correct event alignment between DUT and telescope 
     for( unsigned int i = 0 ; i < nGroups ; i++ )
     {
+      if( (i*numberEvents_perGroup)%10000 == 0 ) std::cout << "Event re-alignment completed for " << (i*numberEvents_perGroup) << " events." << std::endl;
       int optimalOffset = 0;
-      optimalOffset = MatchDetFeI4(i, prevOptimalOffset , acceptanceWindow);
-      
+      optimalOffset = MatchDetFeI4_v2(i,prevOptimalOffset, cCorrelation , cMinCorrelation );// MatchDetFeI4(i, prevOptimalOffset , acceptanceWindow);
+      if( optimalOffset == -100 || std::fabs(optimalOffset) >= fMaxEventOffset ) continue ; 
+
       sprintf(buffer , "%d\t%d\n" , i , optimalOffset );
       fileStream << buffer;
       if( i == 0 )
@@ -3703,7 +4219,6 @@ std::vector<SingleGroup_Offset> EventAlignment::alignEvents(std::string eAlignme
       { 
         std::cout << buffer; 
       }
-      if( (i*numberEvents_perGroup)%100000 == 0 ) std::cout << "Finished aligning " << (i*numberEvents_perGroup) << " events." << std::endl;
       prevOptimalOffset = optimalOffset; 
       Offsets.push_back( optimalOffset ); 
       groupIDs.push_back( i );
@@ -3719,26 +4234,25 @@ std::vector<SingleGroup_Offset> EventAlignment::alignEvents(std::string eAlignme
       int groupID ; 
       int optimalOffset; 
       input  >> groupID >> optimalOffset; 
-      //std::cout << groupID << " : " << optimalOffset << std::endl;
-      //Offsets.push_back( 0 ); 
-      Offsets.push_back( optimalOffset ); 
-      groupIDs.push_back( groupID );
+      if( std::fabs(optimalOffset) < fMaxEventOffset ) 
+      {
+        Offsets.push_back( optimalOffset ); 
+        groupIDs.push_back( groupID );
+      }
     }
   }
-  
+  std::cout << "Have " << groupIDs.size() << " groups after event re-alignment. [ Looked at " << nGroups << " groups]." <<  std::endl;
+  //return gOffsets;
+
   //now, just to be safe, ignore groups between offset skips 
   SingleGroup_Offset gOffset; 
-  std::vector<SingleGroup_Offset> gOffsets; gOffsets.clear();
   std::cout << "Discarding groups on boundaries of missed triggers.....\n";
-  int nGroups = groupIDs.size(); 
-  //nGroups = 500;
+  nGroups = groupIDs.size(); 
   for( unsigned int i = 0 ; i < nGroups ; i++)
   {
     int groupID = groupIDs[i];
     int optimalOffset = Offsets[i];
     //if( std::fabs(optimalOffset) < 12 || std::fabs(optimalOffset) > 15 ) continue;
-    if( std::fabs(optimalOffset) > fMaxEventOffset ) continue;
-
     if( i == 0 )
     {
       if(Offsets[i] == Offsets[i+1] )
@@ -3784,15 +4298,15 @@ std::vector<SingleGroup_Offset> EventAlignment::alignEvents(std::string eAlignme
   std::cout << "Originally had : " << groupIDs.size() << " groups. Now have : " << gOffsets.size() << " groups." << std::endl;
   std::cout << "Now aligning FeI4 plane and extracting track matching parameters.\n";
   doFeI4TrackFit_HighIntensity();
+  //alignX(gOffsets , 1.0 );
+  //return gOffsets;
   
   // align 
   double matchingWindowSize =1.0; 
-  alignX(gOffsets , matchingWindowSize );
-
   int nStrips = 4 ;
   sprintf(buffer,"Mean L1 for FeI4 = %.3f\n" , fL1_mean);
   std::cout << buffer;    
-  std::vector<double> l1Cut{ fL1_mean}; //fL1_mean-1.0 , fL1_mean , fL1_mean + 1.0 };
+  std::vector<double> l1Cut{ fL1_mean };
   std::vector<double> Steps_Window_Y{1.0}; 
   std::vector<double> Steps_Window_X{1.0};
   std::vector<int> nStrips_eff{1};
@@ -3812,20 +4326,23 @@ std::vector<SingleGroup_Offset> EventAlignment::alignEvents(std::string eAlignme
         
         sprintf(buffer,"--------- Using mean L1 for FeI4 = %.3f\n" , l1Cut[index_L1] );
         std::cout << buffer;    
-        fL1_mean = l1Cut[index_L1]; fL1_sigma = 1.0;
+        fL1_mean = l1Cut[index_L1]; fL1_sigma = 1;
         clearHistograms();
         clearTrackMatchhistograms();
         double matchingWindowSize_X = Steps_Window_X[index_X]; 
         double area = matchingWindowSize_X*matchingWindowSize_X*(fResidualX.second)*(fResidualY.second);
         double nHits_Det0 , nHits_Det1 , nClusters_Det0 , nClusters_Det1 , nStubs_Det; 
         double nFidTracks_Det0 , nFidTracks_Det1 , nFidStubs ; 
-        for(unsigned int i = 0 ; i < gOffsets.size() ; i++ )
+        nGroups = gOffsets.size(); 
+        for(unsigned int i = 0 ; i < nGroups ; i++ )
         {
           int groupID = gOffsets[i].first ;
           int evOffset = gOffsets[i].second ;
           
           AllExtrapolatedHits cMatchedHits = CorrelateFeI4Tracks(groupID, evOffset, matchingWindowSize_X , matchingWindowSize_Y );
-          removeDuplicateHits( cMatchedHits );
+          sprintf(buffer,"Group%d : %d matched hits.\n" , i , cMatchedHits.size() );
+          //std::cout << buffer ; 
+          // removeDuplicateHits( cMatchedHits );
 
           CalculateDUTefficiency(cMatchedHits,nStrips*dutpitch() );
           int nEvents =  i*numberEvents_perGroup;
@@ -3847,6 +4364,8 @@ std::vector<SingleGroup_Offset> EventAlignment::alignEvents(std::string eAlignme
             totalStubs_matched = fStubsMatchedToTracks;
             hist_->fillHistProfile("det1","stubEff_time", (int)(nEvents/20000) , eff ) ;
           }
+          sprintf(buffer,"Calculated efficiency for %d events\n" , nEvents);
+          if( nEvents%1000 == 0 ) std::cout << buffer;
 
         }
         CalculateEfficiency(matchingWindowSize_Y);
