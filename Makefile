@@ -34,7 +34,7 @@ cint: $(DICTC)
 
 $(DICTC): $(HDRS_DICT)
 	@echo "Generating dictionary $(DICTC) and $(DICTH) ..."
-	rootcint -f $@ -c $(CXXFLAGS) $^ 
+	rootcint -f $@ -c $(CXXFLAGS) `root-config --cflags` $^ 
 	perl -pi -e 's#interface/##' $(DICTH) 
 	perl -pi -e 's/#include <math.h>/#include <math.h>\n#include <map>/'  $(DICTH)
 	mv $(DICTC) src/
