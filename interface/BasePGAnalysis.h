@@ -1,5 +1,5 @@
-#ifndef BaselineAnalysis_h
-#define BaselineAnalysis_h
+#ifndef BasePGAnalysis_h
+#define BasePGAnalysis_h
 
 #include "BeamAnaBase.h"
 
@@ -9,20 +9,22 @@
 #include "Histogrammer.h"
 
 class TH1;
-class BaselineAnalysis : public BeamAnaBase {
+class BasePGAnalysis : public BeamAnaBase {
  public:
-  BaselineAnalysis();
-  ~BaselineAnalysis();
+  BasePGAnalysis();
+  ~BasePGAnalysis();
   void beginJob();
   void eventLoop(); 
   void bookHistograms();
   void printEfficiency();
   void clearEvent();
   void endJob();
-
+  unsigned long int readEventsLimit(Int_t target);
  private:
   //std::string outFile_;
   Histogrammer* hist_;
+  int run_;
   unsigned long int nEntries_; 
+  unsigned long int maxEvent; 
 };
 #endif

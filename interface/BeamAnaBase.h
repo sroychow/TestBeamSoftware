@@ -32,7 +32,7 @@ class BeamAnaBase {
     bool branchFound(const string& b);
     void setAddresses();
     void setDetChannelVectors();
-    TTree* analysisTree() const{ return analysisTree_; }
+    TTree* analysisTree() const{ return analysisTree_; } 
     tbeam::dutEvent* dutEv() const { return dutEv_; }
     tbeam::condEvent* condEv() const {return condEv_;}
     tbeam::TelescopeEvent* telEv() const { return telEv_; }
@@ -47,7 +47,7 @@ class BeamAnaBase {
     vector<int>* det0C1() const { return dut0_chtempC1_;}
     vector<int>* det1C0() const { return dut1_chtempC0_;}
     vector<int>* det1C1() const { return dut1_chtempC1_;}
-    std::map<std::string,std::vector<tbeam::cluster>>* dutRecoClmap() const {return dutRecoClmap_;}
+    std::map<std::string,std::vector<tbeam::cluster>>* dutRecoClmap() const {return dutRecoClmap_;} 
     std::map<std::string,std::vector<tbeam::stub> >* dutRecoStubmap() const {return dutRecoStubmap_;};
     std::map<std::string,std::vector<unsigned int>>* recostubChipids() const { return recostubChipids_;}
     std::map<std::string,std::vector<unsigned int>>* cbcstubChipids() const { return cbcstubChipids_;}
@@ -55,10 +55,6 @@ class BeamAnaBase {
     int nStubscbcSword() const { return nStubscbcSword_;}
     bool hasTelescope() const { return hasTelescope_;}
     double resDUT() const {return residualSigmaDUT_;}
-    //double resfei4x() const {return residualSigmaFEI4x_;}
-    //double resfei4y() const {return residualSigmaFEI4y_;}
-    //double offsetfei4x() const {return offsetFEI4x_;}
-    //double offsetfei4y() const {return offsetFEI4y_;}
     double resfei4x() const {return alPars_.residualSigmaFEI4x();}
     double resfei4y() const {return alPars_.residualSigmaFEI4y();}
     double offsetfei4x() const {return alPars_.offsetFEI4x();}
@@ -69,7 +65,7 @@ class BeamAnaBase {
     double sensordeltaZ() const {return alPars_.deltaZ();}
     virtual void beginJob();
     virtual void endJob();
-    virtual void eventLoop() = 0;
+    virtual void eventLoop() = 0; 
     virtual void bookHistograms();
     virtual void clearEvent();
     virtual bool readJob(const std::string jfile);
@@ -87,13 +83,24 @@ class BeamAnaBase {
     Histogrammer* outFile() { return hout_; }
     void fillCommonHistograms();
     std::map<std::string,std::string> jobCardmap() const { return jobCardmap_;}
-
+    std::string inFile() { return iFilename_; }    
+    unsigned long int getMaxEvt() { return maxEvent_; }
+    bool CheckFiducial( double xTrk , int pStripMin , int pStripMax ,  const std::string det) 
+    {
+      int iStrip = xTrk/dutpitch() + nstrips()/2.0; 
+      bool isFiducial = true; 
+      if( iStrip > nstrips() || iStrip < pStripMin || iStrip > pStripMax ) isFiducial = false; 
+      //if( iStrip > nstrips() ) isFiducial = false; 
+      if( doChannelMasking_ ) isFiducial =  std::find(dut_maskedChannels_->at(det).begin(), dut_maskedChannels_->at(det).end(), iStrip) ==    dut_maskedChannels_->at(det).end();
+      return isFiducial;
+    }
+    
   private :
     std::string iFilename_;
     std::string outFilename_;
     std::string chmaskFilename_;
     TFile* fin_;
-    TTree *analysisTree_;
+    TTree *analysisTree_; 
     tbeam::dutEvent* dutEv_;
     tbeam::condEvent* condEv_;
     tbeam::TelescopeEvent* telEv_;
@@ -103,6 +110,7 @@ class BeamAnaBase {
     bool hasTelescope_;
     bool doTelMatching_;
     bool doChannelMasking_;
+    unsigned long int maxEvent_=0;
     int sw_;
     int offset1_;
     int offset2_;

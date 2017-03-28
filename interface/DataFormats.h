@@ -3,7 +3,6 @@
 #include "TROOT.h"
 #include "TObject.h"
 #include "TMath.h"
-#include<fstream>
 #include<ostream>
 #include<vector>
 #include<map>
@@ -18,11 +17,11 @@ namespace tbeam {
   class alignmentPars {
    public:
      alignmentPars();
-     alignmentPars(const double fei4Z, const double resfei4X, const double resfei4Y, const double offxfei4, const double offyfei4,
+     alignmentPars(const double fei4Z, const double resfei4X, const double resfei4Y, const double offxfei4, const double offyfei4, 
                    const double off_d0, const double zDUT_d0, const double dZ, const double t);
      ~alignmentPars(){}
-     double residualSigmaFEI4x() const { return resSigmaFEI4X; }
-     void residualSigmaFEI4x(const double fx){ resSigmaFEI4X = fx; }
+     double residualSigmaFEI4x() const { return resSigmaFEI4X; } 
+     void residualSigmaFEI4x(const double fx){ resSigmaFEI4X = fx; } 
 
      double residualSigmaFEI4y() const { return resSigmaFEI4Y; }
      void residualSigmaFEI4y(const double fy) { resSigmaFEI4Y = fy; }
@@ -35,25 +34,25 @@ namespace tbeam {
 
      double FEI4z() const { return FEI4_z; }
      void FEI4z(const double fz) { FEI4_z = fz; }
-
+ 
      double d0Z() const { return d0_chi2_min_z; }
      void d0Z(const double dz) { d0_chi2_min_z = dz; }
 
      double d1Z() const { return d1_chi2_min_z; }
      void d1Z(const double dz) { d1_chi2_min_z = dz; }
 
-     double d0Offset() const { return d0_Offset_aligned; }
-     void d0Offset(const double doff) { d0_Offset_aligned = doff; }
+     double d0Offset() const { return d0_Offset_aligned; } 
+     void d0Offset(const double doff) { d0_Offset_aligned = doff; } 
 
-     double d1Offset() const { return d1_Offset_aligned; }
-     void d1Offset(const double doff) { d1_Offset_aligned = doff; }
+     double d1Offset() const { return d1_Offset_aligned; } 
+     void d1Offset(const double doff) { d1_Offset_aligned = doff; } 
 
      double deltaZ() const { return deltaz; }
      void deltaZ(const double dz) { deltaz = dz; }
 
-     double theta() const { return angle;}
-     void theta(const double t) { angle = TMath::Pi()*t/180.; }
-
+     double theta() const { return angle;} 
+     void theta(const double t) { angle = TMath::Pi()*t/180.; } 
+    
      void setD1parametersfromD0();
      friend std::ostream& operator<< ( std::ostream& out, const tbeam::alignmentPars& ev );
    private:
@@ -76,6 +75,7 @@ namespace tbeam {
      cluster();
      ~cluster();
      uint16_t x;
+     float fx;
      uint16_t size;
      //std::vector<tbeam::stub *> stubs;
      ClassDef(cluster,1)
@@ -87,6 +87,7 @@ namespace tbeam {
      tbeam::cluster * seeding;  // Bottom sensor cluster
      tbeam::cluster * matched;  // Top sensor cluster
      uint16_t x;        // Position of the stub (bottom sensor)
+     float fx;        // Position of the stub (bottom sensor) in 1/2 strip precision
      int16_t direction; // Direction of the stub (cl0-cl1)
      ClassDef(stub,1)
   };
@@ -98,7 +99,7 @@ namespace tbeam {
      uint8_t error;
      ClassDef(cbc,1)
   };
-
+  
   class dutEvent : public TObject {
    public:
      dutEvent();
@@ -108,6 +109,7 @@ namespace tbeam {
      std::map< std::string,std::vector<int> > dut_channel;
      std::map< std::string,std::vector<int> > dut_row;
      std::vector <tbeam::stub*> stubs;
+     std::vector <tbeam::stub*> fstubs;//stubs with floating point precision of position
      uint32_t stubWord;
      uint32_t stubWordReco;
      //bool isGood;
@@ -155,7 +157,7 @@ namespace tbeam {
      virtual ~TelescopeEvent();
      ClassDef(TelescopeEvent,1)
   };
-
+  
   class FeIFourEvent : public TObject {
     public:
      Int_t                nPixHits;
@@ -172,7 +174,7 @@ namespace tbeam {
      virtual ~FeIFourEvent();
      ClassDef(FeIFourEvent,1)
   };
-
+  
   class Track : public TObject {
     public :
       int trkIndex;
@@ -192,7 +194,7 @@ namespace tbeam {
       Track(const tbeam::Track& t);
       virtual ~Track(){}
       ClassDef(Track,1)
-  };
+  }; 
 
 }
 #endif

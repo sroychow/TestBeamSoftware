@@ -3,7 +3,7 @@
 #include <string>
 #include "TROOT.h"
 #include "TStopwatch.h"
-#include "BaselineAnalysis.h"
+#include "BasePGAnalysis.h"
 #include "argvparser.h"
 using std::cout;
 using std::cerr;
@@ -18,16 +18,11 @@ int main( int argc,char* argv[] ){
   }
   std::string jobfile = argv[1];
   //Let's roll
-  
   TStopwatch timer;
   timer.Start();
-
-  BaselineAnalysis r;
-
+  BasePGAnalysis r;
   r.readJob(jobfile);
-
   r.beginJob();
-
   std::cout << "Event Loop start" << std::endl;
   r.eventLoop();
   r.endJob();

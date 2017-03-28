@@ -6,11 +6,8 @@ ClassImp(tbeam::dutEvent)
 ClassImp(tbeam::condEvent)
 ClassImp(tbeam::TelescopeEvent)
 
-
-
-
 namespace tbeam {
-tbeam::alignmentPars::alignmentPars()
+tbeam::alignmentPars::alignmentPars() 
 {
   FEI4_z = 0.;
   d0_chi2_min_z = 0.;
@@ -24,7 +21,7 @@ tbeam::alignmentPars::alignmentPars()
   offFEI4X = 0.;
   offFEI4Y = 0.;
 }
-tbeam::alignmentPars::alignmentPars(const double fei4Z, const double resfei4X, const double resfei4Y, const double offxfei4, const double offyfei4,
+tbeam::alignmentPars::alignmentPars(const double fei4Z, const double resfei4X, const double resfei4Y, const double offxfei4, const double offyfei4, 
                                     const double off_d0, const double zDUT_d0, const double dZ, const double t)
 {
   FEI4_z = fei4Z;
@@ -40,7 +37,7 @@ tbeam::alignmentPars::alignmentPars(const double fei4Z, const double resfei4X, c
   offFEI4Y = offyfei4;
 }
 
- void tbeam::alignmentPars::setD1parametersfromD0()
+ void tbeam::alignmentPars::setD1parametersfromD0() 
 {
   d1_chi2_min_z = d0_chi2_min_z + deltaz*TMath::Cos(angle);
   d1_Offset_aligned = d0_Offset_aligned + TMath::Sin(angle)*deltaz;
@@ -63,10 +60,6 @@ std::ostream& operator<< ( std::ostream& out, const tbeam::alignmentPars& a )
       << std::endl;
   return out;
 }
-}
-
-
-
 
 tbeam::cbc::cbc():
    pipelineAdd(0),
@@ -77,6 +70,7 @@ tbeam::cbc::cbc():
 
 tbeam::cluster::cluster():
    x(0),
+   fx(0.),
    size(0)
 {
 }
@@ -86,17 +80,19 @@ tbeam::cluster::~cluster(){
 
 tbeam::stub::stub():
    x(0),
+   fx(0.),
    direction(0)
 {
    seeding = new tbeam::cluster();
    matched = new tbeam::cluster();
 }
 
-tbeam::stub::stub(const tbeam::stub& t)
+tbeam::stub::stub(const tbeam::stub& t) 
 {
   seeding = new tbeam::cluster(*(t.seeding));
   matched = new tbeam::cluster(*(t.matched));
   x = t.x;
+  fx = t.fx;
   direction = t.direction;
 }
 
@@ -108,7 +104,7 @@ tbeam::dutEvent::dutEvent():
    //stubs=std::vector<tbeam::stub*>();
 }
 
-tbeam::dutEvent::dutEvent(const tbeam::dutEvent& t)
+tbeam::dutEvent::dutEvent(const tbeam::dutEvent& t) 
 {
   //std::map < std::string, std::vector <tbeam::cluster*> > clusters;
   for(auto& d : t.clusters ) {
@@ -128,12 +124,16 @@ tbeam::dutEvent::dutEvent(const tbeam::dutEvent& t)
     tbeam::stub* ss = new tbeam::stub(*sp);
     stubs.push_back(ss);
   }
+  for(auto& sp : t.fstubs) {
+    tbeam::stub* ss = new tbeam::stub(*sp);
+    fstubs.push_back(ss);
+  }
   stubWord = t.stubWord;
   stubWordReco = t.stubWordReco;
 }
 
 tbeam::dutEvent::~dutEvent(){
-   //std::cout << "Entering dutEvent destructor!" << std::endl;
+   //std::cout << "Entering dutEvent destructor!" << std::endl;   
    /*
    for (unsigned int i=0; i<stubs.size(); i++){ if(stubs.at(i))   delete stubs.at(i);}
    for(std::map<std::string,std::vector<tbeam::cluster *> >::iterator it = clusters.begin(); it != clusters.end(); ++it) {
@@ -141,15 +141,15 @@ tbeam::dutEvent::~dutEvent(){
          if(*cl)  delete *cl;
       }
    }*/
-   //std::cout << "Leaving dutEvent destructor!" << std::endl;
+   //std::cout << "Leaving dutEvent destructor!" << std::endl;   
 }
 
 tbeam::condEvent::condEvent() :
-   run(999999),
-   lumiSection(999999),
-   event(999999),
-   time(999999),
-   unixtime(999999),
+   run(999999), 
+   lumiSection(999999), 
+   event(999999),  
+   time(999999), 
+   unixtime(999999), 
    tdcPhase(999999),
    HVsettings(999999),
    DUTangle(999999),
@@ -166,7 +166,7 @@ tbeam::condEvent::condEvent() :
   //cbcs = std::vector<tbeam::cbc>();
 }
 
-tbeam::TelescopeEvent::TelescopeEvent()
+tbeam::TelescopeEvent::TelescopeEvent() 
 {
    xPos = new vector<double>();
    yPos = new vector<double>();
@@ -207,7 +207,7 @@ tbeam::FeIFourEvent::FeIFourEvent() {
   lv1 = new vector<int>();
   iden = new vector<int>();
   hitTime = new vector<int>();
-  frameTime = new vector<double>();
+  frameTime = new vector<double>();  
 }
 tbeam::FeIFourEvent::FeIFourEvent(const FeIFourEvent& f) {
   nPixHits = f.nPixHits;
@@ -218,7 +218,7 @@ tbeam::FeIFourEvent::FeIFourEvent(const FeIFourEvent& f) {
   lv1 = new vector<int>(*f.lv1);
   iden = new vector<int>(*f.iden);
   hitTime = new vector<int>(*f.hitTime);
-  frameTime = new vector<double>(*f.frameTime);
+  frameTime = new vector<double>(*f.frameTime);  
 }
 tbeam::FeIFourEvent::~FeIFourEvent() {
   delete     col;
@@ -282,4 +282,5 @@ tbeam::Track::Track(const tbeam::Track& t) {
   xtkDut1 = t.xtkDut1;
   ytkDut0 = t.ytkDut0;
   ytkDut1 = t.ytkDut1;
+}
 }
