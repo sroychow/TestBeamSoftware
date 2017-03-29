@@ -2,11 +2,22 @@
 ## Installation
 
 Set up ROOT(works with ROOT 5, requires ROOT to be compiled with libminut2)
+##On lxplus, you can setup gcc and root as follows
+source /afs/cern.ch/sw/lcg/external/gcc/4.9/x86_64-slc6-gcc49-opt/setup.sh
 
-After checking out the code:-
+source /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.36/x86_64-slc6-gcc49-opt/root/bin/thisroot.sh
+
+git clone https://github.com/sroychow/TestBeamSoftware.git
+
+cd TestBeamSoftware
+
+git checkout may16dev
+
+#Set to NOV_15 or MAY_16 or OCT_16
+setenv  BT_ERA OCT_16
+
 make cint
-
-make 
+make
 
 ## Usage
 ##Running on tuple
