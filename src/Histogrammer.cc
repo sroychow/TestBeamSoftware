@@ -810,9 +810,9 @@ void Histogrammer::bookTelescopeAnalysisHistograms() {
   h1->SetFillColor(kGreen);
   h1->SetFillStyle(3001);
   
-  TH1D* h1f = dynamic_cast<TH1D*>(Utility::getHist1D("deltaXPos"));
+  TH1F* h1f = dynamic_cast<TH1F*>(Utility::getHist1D("deltaXPos"));
   h1f->SetLineColor(kGreen);
-  h1f = dynamic_cast<TH1D*>(Utility::getHist1D("deltaYPos"));
+  h1f = dynamic_cast<TH1F*>(Utility::getHist1D("deltaYPos"));
   h1f->SetLineColor(kBlue);
 
 }
