@@ -367,7 +367,7 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
      || (std::fabs(xtrk1Pos) > pitchDUT_*nStrips_/2.))  return false;
   //DUT y acceptance
 #if defined(OCT_16) || defined(MAY_16)
-  if(std::fabs(ytrk0Pos) > 5. || std::fabs(ytrk1Pos) > 5.)  return false; 
+  if(std::fabs(ytrk0Pos) > 25. || std::fabs(ytrk1Pos) > 25.)  return false; 
 #elif NOV_15
   if(std::fabs(ytrk0Pos) > 25. || std::fabs(ytrk1Pos) > 25.)  return false;
 #endif
