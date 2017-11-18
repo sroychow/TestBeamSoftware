@@ -1,5 +1,5 @@
-#ifndef __TestBeamAnalysis_EdmToNtupleNoMask_Event_h
-#define __TestBeamAnalysis_EdmToNtupleNoMask_Event_h
+#ifndef __Event_h
+#define __Event_h
 #include <vector>
 #include <map>
 #include <string>

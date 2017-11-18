@@ -1,4 +1,4 @@
-#include "TestBeamAnalysis/EdmToNtupleNoMask/interface/Event.h" 
+#include "Event.h" 
 #include<iostream>
 
 tbeam::Event::Event():
