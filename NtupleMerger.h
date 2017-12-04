@@ -29,93 +29,50 @@ using std::map;
 using std::cerr;
 
 
-struct cbcCond {
-    uint32_t l1Accept_;
-    uint32_t tdcCounter_;
-    uint32_t totalHits_;  
-    uint32_t totalStubs_;  
-    bool eventFlag_;
-    uint32_t eventCountCBC_;
-    std::vector<unsigned int> cbcErrorVal_;
-    std::vector<unsigned int> cbcPLAddressVal_;
-    std::vector<unsigned int> dut0C0chData_;
-    std::vector<unsigned int> dut0C1chData_;
-    std::vector<unsigned int> dut1C0chData_;
-    std::vector<unsigned int> dut1C1chData_;
-};
-
 
 class NtupleMerger {
   public :
-    NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string dqmTuple, const std::string runNumber);
-    NtupleMerger(const std::string telTuple, const std::string runNumber);
+    NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string runNumber);
 
     virtual ~NtupleMerger();
 
     bool branchFound(TTree* chain,const string& b,std::vector<std::string>& brList_);
     void setInputBranchAddresses();
-    void bookValidationHistograms(const std::string run);
+    //    void bookValidationHistograms(const std::string run);
 
-    void filltrigTrackmap();
+    //void filltrigTrackmap();
     void eventLoop();
     //void clearEvent();
     void endJob();
   private :
     TFile* dutF_;
     TFile* telF_;
-    TFile* dqmF_;
+    //    TFile* dqmF_;
     TTree *dutchain_; 
     TTree *telchain_;
-    TTree *fei4chain_;
-    TTree *dqmchain_;
+    //    TTree *fei4chain_;
+    //    TTree *dqmchain_;
     TTree* outTree_;
     TFile* fout_;
     bool telFound_;
-    bool fei4Found_; 
+    //    bool fei4Found_; 
     //input format
-    std::vector<unsigned int>* cbcErrorVal_;
-    std::vector<unsigned int>* cbcPLAddressVal_;
-    unsigned int tdcCounterFromdqm_;  
     tbeam::TelescopeEvent* telEvent_;
-    tbeam::FeIFourEvent* fei4Event_;
-    bool periodicityFlag_;
-    bool pFlag_;
-    bool goodEventFlag_;
-    unsigned int l1adqm_;
-    unsigned int totalHitsdqm_;
-    unsigned int totalStubsdqm_;
-    unsigned int evCountcbc_;
-    std::vector<unsigned int>* dut0C0chData_;
-    std::vector<unsigned int>* dut0C1chData_;
-    std::vector<unsigned int>* dut1C0chData_;
-    std::vector<unsigned int>* dut1C1chData_;
+    tbeam::Event* dutEvent_;
 
-    //branches to update
-    //TBranch* condBranch_;
-    TBranch* telBranch_;
-    TBranch* periodicityBranch_;
-    TBranch* goodEvBranch_;
-    
-    //TBranch* eventQualityBranch_; 
 
     //output format
     
     //
-    tbeam::TelescopeEvent* telOutputEvent_;
-    tbeam::FeIFourEvent* fei4OutputEvent_;
-    tbeam::condEvent* condEvent_;
-    tbeam::dutEvent* dutEvent_;
-    tbeam::dutEvent* outdutEvent_;
-    tbeam::condEvent* outcondEvent_;
-    //TBranch* condBranch_;
+    tbeam::Track* telOutputEvent_;
+    tbeam::Event* outdutEvent_;
 
-    std::map<Int_t,tbeam::TelescopeEvent>* trigTrackmap_;
-    std::map<Int_t,tbeam::FeIFourEvent>* trigFeI4map_;
-    std::map<long int,cbcCond>*  cbcCondmap_;
+    //std::map<Int_t,tbeam::TelescopeEvent>* trigTrackmap_;
+    //std::map<Int_t,tbeam::FeIFourEvent>* trigFeI4map_;
     long int nTelchainentry_;
     long int nDutchainentry_; 
-    long int nDqmchainentry_; 
     long int nEventstoLoop_;
+    /*
     //validation histograms
     TFile* fval;
     TH1D* tdc1;
@@ -130,5 +87,6 @@ class NtupleMerger {
     TH1D* hitedm;
     bool  debug_;
     bool  telOnly_;
+    */
 };
 #endif

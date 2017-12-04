@@ -7,114 +7,67 @@
 #include<string>
 #include <string>
 #include<stdint.h>
+#include<iostream>
+#include<iomanip>
+#include "TObject.h"
+#include "Cluster.h"
+#include "Hit.h"
+#include "Cbc.h"
+#include "Stub.h"
+#include "Track.h"
+#include "TelescopeEvent.h"
+
 using std::vector;
 using std::map;
 using std::string;
 namespace tbeam {
-  class cluster;
-  class stub;
-  class cluster : public TObject {
-   public:
-     cluster();
-     ~cluster();
-     uint16_t x;
-     float fx;//floating point position
-     uint16_t size;
-     //std::vector<tbeam::stub *> stubs;
-     ClassDef(cluster,1)
-  };
-  class stub : public TObject {
-   public:
-     stub();
-     stub(const tbeam::stub& t);
-     tbeam::cluster * seeding;  // Bottom sensor cluster
-     tbeam::cluster * matched;  // Top sensor cluster
-     uint16_t x;        // Position of the stub (bottom sensor)
-     float fx;        // Floating point Position of the stub (bottom sensor)
-     int16_t direction; // Direction of the stub (cl0-cl1)
-     ClassDef(stub,1)
-  };
-  class cbc : public TObject {
-   public:
-     cbc();
-     uint16_t pipelineAdd;
-     uint8_t status;
-     uint8_t error;
-     ClassDef(cbc,1)
-  };
-  
-  class dutEvent : public TObject {
-   public:
-     dutEvent();
-     dutEvent(const tbeam::dutEvent& t);
-     virtual ~dutEvent();
-     std::map < std::string, std::vector <tbeam::cluster*> > clusters;
-     std::map< std::string,std::vector<int> > dut_channel;
-     std::map< std::string,std::vector<int> > dut_row;
-     std::vector <tbeam::stub*> stubs;
-     uint32_t stubWord;
-     uint32_t stubWordReco;
-     //bool isGood;
-     ClassDef(dutEvent,1)
-  };
-  class condEvent : public TObject {
-   public:
-    unsigned int run;
-    unsigned int lumiSection;
-    unsigned int event;
-    unsigned long long time;
-    unsigned long int unixtime;
-    unsigned int tdcPhase;
-    unsigned int HVsettings;
-    unsigned int DUTangle;
+  class Event :  public TObject {
+  public:
+    Event();
+    virtual ~Event(){};
+    void reset();
+    void dumpEvent(std::ostream& os = std::cout);
+    //header part
+    unsigned int run;//
+    unsigned int lumiSection;//
+    unsigned int event;//
+    unsigned long long time;//
+    unsigned long int unixtime;//
+    unsigned long int dt;//is it used?
+    bool isSparisified;//
+    
+    uint8_t dataFormatVersion;//
+    uint8_t condData;//
+    uint8_t debugMode;//
+    uint8_t readoutMode;//
+    uint8_t dataType;//
+    uint64_t glibStatusCode;//
+    uint16_t numberOfCBC;//
+    //condition data
+    unsigned int tdcPhase;//
+    unsigned int HVsettings;//
+    unsigned int DUTangle;//
+    uint32_t vcth;//
+    
     uint32_t window;
     uint32_t offset;
     uint32_t cwd;
     uint32_t tilt;
-    uint32_t vcth;
     uint32_t stubLatency;
     uint32_t triggerLatency;
-    int condData;
-    int glibStatus;
-    std::vector<tbeam::cbc> cbcs;
-    condEvent();
-    virtual ~condEvent(){}
-    ClassDef(condEvent,1)
-  };
-
-  class TelescopeEvent : public TObject {
-    public :
-     Int_t           nTrackParams;
-     Int_t           euEvt;
-     std::vector<double>  *xPos;
-     std::vector<double>  *yPos;
-     std::vector<double>  *dxdz;
-     std::vector<double>  *dydz;
-     std::vector<int>     *trackNum;
-     std::vector<int>     *iden;
-     std::vector<double>  *chi2;
-     std::vector<double>  *ndof;
-     TelescopeEvent();
-     TelescopeEvent(const TelescopeEvent& t);
-     virtual ~TelescopeEvent();
-     ClassDef(TelescopeEvent,1)
-  };
-  
-  class FeIFourEvent : public TObject {
-    public:
-     Int_t                nPixHits;
-     Int_t                euEvt;
-     std::vector<int>     *col;
-     std::vector<int>     *row;
-     std::vector<int>     *tot;
-     std::vector<int>     *lv1;
-     std::vector<int>     *iden;
-     std::vector<int>     *hitTime;
-     std::vector<double>  *frameTime;
-     FeIFourEvent();
-     FeIFourEvent(const FeIFourEvent& f);
-     virtual ~FeIFourEvent();
-     ClassDef(FeIFourEvent,1)
-  };
+    
+    std::map<uint32_t,uint32_t > conddatamap;//this is kept for now.If not used in offline analysis, it can be dropped
+    std::map<unsigned int,std::vector<tbeam::cbc> > cbcs;//
+    std::map< std::string,std::vector<tbeam::hit> > dutHits;//
+    std::map< std::string, std::vector<tbeam::cluster> > cbcClusters;//only in sparsified mode
+    std::map<std::string, std::vector<tbeam::stub>> cbcStubs;//
+    std::map< std::string, std::vector<tbeam::cluster> > offlineClusters;//only in unsparsified mode
+    std::map< std::string, std::vector<tbeam::stub> > offlineStubs;//created from offlineClusters or cbcClusters
+    //At the ntuplizer stage this is a empty
+    //This vector of tracks is defined here to avoid redifining Event class in offline analysis
+    //This vector will be filled in Merge step of Telescope Ntuple + EdmNtuple
+    std::vector<tbeam::Track>  tracks;
+    ClassDef(Event,1)
+      };
 }
 #endif

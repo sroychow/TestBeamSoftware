@@ -1,172 +1,182 @@
 #include "DataFormats.h"
-ClassImp(tbeam::cbc)
 ClassImp(tbeam::cluster)
+ClassImp(tbeam::hit)
+ClassImp(tbeam::cbc)
 ClassImp(tbeam::stub)
-ClassImp(tbeam::dutEvent)
-ClassImp(tbeam::condEvent)
-ClassImp(tbeam::TelescopeEvent)
+ClassImp(tbeam::Track)
+ClassImp(tbeam::Event)
 
-tbeam::cbc::cbc():
-   pipelineAdd(0),
-   status(0),
-   error(0)
+#include<iostream>
+
+static constexpr unsigned int MASK_BITS_8  = 0xFF;
+static constexpr unsigned int MASK_BITS_4 = 0xF;
+
+tbeam::Event::Event():
+  run(999999), 
+  lumiSection(999999), 
+  event(999999),  
+  time(999999), 
+  unixtime(999999), 
+  dt(999999),
+  isSparisified(false),
+  tdcPhase(999999),
+  HVsettings(999999),
+  DUTangle(999999),
+  stubLatency(999999),
+  triggerLatency(999999)
 {
 }
 
-tbeam::cluster::cluster():
-   x(0),
-   fx(-99.),
-   size(0)
-{
+void tbeam::Event::reset(){
+  run = 0;//
+  lumiSection = 0;//
+  event = 0;//
+  time = 0;//
+  unixtime = 0;//
+  dt = 0;//is it used?
+  isSparisified = 0;//
+  
+  dataFormatVersion = 0;//
+  condData = 0;//
+  debugMode = 0;//
+  readoutMode = 0;//
+  dataType = 0;//
+  glibStatusCode = 0;//
+  numberOfCBC = 0;//
+  //condition data
+  tdcPhase = 0;//
+  HVsettings = 0;//
+  DUTangle = 0;//
+  vcth = 0;//
+  
+  window = 0;
+  offset = 0;
+  cwd = 0;
+  tilt = 0;
+  stubLatency = 0;
+  triggerLatency = 0;
+  
+  //clear the maps
+  conddatamap.clear();//
+  cbcs.clear();//
+  dutHits.clear();//
+  cbcClusters.clear();//only in sparsified mode
+  cbcStubs.clear();//
+  offlineClusters.clear();//only in unsparsified mode
+  offlineStubs.clear();
 }
 
-tbeam::cluster::~cluster(){
-}
-
-tbeam::stub::stub():
-   x(0),
-   fx(-99.),
-   direction(0)
-{
-   seeding = new tbeam::cluster();
-   matched = new tbeam::cluster();
-}
-
-tbeam::stub::stub(const tbeam::stub& t) 
-{
-  seeding = new tbeam::cluster(*(t.seeding));
-  matched = new tbeam::cluster(*(t.matched));
-  x = t.x;
-  direction = t.direction;
-}
-
-tbeam::dutEvent::dutEvent():
-   stubWord(0),
-   stubWordReco(0)
-{
-   //isGood(1)
-   //stubs=std::vector<tbeam::stub*>();
-}
-
-tbeam::dutEvent::dutEvent(const tbeam::dutEvent& t) 
-{
-  //std::map < std::string, std::vector <tbeam::cluster*> > clusters;
-  for(auto& d : t.clusters ) {
-    std::vector<tbeam::cluster*> ctemp;
-    for(auto cp : d.second) {
-      tbeam::cluster* cc = new tbeam::cluster(*cp);
-      ctemp.push_back(cc);
-    }
-    clusters[d.first] = ctemp;
+void tbeam::Event::dumpEvent(std::ostream& os) {
+  os << "Run:"   <<  run
+     << " Lumi:" <<  lumiSection
+     << " Event:" << event
+     << std::endl;
+  os << "******Tracker Header information Start*****" << std::endl;
+  os << " Version  : " << std::hex << std::setw(2) << (int)dataFormatVersion << std::endl;
+  os << " Debug Mode     : " << std::hex << std::setw(2) << (int)debugMode << std::endl;
+  os << " Readout Mode : " << std::hex << std::setw(2) << (int)readoutMode << std::endl;
+  os << " Data Type     : " << std::hex << std::setw(2) << (int)dataType << std::endl;
+  os << " Condition Data : " << std::hex << (condData) << std::endl;;
+  os << " Data Type  : " << ( dataType ? "Real" : "Fake" ) << "\n";
+  os << " Glib Status   : " << std::hex << std::setw(2) << (int)glibStatusCode << std::endl;
+  os << " No. of CBC   : " << std::hex << std::setw(2) << (int)numberOfCBC << std::endl;
+  os << "******Tracker Header information End*******" << std::endl;
+  os << "******Tracker Condition Data information Start*****" << std::endl;
+  for(auto& it : conddatamap){ 
+    uint8_t uid     = (it.first >> 24)  & MASK_BITS_8;
+    uint8_t i2cReg  = (it.first >> 16)  & MASK_BITS_8;
+    uint8_t i2cPage = (it.first >> 12)  & MASK_BITS_4;
+    uint8_t roId    = (it.first >> 8)   & MASK_BITS_4;
+    uint8_t feId    = (it.first)        & MASK_BITS_8;
+    os <<  std::hex << "key: "      << it.first
+       <<  " uid: "     << std::setw(8) << (int)uid  
+       <<  " i2cReg: "  << std::setw(8) << (int)i2cReg  
+       <<  " i2cPage: " << std::setw(8) << (int)i2cPage  
+       <<  " roId: "    << std::setw(8) << (int)roId 
+       <<  " feId: "    << std::setw(8) << (int)feId  
+       << std::hex << " value: "   << it.second << " (hex) "
+       << std::dec                 << it.second << " (dec) " << std::endl;
+  } 
+  os << "Vcth:" << (int)vcth << "\tHV:" << HVsettings << "\tTDC:" << tdcPhase << "\tAngle:" << DUTangle;
+  os << "******Tracker Condition Data information End*******" << std::endl;
+  os << "******Tracker CBC staus Start*******" << std::endl;
+  for(auto& c : cbcs) {
+    os << "FeId:" << c.first << std::endl;
+    for(auto& s : c.second) os << s;
   }
-  //std::map< std::string,std::vector<int> > dut_channel;
-  dut_channel = t.dut_channel;
-  //std::map< std::string,std::vector<int> > dut_row;
-  dut_row = t.dut_row;
-  //std::vector <tbeam::stub*> stubs;
-  for(auto& sp : t.stubs) {
-    tbeam::stub* ss = new tbeam::stub(*sp);
-    stubs.push_back(ss);
+  os << "******Tracker CBC staus End*******" << std::endl;
+  
+  os << "******Tracker Hit Data Start(unsparsified mode)*******" << std::endl;
+  for(auto& detH : dutHits) {
+    os << "DetId:" << detH.first << std::endl;
+    for(auto& hit : detH.second)   os << std::dec << hit; 
   }
-  stubWord = t.stubWord;
-  stubWordReco = t.stubWordReco;
+  os << "******Tracker Hit Data End(unsparsified mode)*******" << std::endl;
+  os << "******Tracker CBC Cluster1D Data Start(sparisified mode)*******" << std::endl;
+  for(auto& detC : cbcClusters) {
+    os << "DetId:" << detC.first << std::endl;
+    for(auto& cls : detC.second) os << std::dec << cls;
+  }
+  os << "******Tracker CBC Cluster1D Data End(sparisified mode)*********" << std::endl;
+  os << "******Tracker Offline Cluster1D Data Start(unsparisified mode)*******" << std::endl;
+  for(auto& detC : offlineClusters) {
+    os << "DetId:" << detC.first << std::endl;
+    for(auto& cls : detC.second) os << std::dec << cls;
+  }
+  os << "******Tracker Offline Cluster1D Data End(unsparisified mode)*********" << std::endl;
+  
+  os << "******Tracker CBC Stub Data Start*******" << std::endl;
+  for(auto& detS : cbcStubs) {
+    os << "DetId:" << detS.first << std::endl;
+    for(auto& stub : detS.second) os << std::dec << stub;
+  }
+  os << "******Tracker CBC Stub Data End*********" << std::endl;
+  
+  os << "******Tracker offline Stub Data Start*******" << std::endl;
+  for(auto& detS : offlineStubs) {
+    os<< "DetId:" << detS.first << std::endl;
+    for(auto& stub : detS.second) os << std::dec << stub;
+  }
+  os << "******Tracker CBC offline Data End*********" << std::endl;
+
+  os << "******Track Data(Should be Empty if DUT only Ntuple!!!)*******" << std::endl;
+  for(auto& tk : tracks) {
+    os << tk;
+  }
+  os << "******Track Data(Should be Empty if DUT only Ntuple!!!)*******" << std::endl;
 }
 
-tbeam::dutEvent::~dutEvent(){
-   //std::cout << "Entering dutEvent destructor!" << std::endl;   
-   /*
-   for (unsigned int i=0; i<stubs.size(); i++){ if(stubs.at(i))   delete stubs.at(i);}
-   for(std::map<std::string,std::vector<tbeam::cluster *> >::iterator it = clusters.begin(); it != clusters.end(); ++it) {
-      for(std::vector<tbeam::cluster *>::iterator cl = it->second.begin(); cl!=it->second.end(); ++cl){
-         if(*cl)  delete *cl;
-      }
-   }*/
-   //std::cout << "Leaving dutEvent destructor!" << std::endl;   
-}
-
-tbeam::condEvent::condEvent() :
-   run(999999), 
-   lumiSection(999999), 
-   event(999999),  
-   time(999999), 
-   unixtime(999999), 
-   tdcPhase(999999),
-   HVsettings(999999),
-   DUTangle(999999),
-   window(999999),
-   offset(999999),
-   cwd(999999),
-   tilt(999999),
-   vcth(999999),
-   stubLatency(999999),
-   triggerLatency(999999),
-   condData(999),
-   glibStatus(9999)
-{
-  //cbcs = std::vector<tbeam::cbc>();
-}
 
 tbeam::TelescopeEvent::TelescopeEvent() 
 {
-   xPos = new vector<double>();
-   yPos = new vector<double>();
-   dxdz = new vector<double>();
-   dydz = new vector<double>();
-   trackNum = new vector<int>();
-   iden = new vector<int>();
-   chi2 = new vector<double>();
-   ndof = new vector<double>();
+  xPos = new vector<float>();
+  yPos = new vector<float>();
+  dxdz = new vector<float>();
+  dydz = new vector<float>();
+  chi2 = new vector<float>();
+  ndof = new vector<float>();
+  xPosError = new vector<float>();
+  yPosError = new vector<float>();
 }
 tbeam::TelescopeEvent::TelescopeEvent(const TelescopeEvent& t) {
-   nTrackParams = t.nTrackParams;
-   euEvt = t.euEvt;
-   xPos = new vector<double>(*t.xPos);
-   yPos = new vector<double>(*t.yPos);
-   dxdz = new vector<double>(*t.dxdz);
-   dydz = new vector<double>(*t.dydz);
-   trackNum = new vector<int>(*t.trackNum);
-   iden = new vector<int>(*t.iden);
-   chi2 = new vector<double>(*t.chi2);
-   ndof = new vector<double>(*t.ndof);
- }
+  nTracks = t.nTracks;
+  event = t.event;
+  xPos = new vector<float>(*t.xPos);
+  yPos = new vector<float>(*t.yPos);
+  dxdz = new vector<float>(*t.dxdz);
+  dydz = new vector<float>(*t.dydz);
+  chi2 = new vector<float>(*t.chi2);
+  ndof = new vector<float>(*t.ndof);
+  xPosError = new vector<float>(*t.xPosError);
+  yPosError = new vector<float>(*t.yPosError);
+}
 tbeam::TelescopeEvent::~TelescopeEvent() {
-   delete xPos;
-   delete yPos;
-   delete dxdz;
-   delete dydz;
-   delete trackNum;
-   delete iden;
-   delete chi2;
-   delete ndof;
+  delete xPos;
+  delete yPos;
+  delete dxdz;
+  delete dydz;
+  delete chi2;
+  delete ndof;
+  delete xPosError;
+  delete yPosError;
 }
-
-tbeam::FeIFourEvent::FeIFourEvent() {
-  col = new vector<int>();
-  row =new vector<int>();
-  tot = new vector<int>();
-  lv1 = new vector<int>();
-  iden = new vector<int>();
-  hitTime = new vector<int>();
-  frameTime = new vector<double>();  
-}
-tbeam::FeIFourEvent::FeIFourEvent(const FeIFourEvent& f) {
-  nPixHits = f.nPixHits;
-  euEvt = f.euEvt;
-  col = new vector<int>(*f.col);
-  row =new vector<int>(*f.row);
-  tot = new vector<int>(*f.tot);
-  lv1 = new vector<int>(*f.lv1);
-  iden = new vector<int>(*f.iden);
-  hitTime = new vector<int>(*f.hitTime);
-  frameTime = new vector<double>(*f.frameTime);  
-}
-tbeam::FeIFourEvent::~FeIFourEvent() {
-  delete     col;
-  delete     row;
-  delete     tot;
-  delete     lv1;
-  delete     iden;
-  delete     hitTime;
-  delete     frameTime;
-}
-

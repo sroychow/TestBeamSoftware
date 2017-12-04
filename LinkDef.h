@@ -25,12 +25,12 @@
 #pragma link C++ class std::map<std::string,std::vector<tbeam::cluster* > >+;
 #pragma link C++ class std::vector<tbeam::stub>+;
 #pragma link C++ class std::vector<tbeam::stub* >+;
-#pragma link C++ class tbeam::dutEvent+;
-#pragma link C++ class tbeam::condEvent+;
-#pragma link C++ class tbeam::FeIFourEvent+;
+#pragma link C++ class tbeam::Event+;
+#pragma link C++ class tbeam::Track+;
+#pragma link C++ class tbeam::TelescopeEvent+;
+#pragma link C++ class tbeam::hit+;
 
 #pragma link C++ class  std::vector<unsigned short>+;
 #pragma link C++ class  std::map< std::string,std::vector<int> >+;
 #pragma link C++ class  std::map< std::string,std::vector<unsigned short> >+;
-#pragma link C++ class tbeam::TelescopeEvent+; 
 #endif
