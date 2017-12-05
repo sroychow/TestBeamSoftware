@@ -15,7 +15,6 @@
 #include "Cbc.h"
 #include "Stub.h"
 #include "Track.h"
-#include "TelescopeEvent.h"
 
 using std::vector;
 using std::map;

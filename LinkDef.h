@@ -1,5 +1,6 @@
 #ifdef __CINT__
 #include "Event.h"
+#include "TelescopeEvent.h"
 #include <TROOT.h>
 #include <vector>
 #include <map>
@@ -27,7 +28,7 @@
 #pragma link C++ class std::vector<tbeam::stub* >+;
 #pragma link C++ class tbeam::Event+;
 #pragma link C++ class tbeam::Track+;
-#pragma link C++ class tbeam::TelescopeEvent+;
+#pragma link C++ class event+;
 #pragma link C++ class tbeam::hit+;
 
 #pragma link C++ class  std::vector<unsigned short>+;

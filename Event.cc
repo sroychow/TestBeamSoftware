@@ -5,7 +5,7 @@ ClassImp(tbeam::cbc)
 ClassImp(tbeam::stub)
 ClassImp(tbeam::Track)
 ClassImp(tbeam::Event)
-ClassImp(tbeam::TelescopeEvent)
+ClassImp(event)
 
 #include<iostream>
 

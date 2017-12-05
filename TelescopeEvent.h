@@ -5,58 +5,78 @@
 #include<iomanip>
 #include<vector>
 using std::vector;
-namespace tbeam {
-class TelescopeEvent : public TObject {
+class event : public TObject {
   public :
-    TelescopeEvent()
-      {
-	xPos = new vector<float>();
-	yPos = new vector<float>();
-	dxdz = new vector<float>();
-	dydz = new vector<float>();
-	chi2 = new vector<float>();
-	ndof = new vector<float>();
-	xPosError = new vector<float>();
-	yPosError = new vector<float>();
-      }
-    TelescopeEvent(const TelescopeEvent& t)
-      {
-	nTracks = t.nTracks;
-	event = t.event;
-	xPos = new vector<float>(*t.xPos);
-	yPos = new vector<float>(*t.yPos);
-	dxdz = new vector<float>(*t.dxdz);
-	dydz = new vector<float>(*t.dydz);
-	chi2 = new vector<float>(*t.chi2);
-	ndof = new vector<float>(*t.ndof);
-	xPosError = new vector<float>(*t.xPosError);
-	yPosError = new vector<float>(*t.yPosError);
-      }
-    virtual ~TelescopeEvent()
-      {
-	delete xPos;
-	delete yPos;
-	delete dxdz;
-	delete dydz;
-	delete chi2;
-	delete ndof;
-	delete xPosError;
-	delete yPosError;
-      }
+  event()
+    {
+      trigger=0;
+      runNumber=0;
+      timestamp=0;
+      xPos=0.;
+      yPos=0.;
+      dxdz=0.;
+      dydz=0.;
+      chi2ndf=0.;
+      xPosErr=0.;
+      yPosErr=0.;
+      xPosPrevHit=0.;
+      yPosPrevHit=0.;
+      xPosErrsPrevHit=0.;
+      yPosErrsPrevHit=0.;
+      xPosNextHit=0.;
+      yPosNextHit=0.;
+      xPosErrNextHit=0.;
+      yPosErrNextHit=0.;
+    }
+  event(const event& t)
+    {
+      trigger=t.trigger;
+      runNumber=t.runNumber;
+      timestamp=t.timestamp;
+      xPos=t.xPos;
+      yPos=t.yPos;
+      dxdz=t.dxdz;
+      dydz=t.dydz;
+      chi2ndf=t.chi2ndf;
+      xPosErr=t.xPosErr;
+      yPosErr=t.yPosErr;
+      xPosPrevHit=t.xPosPrevHit;
+      yPosPrevHit=t.yPosPrevHit;
+      xPosErrsPrevHit=t.xPosErrsPrevHit;
+      yPosErrsPrevHit=t.yPosErrsPrevHit;
+      xPosNextHit=t.xPosNextHit;
+      yPosNextHit=t.yPosNextHit;
+      xPosErrNextHit=t.xPosErrNextHit;
+      yPosErrNextHit=t.yPosErrNextHit;
+    }
 
-    int nTracks;// number of tracks in the telescope
-    int event;// trigger/event number used for sync. with event from DUT
-    std::vector<float> *xPos;//Track impact x-position at the reference plane
-    std::vector<float> *yPos;//Track impact y-position at the reference plane
-    std::vector<float> *dxdz;//x-Gradient along beam direction 
-    std::vector<float> *dydz;//y-Gradient along beam direction
-    std::vector<float> *chi2;//Chi-square from track fitting
-    std::vector<float> *ndof;//#degrees of freedom
+    virtual ~event()
+      {
+
+      }
+    //    int nTracks;// number of tracks in the telescope
+
+    int trigger;// trigger/event number used for sync. with event from DUT
+    int runNumber;
+    long int timestamp;
+    double xPos;//Track impact x-position at the reference plane
+    double yPos;//Track impact y-position at the reference plane
+    double dxdz;//x-Gradient along beam direction 
+    double dydz;//y-Gradient along beam direction
+    double chi2ndf;//Chi-square from track fitting
+    //double ndof;//#degrees of freedom
     //optional requirement
-    std::vector<float> *xPosError;//Track impact x-position error
-    std::vector<float> *yPosError;//Track impact y-position error
+    double xPosErr;//Track impact x-position error
+    double yPosErr;//Track impact y-position error
+    double xPosPrevHit;
+    double yPosPrevHit;
+    double xPosErrsPrevHit;
+    double yPosErrsPrevHit;
+    double xPosNextHit;
+    double yPosNextHit;
+    double xPosErrNextHit;
+    double yPosErrNextHit;
 
-    ClassDef(TelescopeEvent,1)
+    ClassDef(event,1)
       };
-}
 #endif

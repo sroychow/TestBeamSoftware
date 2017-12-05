@@ -4,8 +4,8 @@ using std::setw;
 
 NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string runNumber) :
   telFound_(true),
-  telOutputEvent_(new tbeam::TelescopeEvent()),//for output
-  telEvent_(new tbeam::TelescopeEvent()),//for input
+  telOutputEvent_(new event()),//for output
+  telEvent_(new event()),//for input
   dutEvent_(new tbeam::Event()),
   outdutEvent_(new tbeam::Event())
 {
@@ -24,7 +24,7 @@ NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTupl
     telFound_ = false;
     //exit(1);
   } else {
-    telchain_ = dynamic_cast<TTree*>(telF_->Get("tracks")); //Tree Name to be chacked
+    telchain_ = dynamic_cast<TTree*>(telF_->Get("OuterTracker")); //Tree Name to be checked
     if(telchain_)  {
       nTelchainentry_ = static_cast<long int>(telchain_->GetEntries());
       telFound_ = telFound_ && nTelchainentry_;
@@ -55,19 +55,8 @@ void NtupleMerger::setInputBranchAddresses() {
     dutchain_->SetBranchAddress("Event", &dutEvent_);
   }
   if(telFound_) {
-    /*
-    //set the address of the input Telescope tree
-    telchain_->SetBranchAddress("nTrackParams", &telEvent_->nTrackParams);
-    telchain_->SetBranchAddress("euEvt", &telEvent_->euEvt);
-    telchain_->SetBranchAddress("xPos", &telEvent_->xPos);
-    telchain_->SetBranchAddress("yPos", &telEvent_->yPos);
-    telchain_->SetBranchAddress("dxdz", &telEvent_->dxdz);
-    telchain_->SetBranchAddress("dydz", &telEvent_->dydz);
-    telchain_->SetBranchAddress("trackNum", &telEvent_->trackNum);
-    telchain_->SetBranchAddress("iden", &telEvent_->iden);
-    telchain_->SetBranchAddress("chi2", &telEvent_->chi2);
-    telchain_->SetBranchAddress("ndof", &telEvent_->ndof);
-    */
+    telchain_->SetBranchStatus("*",1);
+    telchain_->SetBranchAddress("event", &telEvent_);
   }
 }
 
@@ -96,13 +85,13 @@ void NtupleMerger::filltrigTrackmap() {
     std::cout << "Filling Trigger Track Map" << std::endl;
     for (Long64_t jentry=0; jentry<nTelchainentry_;jentry++) {
       Long64_t ientry = telchain_->GetEntry(jentry);
-      if (jentry%1000 == 0)  
+      if (jentry%10 == 0)  
         cout << " Events processed. " << std::setw(8) << jentry 
              << "\t loadTree="<< ientry 
-             << "\t ntracks=" << telEvent_->nTracks << endl;
+             << "\t trigger=" << telEvent_->runNumber << endl;
       if (ientry < 0) break;
-      tbeam::TelescopeEvent telTemp(*telEvent_);
-      trigTrackmap_->insert({telEvent_->event,telTemp});
+      event telTemp(*telEvent_);
+      //trigTrackmap_->insert(std::pair<Int_t,tbeam::TelescopeEvent>(telEvent_->trigger,telTemp));
     }
   }
 }
@@ -121,9 +110,10 @@ void NtupleMerger::eventLoop() {
     if(telFound_ && trigTrackmap_->find(dtemp.event) == trigTrackmap_->end())      continue;
     
     if(telFound_){
-      telOutputEvent_ = &trigTrackmap_->at(dtemp.event);
-      for(int itrks=0; itrks<telOutputEvent_->nTracks; itrks++){
-	tbeam::Track trkTemp(telOutputEvent_->xPos->at(itrks),telOutputEvent_->xPos->at(itrks),telOutputEvent_->dxdz->at(itrks),telOutputEvent_->dydz->at(itrks),telOutputEvent_->chi2->at(itrks),telOutputEvent_->ndof->at(itrks),telOutputEvent_->xPosError->at(itrks),telOutputEvent_->yPosError->at(itrks));
+      auto tracks = trigTrackmap_->equal_range(dtemp.event-1); // DUT trigger start from 1 while Telescope trigger start from 0
+      for(auto itrks = tracks.first;itrks != tracks.second;++itrks){
+	telOutputEvent_ = &itrks->second;
+	tbeam::Track trkTemp(telOutputEvent_->xPos,telOutputEvent_->xPos,telOutputEvent_->dxdz,telOutputEvent_->dydz,telOutputEvent_->chi2ndf,0,telOutputEvent_->xPosErr,telOutputEvent_->yPosErr);
 	dtemp.tracks.push_back(trkTemp);
       }
     }
@@ -131,7 +121,7 @@ void NtupleMerger::eventLoop() {
     //Fill output tree
     outTree_->Fill();
 
-  }  
+  }
   endJob();
 }
 

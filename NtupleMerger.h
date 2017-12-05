@@ -16,6 +16,7 @@
 #include <string>
 
 #include "Event.h"
+#include "TelescopeEvent.h"
 #include "TSystem.h"
 #include "TChain.h"
 #include "TH1I.h"
@@ -57,17 +58,17 @@ class NtupleMerger {
     bool telFound_;
     //    bool fei4Found_; 
     //input format
-    tbeam::TelescopeEvent* telEvent_;
+    event* telEvent_;
     tbeam::Event* dutEvent_;
 
 
     //output format
     
     //
-    tbeam::TelescopeEvent* telOutputEvent_;
+    event* telOutputEvent_;
     tbeam::Event* outdutEvent_;
 
-    std::map<Int_t,tbeam::TelescopeEvent>* trigTrackmap_;
+    std::multimap<Int_t,event>* trigTrackmap_;
     //std::map<Int_t,tbeam::FeIFourEvent>* trigFeI4map_;
     long int nTelchainentry_;
     long int nDutchainentry_; 
