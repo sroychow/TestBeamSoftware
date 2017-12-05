@@ -4,15 +4,13 @@ using std::setw;
 
 NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string runNumber) :
   telFound_(true),
-  telOutputEvent_(new event()),//for output
-  telEvent_(new event()),//for input
   dutEvent_(new tbeam::Event()),
   outdutEvent_(new tbeam::Event())
 {
-  
+  telEvent_=new TelescopeEvent;
   dutF_ = TFile::Open(dutTuple.c_str());
   if(!dutF_) {
-    std::cout << dutTuple << " could not be onened!!" << std::endl;
+    std::cout << dutTuple << " could not be opened!!" << std::endl;
     exit(1);
   }
   dutchain_ = dynamic_cast<TTree*>(dutF_->Get("treeMaker/tbeamTree"));
@@ -20,7 +18,7 @@ NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTupl
   
   telF_ = TFile::Open(telTuple.c_str());
   if(!telF_) {
-    std::cout << telTuple << " could not be onened!!" << std::endl;
+    std::cout << telTuple << " could not be opened!!" << std::endl;
     telFound_ = false;
     //exit(1);
   } else {
@@ -45,7 +43,7 @@ NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTupl
   fout_ = TFile::Open(outTuple.c_str(),"recreate");
   outTree_ = new TTree("analysisTree","");
   if(dutF_)  outTree_->Branch("Event", &outdutEvent_);
-  //  if(telFound_)  outTree_->Branch("TelescopeEvent",&telOutputEvent_);
+  trigTrackmap_=new std::multimap<Int_t,TelescopeEvent>();
 }
 
 void NtupleMerger::setInputBranchAddresses() {
@@ -56,7 +54,7 @@ void NtupleMerger::setInputBranchAddresses() {
   }
   if(telFound_) {
     telchain_->SetBranchStatus("*",1);
-    telchain_->SetBranchAddress("event", &telEvent_);
+    telchain_->SetBranchAddress("event", &telEvent_->dxdz);
   }
 }
 
@@ -85,14 +83,14 @@ void NtupleMerger::filltrigTrackmap() {
     std::cout << "Filling Trigger Track Map" << std::endl;
     for (Long64_t jentry=0; jentry<nTelchainentry_;jentry++) {
       Long64_t ientry = telchain_->GetEntry(jentry);
-      if (jentry%10 == 0)  
+      if (jentry%10000 == 0)  
         cout << " Events processed. " << std::setw(8) << jentry 
              << "\t loadTree="<< ientry 
-             << "\t trigger=" << telEvent_->runNumber << endl;
+             << "\t trigger=" << telEvent_->trigger << endl;
       if (ientry < 0) break;
-      event telTemp(*telEvent_);
-      //trigTrackmap_->insert(std::pair<Int_t,tbeam::TelescopeEvent>(telEvent_->trigger,telTemp));
+      trigTrackmap_->insert({telEvent_->trigger,*telEvent_});
     }
+    cout<<"Trigger Track Map done!"<<endl;
   }
 }
 
@@ -112,7 +110,7 @@ void NtupleMerger::eventLoop() {
     if(telFound_){
       auto tracks = trigTrackmap_->equal_range(dtemp.event-1); // DUT trigger start from 1 while Telescope trigger start from 0
       for(auto itrks = tracks.first;itrks != tracks.second;++itrks){
-	telOutputEvent_ = &itrks->second;
+	auto telOutputEvent_ = &itrks->second;
 	tbeam::Track trkTemp(telOutputEvent_->xPos,telOutputEvent_->xPos,telOutputEvent_->dxdz,telOutputEvent_->dydz,telOutputEvent_->chi2ndf,0,telOutputEvent_->xPosErr,telOutputEvent_->yPosErr);
 	dtemp.tracks.push_back(trkTemp);
       }
@@ -134,16 +132,15 @@ void NtupleMerger::endJob() {
 }
 
 NtupleMerger::~NtupleMerger() {
-  //if(dutchain_) delete dutchain_;
-  //if(telchain_) delete telchain_;
-  //if(dqmchain_) delete dqmchain_;
-  //if(telEvent_) delete telEvent_;
-  //if(condEvent_) delete condEvent_;
+  //  if(dutchain_) delete dutchain_;
+  //  if(telchain_) delete telchain_;
+  if(telEvent_) delete telEvent_;
+  if(trigTrackmap_) delete trigTrackmap_;
 }
 
 int main(int argc, char** argv) {
   if(argc !=4)   {
-    std::cout << "Wrong Usage!!Use one of the following" << std::endl;
+    std::cout << "Wrong Usage!!" << std::endl;
     std::cout << "Usage: ./ntuplemerger <EDMTupleName> <TelescopeTupleName> <RunNumber>" << std::endl;
     exit(1);
   }

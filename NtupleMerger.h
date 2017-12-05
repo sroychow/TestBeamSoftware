@@ -43,36 +43,32 @@ class NtupleMerger {
 
     void filltrigTrackmap();
     void eventLoop();
-    //void clearEvent();
     void endJob();
   private :
     TFile* dutF_;
     TFile* telF_;
-    //    TFile* dqmF_;
     TTree *dutchain_; 
     TTree *telchain_;
-    //    TTree *fei4chain_;
-    //    TTree *dqmchain_;
     TTree* outTree_;
     TFile* fout_;
     bool telFound_;
-    //    bool fei4Found_; 
+
+    long int nDutchainentry_; 
+    long int nEventstoLoop_;
+    long int nTelchainentry_;
+
     //input format
-    event* telEvent_;
+    TelescopeEvent* telEvent_;
     tbeam::Event* dutEvent_;
 
 
-    //output format
-    
-    //
-    event* telOutputEvent_;
+    //output format    
     tbeam::Event* outdutEvent_;
 
-    std::multimap<Int_t,event>* trigTrackmap_;
-    //std::map<Int_t,tbeam::FeIFourEvent>* trigFeI4map_;
-    long int nTelchainentry_;
-    long int nDutchainentry_; 
-    long int nEventstoLoop_;
+    //Trigger Track Map
+    std::multimap<Int_t,TelescopeEvent>* trigTrackmap_;
+
+
     /*
     //validation histograms
     TFile* fval;

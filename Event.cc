@@ -1,11 +1,12 @@
 #include "Event.h"
+#include "TelescopeEvent.h"
 ClassImp(tbeam::cluster)
 ClassImp(tbeam::hit)
 ClassImp(tbeam::cbc)
 ClassImp(tbeam::stub)
 ClassImp(tbeam::Track)
 ClassImp(tbeam::Event)
-ClassImp(event)
+//ClassImp(event)
 
 #include<iostream>
 

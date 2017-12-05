@@ -19,7 +19,7 @@ namespace tbeam {
          << "  Chip Error"     << std::hex << std::setw(4) << chip.error()
          << "  Chip L1ID "     << int(chip.L1Id()) 
          << "  Chip PA   "     << int(chip.pipelineAddress()) 
-         << std::endl;
+         << std::dec  <<std::endl;
       return os;
     }
   private:

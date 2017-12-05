@@ -4,7 +4,6 @@ namespace tbeam {  }
 
 [  ]
 # List of selected classes
-class event
 class map<basic_string<char,char_traits<char>,allocator<char> >,int,less<basic_string<char,char_traits<char>,allocator<char> > >,allocator<pair<const basic_string<char,char_traits<char>,allocator<char> >,int> > >
 class map<basic_string<char,char_traits<char>,allocator<char> >,vector<double>,less<basic_string<char,char_traits<char>,allocator<char> > >,allocator<pair<const basic_string<char,char_traits<char>,allocator<char> >,vector<double> > > >
 class map<basic_string<char,char_traits<char>,allocator<char> >,vector<int>,less<basic_string<char,char_traits<char>,allocator<char> > >,allocator<pair<const basic_string<char,char_traits<char>,allocator<char> >,vector<int> > > >
@@ -34,7 +33,6 @@ class vector<tbeam::cluster>
 class vector<tbeam::stub*>
 class vector<tbeam::stub>
 class vector<unsigned short>
-header TelescopeEvent.h
 header Event.h
 header Track.h
 header Cbc.h
