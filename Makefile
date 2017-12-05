@@ -10,7 +10,7 @@ HSUF   = h
 DICTC  = Dict.$(CSUF)
 DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
 
-SRCS   = src/DataFormats.cc src/BeamAnaBase.cc src/Utility.cc src/Histogrammer.cc   
+SRCS   = src/Event.cc src/BeamAnaBase.cc src/Utility.cc src/Histogrammer.cc   
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
 
@@ -22,7 +22,7 @@ CXX       = g++
 CXXFLAGS += -g -std=c++11 -D$(BT_ERA)
 
 
-HDRS_DICT = interface/DataFormats.h interface/LinkDef.h
+HDRS_DICT = interface/Hit.h interface/Cluster.h interface/Cbc.h interface/Stub.h interface/Track.h interface/Event.h interface/LinkDef.h
 
 bin: baselineReco basePGReco alignmentReco telescopeAna eAlignment
 #deltaClusAnalysis
@@ -33,12 +33,10 @@ all:
 cint: $(DICTC) 
 
 $(DICTC): $(HDRS_DICT)
-	@echo "Generating dictionary $(DICTC) and $(DICTH) ..."
-	rootcint -f $@ -c $(CXXFLAGS) `root-config --cflags` $^ 
-	perl -pi -e 's#interface/##' $(DICTH) 
-	perl -pi -e 's/#include <math.h>/#include <math.h>\n#include <map>/'  $(DICTH)
+	@echo "Generating dictionary $(DICTC) with rootcling ..."
+	rootcling -f $@ -rmf interface/TestBeamAnalysis_xr.rootmap -c $^ 
 	mv $(DICTC) src/
-	mv $(DICTH) interface/
+	mv Dict_rdict.pcm src/
 
 BaselineAnalysis.o : src/BaselineAnalysis.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
@@ -99,5 +97,5 @@ include Makefile.dep
 # Clean 
 .PHONY   : clean 
 clean : 
-	@-rm $(OBJS) $(EXE) interface/$(DICTH) src/$(DICTC) src/*.o  
+	@-rm $(OBJS) $(EXE) src/$(DICTC) src/Dict_rdict.pcm src/*.o  
 
