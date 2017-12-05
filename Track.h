@@ -20,7 +20,7 @@ class Track : public TObject {
     float ndof() const { return ndof_; }
     float xPosErr() const { return xPosError_;}
     float yPosErr() const { return yPosError_; }
-    
+
     friend std::ostream &operator<<(std::ostream& os, const tbeam::Track& tk) {    
       os << "X="       << std::setw(6) << tk.xPos() 
 	 << " Y="      << std::setw(6) << tk.yPos()

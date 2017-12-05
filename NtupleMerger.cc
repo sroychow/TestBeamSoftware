@@ -4,7 +4,7 @@ using std::setw;
 
 NtupleMerger::NtupleMerger(const std::string dutTuple, const std::string telTuple, const std::string runNumber) :
   telFound_(true),
-  telOutputEvent_(new tbeam::Track()),//for output
+  telOutputEvent_(new tbeam::TelescopeEvent()),//for output
   telEvent_(new tbeam::TelescopeEvent()),//for input
   dutEvent_(new tbeam::Event()),
   outdutEvent_(new tbeam::Event())
@@ -90,7 +90,7 @@ void NtupleMerger::bookValidationHistograms(const std::string run) {
   hitdqm = new TH1D("hitdqm","Total Hits dqm",50,-0.5,49.5);
   hitedm = new TH1D("hitedm","Total Hits edm",50,-0.5,49.5);
 }
-
+*/
 void NtupleMerger::filltrigTrackmap() {
   if(telFound_) {
     std::cout << "Filling Trigger Track Map" << std::endl;
@@ -99,53 +99,16 @@ void NtupleMerger::filltrigTrackmap() {
       if (jentry%1000 == 0)  
         cout << " Events processed. " << std::setw(8) << jentry 
              << "\t loadTree="<< ientry 
-             << "\t ntracks=" << telEvent_->nTrackParams << endl;
+             << "\t ntracks=" << telEvent_->nTracks << endl;
       if (ientry < 0) break;
       tbeam::TelescopeEvent telTemp(*telEvent_);
-      trigTrackmap_->insert({telEvent_->euEvt,telTemp});
+      trigTrackmap_->insert({telEvent_->event,telTemp});
     }
-  }
-  if(fei4Found_) {
-    std::cout << "Filling Trigger Track Map" << std::endl;
-    for (Long64_t jentry=0; jentry<fei4chain_->GetEntries();jentry++) {
-      Long64_t ientry = fei4chain_->GetEntry(jentry);
-      if (jentry%1000 == 0)  
-        cout << " Events processed. " << std::setw(8) << jentry 
-             << "\t loadTree="<< ientry 
-             << "\t nPixHits=" << fei4Event_->nPixHits << endl;
-      if (ientry < 0) break;
-      tbeam::FeIFourEvent fei4Temp(*fei4Event_);
-      trigFeI4map_->insert({fei4Event_->euEvt,fei4Temp});
-    }
-  }
-
-  if(dqmF_) {
-  for (Long64_t jentry=0; jentry<nDqmchainentry_;jentry++) {
-    Long64_t dqmentry = dqmchain_->GetEntry(jentry);
-    if (jentry%1000 == 0)  
-      cout << " Events processed. " << std::setw(8) << jentry  
-           << "\t loadDQMTree="<< dqmentry 
-           << "\t L1A=" << l1adqm_
-           << std::endl;
-    cbcCond ctemp;
-    ctemp.l1Accept_ = l1adqm_;
-    ctemp.tdcCounter_ = tdcCounterFromdqm_;
-    ctemp.totalHits_ = totalHitsdqm_;  
-    ctemp.totalStubs_ = totalStubsdqm_;  
-    ctemp.eventFlag_ = periodicityFlag_;
-    ctemp.eventCountCBC_ = evCountcbc_;
-    ctemp.cbcErrorVal_ = *cbcErrorVal_;
-    ctemp.cbcPLAddressVal_ = *cbcPLAddressVal_;
-    ctemp.dut0C0chData_ = *dut0C0chData_;
-    ctemp.dut0C1chData_ = *dut0C1chData_;
-    ctemp.dut1C0chData_ = *dut1C0chData_;
-    ctemp.dut1C1chData_ = *dut1C1chData_;
-    cbcCondmap_->insert({l1adqm_,ctemp});
-  }
   }
 }
-*/
+
 void NtupleMerger::eventLoop() {
+  filltrigTrackmap();
   for (Long64_t jentry=0; jentry<nDutchainentry_;jentry++) {//nEventstoLoop_
     Long64_t dutentry = dutchain_->GetEntry(jentry);
     if (jentry%1000 == 0)  {
@@ -154,11 +117,17 @@ void NtupleMerger::eventLoop() {
 	   << "\t TelescopeFound=" << telFound_ 
            << endl;
     }
-
     auto& dtemp = *dutEvent_;
+    if(telFound_ && trigTrackmap_->find(dtemp.event) == trigTrackmap_->end())      continue;
     
+    if(telFound_){
+      telOutputEvent_ = &trigTrackmap_->at(dtemp.event);
+      for(int itrks=0; itrks<telOutputEvent_->nTracks; itrks++){
+	tbeam::Track trkTemp(telOutputEvent_->xPos->at(itrks),telOutputEvent_->xPos->at(itrks),telOutputEvent_->dxdz->at(itrks),telOutputEvent_->dydz->at(itrks),telOutputEvent_->chi2->at(itrks),telOutputEvent_->ndof->at(itrks),telOutputEvent_->xPosError->at(itrks),telOutputEvent_->yPosError->at(itrks));
+	dtemp.tracks.push_back(trkTemp);
+      }
+    }
     outdutEvent_ = &dtemp;
-
     //Fill output tree
     outTree_->Fill();
 

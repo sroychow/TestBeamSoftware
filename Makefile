@@ -9,7 +9,7 @@ HSUF   = h
 DICTC  = Dict.$(CSUF)
 DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
 
-SRCS   = DataFormats.cc NtupleMerger.cc
+SRCS   = Event.cc NtupleMerger.cc
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
 LDFLAGS  = -g
@@ -18,10 +18,10 @@ CXXFLAGS = -I./
 
 CXX       = g++
 CXXFLAGS += -g -std=c++11
-#-Wall -Wno-deprecated -std=c++11
+##-Wall -Wno-deprecated -std=c++11
 
 
-HDRS_DICT = DataFormats.h LinkDef.h
+HDRS_DICT = Hit.h Cluster.h Cbc.h Stub.h Track.h TelescopeEvent.h Event.h LinkDef.h
 
 bin: ntupleMerger
 all: 
@@ -30,18 +30,17 @@ all:
 cint: $(DICTC) 
 
 $(DICTC): $(HDRS_DICT)
-	@echo "Generating dictionary $(DICTC) and $(DICTH) ..."
-	rootcint -f $@ -c $(CXXFLAGS) $^ 
-	perl -pi -e 's/#include <math.h>/#include <math.h>\n#include <map>/' $(DICTH)
+	@echo "Generating dictionary $(DICTC) with rootcling ..."	
+	rootcling -f $@ -rmf NtupleMerger_xr.rootmap -c $^ 
 
 ntupleMerger:  $(OBJS) Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
-# Create object files
+## Create object files
 %.o : %.$(CSUF)
 	$(CXX) $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 
-# makedepend
+## makedepend
 depend: $(SRCS:.$(CSUF)=.$(CSUF).dep)
 	@cat $(notdir $^) > Makefile.dep
 	@-rm -f $(notdir $^) $(patsubst %,%.bak,$(notdir $^))
@@ -50,7 +49,7 @@ depend: $(SRCS:.$(CSUF)=.$(CSUF).dep)
 	rmkdepend -f$(notdir $@) -- $(CXXFLAGS) `root-config --cflags` -- $*
 include Makefile.dep
 
-# Clean 
+## Clean 
 .PHONY   : clean 
 clean : 
-	@-rm $(OBJS) $(EXE) $(DICTH) $(DICTC) *.o
+	@-rm $(OBJS) $(EXE) Dict_rdict.pcm $(DICTC) *.o

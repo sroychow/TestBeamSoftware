@@ -1,5 +1,5 @@
-#ifndef DataFormats_h
-#define DataFormats_h
+#ifndef Event_h
+#define Event_h
 #include "TROOT.h"
 #include "TObject.h"
 #include<vector>

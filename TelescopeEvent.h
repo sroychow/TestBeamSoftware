@@ -8,9 +8,42 @@ using std::vector;
 namespace tbeam {
 class TelescopeEvent : public TObject {
   public :
-    TelescopeEvent();
-    TelescopeEvent(const TelescopeEvent& t);
-    virtual ~TelescopeEvent();
+    TelescopeEvent()
+      {
+	xPos = new vector<float>();
+	yPos = new vector<float>();
+	dxdz = new vector<float>();
+	dydz = new vector<float>();
+	chi2 = new vector<float>();
+	ndof = new vector<float>();
+	xPosError = new vector<float>();
+	yPosError = new vector<float>();
+      }
+    TelescopeEvent(const TelescopeEvent& t)
+      {
+	nTracks = t.nTracks;
+	event = t.event;
+	xPos = new vector<float>(*t.xPos);
+	yPos = new vector<float>(*t.yPos);
+	dxdz = new vector<float>(*t.dxdz);
+	dydz = new vector<float>(*t.dydz);
+	chi2 = new vector<float>(*t.chi2);
+	ndof = new vector<float>(*t.ndof);
+	xPosError = new vector<float>(*t.xPosError);
+	yPosError = new vector<float>(*t.yPosError);
+      }
+    virtual ~TelescopeEvent()
+      {
+	delete xPos;
+	delete yPos;
+	delete dxdz;
+	delete dydz;
+	delete chi2;
+	delete ndof;
+	delete xPosError;
+	delete yPosError;
+      }
+
     int nTracks;// number of tracks in the telescope
     int event;// trigger/event number used for sync. with event from DUT
     std::vector<float> *xPos;//Track impact x-position at the reference plane

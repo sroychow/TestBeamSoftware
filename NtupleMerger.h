@@ -15,7 +15,7 @@
 #include <map>
 #include <string>
 
-#include "DataFormats.h"
+#include "Event.h"
 #include "TSystem.h"
 #include "TChain.h"
 #include "TH1I.h"
@@ -40,7 +40,7 @@ class NtupleMerger {
     void setInputBranchAddresses();
     //    void bookValidationHistograms(const std::string run);
 
-    //void filltrigTrackmap();
+    void filltrigTrackmap();
     void eventLoop();
     //void clearEvent();
     void endJob();
@@ -64,10 +64,10 @@ class NtupleMerger {
     //output format
     
     //
-    tbeam::Track* telOutputEvent_;
+    tbeam::TelescopeEvent* telOutputEvent_;
     tbeam::Event* outdutEvent_;
 
-    //std::map<Int_t,tbeam::TelescopeEvent>* trigTrackmap_;
+    std::map<Int_t,tbeam::TelescopeEvent>* trigTrackmap_;
     //std::map<Int_t,tbeam::FeIFourEvent>* trigFeI4map_;
     long int nTelchainentry_;
     long int nDutchainentry_; 
