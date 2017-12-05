@@ -38,6 +38,10 @@ $(DICTC): $(HDRS_DICT)
 	mv $(DICTC) src/
 	mv Dict_rdict.pcm src/
 
+Event.o : src/Event.cc
+	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+	mv $@ ../src/
+
 BaselineAnalysis.o : src/BaselineAnalysis.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
@@ -53,10 +57,6 @@ TelescopeAnalysis.o : src/TelescopeAnalysis.cc
 AlignmentMultiDimAnalysis.o : src/AlignmentMultiDimAnalysis.cc
 	$(CXX)  $(CXXFLAGS) -Wdeprecated-declarations `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
-
-#DeltaClusterAnalysis.o : src/DeltaClusterAnalysis.cc
-#	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-#	mv $@ ../src/
 
 EventAlignment.o : src/EventAlignment.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
