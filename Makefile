@@ -1,75 +1,46 @@
 UNAME    = $(shell uname)
-EXE      = baselineReco deltaClusAnalysis alignmentReco telescopeAna
+EXE      = ntupleMerger
  
-VPATH  = .:./interface
-vpath %.h ./interface
+VPATH  = .:./
+vpath %.h ./
 
 CSUF   = cc
 HSUF   = h
 DICTC  = Dict.$(CSUF)
 DICTH  = $(patsubst %.$(CSUF),%.h,$(DICTC))
 
-SRCS   = src/argvparser.cc src/DataFormats.cc src/BeamAnaBase.cc src/Utility.cc src/Histogrammer.cc   
+SRCS   = Event.cc NtupleMerger.cc
 OBJS   = $(patsubst %.$(CSUF), %.o, $(SRCS))
 
-
-LDFLAGS  = -g 
+LDFLAGS  = -g
 SOFLAGS  = -shared 
-CXXFLAGS = -I./interface -I./  
+CXXFLAGS = -I./  
 
 CXX       = g++
 CXXFLAGS += -g -std=c++11
+##-Wall -Wno-deprecated -std=c++11
 
 
-HDRS_DICT = interface/DataFormats.h interface/LinkDef.h
+HDRS_DICT = Hit.h Cluster.h Cbc.h Stub.h Track.h TelescopeEvent.h Event.h LinkDef.h
 
-bin: baselineReco deltaClusAnalysis alignmentReco telescopeAna
+bin: ntupleMerger
 all: 
 	gmake cint 
 	gmake bin 
 cint: $(DICTC) 
 
 $(DICTC): $(HDRS_DICT)
-	@echo "Generating dictionary $(DICTC) and $(DICTH) ..."
-	rootcint -f $@ -c $(CXXFLAGS) $^ 
-	perl -pi -e 's#interface/##' $(DICTH) 
-	perl -pi -e 's/#include <math.h>/#include <math.h>\n#include <map>/'  $(DICTH)
-	mv $(DICTC) src/
-	mv $(DICTH) interface/
+	@echo "Generating dictionary $(DICTC) with rootcling ..."	
+	rootcling -f $@ -rmf NtupleMerger_xr.rootmap -c $^ 
 
-BaselineAnalysis.o : src/BaselineAnalysis.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-	mv $@ ../src/
-
-TelescopeAnalysis.o : src/TelescopeAnalysis.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-	mv $@ ../src/
-
-AlignmentMultiDimAnalysis.o : src/AlignmentMultiDimAnalysis.cc
-	$(CXX)  $(CXXFLAGS) -Wdeprecated-declarations `root-config --cflags` -o $@ -c $<
-	mv $@ ../src/
-
-DeltaClusterAnalysis.o : src/DeltaClusterAnalysis.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-	mv $@ ../src/
-
-baselineReco:   src/baselineReco.cc $(OBJS) src/BaselineAnalysis.o src/Dict.o
+ntupleMerger:  $(OBJS) Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
-telescopeAna:   src/telescopeAna.cc $(OBJS) src/TelescopeAnalysis.o src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
-
-alignmentReco:   src/alignmentReco.cc $(OBJS) src/AlignmentMultiDimAnalysis.o src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs ` -lMinuit2
-
-deltaClusAnalysis: src/dclusAnalysis.cc $(OBJS) src/DeltaClusterAnalysis.o src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
-
-# Create object files
+## Create object files
 %.o : %.$(CSUF)
 	$(CXX) $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 
-# makedepend
+## makedepend
 depend: $(SRCS:.$(CSUF)=.$(CSUF).dep)
 	@cat $(notdir $^) > Makefile.dep
 	@-rm -f $(notdir $^) $(patsubst %,%.bak,$(notdir $^))
@@ -78,8 +49,7 @@ depend: $(SRCS:.$(CSUF)=.$(CSUF).dep)
 	rmkdepend -f$(notdir $@) -- $(CXXFLAGS) `root-config --cflags` -- $*
 include Makefile.dep
 
-# Clean 
+## Clean 
 .PHONY   : clean 
 clean : 
-	@-rm $(OBJS) $(EXE) interface/$(DICTH) src/$(DICTC) src/*.o  
-
+	@-rm $(OBJS) $(EXE) Dict_rdict.pcm $(DICTC) *.o
