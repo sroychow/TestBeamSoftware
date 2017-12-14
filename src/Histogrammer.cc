@@ -283,8 +283,8 @@ void Histogrammer::bookDUTHistoForColumn(TString& d, TString c)
 void Histogrammer::bookStubHistograms(TString& det) 
 {
   fout_->cd();
-  fout_->mkdir(TString("StubInfo") + d);
-  fout_->cd(TString("StubInfo") + d);
+  fout_->mkdir(TString("StubInfo") + det);
+  fout_->cd(TString("StubInfo") + det);
 
   //new TH1I("cbcStubWord","Stub Bit from CBC",16,-0.5,15.5);
   //new TH1I("recoStubWord","Stub Bit from offline CBC logic emulation",16,-0.5,15.5);
@@ -293,8 +293,8 @@ void Histogrammer::bookStubHistograms(TString& det)
   new TH1I("stubMatch","Matching between CBC Stub and Reco Stub",4,0.5,4.5);
   new TH1I("nstubsdiffSword","#StubsRecoStubword - #StubsfromStubWord",20,-0.5,19.5);
   //new TH1I("nstubsdiff","#StubsReco - #StubsfromStubWord",20,-0.5,19.5);
-  new TH1I("stubPosmap","StubPosition in Det " + d + " Column0;strip no.;#Events",2032,-0.5,1015.5);//move to half-strip precision
-  //new TH1I("stubPosmap","StubPosition in Det " + d + " Column1;strip no.;#Events",2032,-0.5,1015.5);//move to half-strip precision
+  new TH1I("stubPosmap","StubPosition in Det " + det + " Column0;strip no.;#Events",2032,-0.5,1015.5);//move to half-strip precision
+  //new TH1I("stubPosmap","StubPosition in Det " + det + " Column1;strip no.;#Events",2032,-0.5,1015.5);//move to half-strip precision
   //bookStubHistoForColumn("C0");
   //bookStubHistoForColumn("C1");
 }
@@ -1018,16 +1018,16 @@ void Histogrammer::closeFile() {
   fout_->Close();
   isFileopen_=false;  
 }
-void Histogrammer::fillClusterHistograms( const char* det, std::vector<tbeam::cluster>& cvec, 
+void Histogrammer::fillClusterHistograms( const char* det, const std::vector<tbeam::cluster>& cvec, 
                                           const char* col) {
   fout_->cd(det);
   TString c(col);
   Utility::fillHist1D( "ncluster" + c, cvec.size() );
   for( unsigned int i =0; i<cvec.size(); i++ ) {
-    Utility::fillHist1D("clusterWidth" + c,cvec[i].size);
-    Utility::fillHist1D("clusterPos" + c,cvec[i].x);
-    Utility::fillHistProfile("clusterWidthVsPosProf" + c,cvec[i].x,cvec[i].size);
-    Utility::fillHist2D("clusterWidthVsPos2D" + c,cvec[i].x,cvec[i].size);
+    Utility::fillHist1D("clusterWidth" + c,cvec[i].size());
+    Utility::fillHist1D("clusterPos" + c,cvec[i].center());
+    Utility::fillHistProfile("clusterWidthVsPosProf" + c,cvec[i].center(),cvec[i].size());
+    Utility::fillHist2D("clusterWidthVsPos2D" + c,cvec[i].center(),cvec[i].size());
   } 
 }
 

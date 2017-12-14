@@ -6,18 +6,22 @@
 #include <TFile.h>
 #include <TString.h>
 #include <TTree.h>
+#include "TSystem.h"
 
 #include <iostream>
 #include <utility>
 #include <vector>
 #include <iomanip>
-
+#include<stdint.h>
 #include <map>
 #include <string>
+#include <fstream>
+
 
 //#include "DataFormats.h"
 #include "Histogrammer.h"
 #include "Event.h"
+#include "AlignmentParameters.h"
 
 using std::cout;
 using std::endl;
@@ -37,10 +41,10 @@ class BeamAnaBase {
     void setDetChannelVectors();
     TTree* analysisTree() const{ return analysisTree_; } 
     tbeam::Event* event() const { return event_; }
-    int stubWindow()  const { return sw_;}
-    int cbcClusterWidth()  const { return cwd_;}
-    int cbcOffset1() const {return offset1_;}
-    int cbcOffset2() const {return offset2_;}
+    //int stubWindow()  const { return sw_;}
+    //int cbcClusterWidth()  const { return cwd_;}
+    //int cbcOffset1() const {return offset1_;}
+    //int cbcOffset2() const {return offset2_;}
 
     bool hasTelescope() const { return hasTelescope_;}
     double resDUT() const {return residualSigmaDUT_;}
@@ -94,7 +98,7 @@ class BeamAnaBase {
     std::string chmaskFilename_;
     TFile* fin_;
     TTree *analysisTree_; 
-    tbeam::Event* eventv_;
+    tbeam::Event* event_;
 
     bool hasTelescope_;
     bool doTelMatching_;

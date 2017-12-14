@@ -74,7 +74,7 @@ namespace tbeam {
       d1_Offset_aligned = d0_Offset_aligned + TMath::Sin(angle)*deltaz;
 
      }
-     friend std::ostream& operator<< ( std::ostream& out, const tbeam::alignmentPars& ev ) {
+     friend std::ostream& operator<< ( std::ostream& out, const tbeam::alignmentPars& a ) {
        out << "----Alignment Parameters----\n";
        out << "Fei4Z=" << a.FEI4z()
            << "\nd0_chi2_min_z=" << a.d0Z()

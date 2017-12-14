@@ -50,23 +50,23 @@ namespace Utility {
   }
 
   void getChannelMaskedClusters( std::vector<tbeam::cluster*>& vec, const std::vector<int>& mch ) {
-    std::vector<tbeam::cluster*> vtemp = vec;
-    vec.clear();
-    for(auto& clus : vtemp) {
-      //std::cout << ch;
-      if( std::find(mch.begin(), mch.end(), clus->x) != mch.end() )   continue;
-      vec.push_back(clus);
-    }
+    //std::vector<tbeam::cluster*> vtemp = vec;
+    //vec.clear();
+    //for(auto& clus : vtemp) {
+    //  //std::cout << ch;
+    //  if( std::find(mch.begin(), mch.end(), clus->x) != mch.end() )   continue;
+    //  vec.push_back(clus);
+    //}
   }
 
   void getChannelMaskedStubs( std::vector<tbeam::stub*>& vec, const std::vector<int>& mch ) {
-    std::vector<tbeam::stub*> vtemp = vec;
-    vec.clear();
-    for(auto& stub : vtemp) {
+    //std::vector<tbeam::stub*> vtemp = vec;
+    //vec.clear();
+    //for(auto& stub : vtemp) {
       //std::cout << ch;
-      if( std::find(mch.begin(), mch.end(), stub->x) != mch.end() )   continue;
-      vec.push_back(stub);
-    }
+    //  if( std::find(mch.begin(), mch.end(), stub->x) != mch.end() )   continue;
+    //  vec.push_back(stub);
+    //}
   }
 
   void fill2DHistofromVec( const std::vector<int>& vecC0, const std::vector<int>& vecC1,const char* h) {

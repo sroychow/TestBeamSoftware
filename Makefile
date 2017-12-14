@@ -19,7 +19,8 @@ SOFLAGS  = -shared
 CXXFLAGS = -I./interface -I./  
 
 CXX       = g++
-CXXFLAGS += -g -std=c++11 -D$(BT_ERA)
+CXXFLAGS += -g -std=c++11 
+#-D$(BT_ERA)
 
 
 HDRS_DICT = interface/Hit.h interface/Cluster.h interface/Cbc.h interface/Stub.h interface/Track.h interface/Event.h interface/LinkDef.h
