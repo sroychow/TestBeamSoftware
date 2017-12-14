@@ -1,6 +1,8 @@
-#include "interface/Event.h" 
+#include "Event.h" 
 #include<iostream>
 
+ClassImp(tbeam::Event)
+namespace tbeam {
 static constexpr unsigned int MASK_BITS_8  = 0xFF;
 static constexpr unsigned int MASK_BITS_4 = 0xF;
 
@@ -137,4 +139,5 @@ void tbeam::Event::dumpEvent(std::ostream& os) {
     os << tk;
   }
   os << "******Track Data(Should be Empty if DUT only Ntuple!!!)*******" << std::endl;
+}
 }

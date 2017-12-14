@@ -19,12 +19,14 @@ SOFLAGS  = -shared
 CXXFLAGS = -I./interface -I./  
 
 CXX       = g++
-CXXFLAGS += -g -std=c++11 -D$(BT_ERA)
+CXXFLAGS += -g -std=c++11 
+#-D$(BT_ERA)
 
 
 HDRS_DICT = interface/Hit.h interface/Cluster.h interface/Cbc.h interface/Stub.h interface/Track.h interface/Event.h interface/LinkDef.h
 
-bin: baselineReco basePGReco alignmentReco telescopeAna eAlignment
+bin: baselineReco 
+#basePGReco alignmentReco telescopeAna eAlignment
 #deltaClusAnalysis
 
 all: 
@@ -46,40 +48,40 @@ BaselineAnalysis.o : src/BaselineAnalysis.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
 
-BasePGAnalysis.o : src/BasePGAnalysis.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-	mv $@ ../src/
+#BasePGAnalysis.o : src/BasePGAnalysis.cc
+#	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+#	mv $@ ../src/
 
-TelescopeAnalysis.o : src/TelescopeAnalysis.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-	mv $@ ../src/
+#TelescopeAnalysis.o : src/TelescopeAnalysis.cc
+#	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+#	mv $@ ../src/
 
-AlignmentMultiDimAnalysis.o : src/AlignmentMultiDimAnalysis.cc
-	$(CXX)  $(CXXFLAGS) -Wdeprecated-declarations `root-config --cflags` -o $@ -c $<
-	mv $@ ../src/
+#AlignmentMultiDimAnalysis.o : src/AlignmentMultiDimAnalysis.cc
+#	$(CXX)  $(CXXFLAGS) -Wdeprecated-declarations `root-config --cflags` -o $@ -c $<
+#	mv $@ ../src/
 
-EventAlignment.o : src/EventAlignment.cc
-	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
-	mv $@ ../src/
+#EventAlignment.o : src/EventAlignment.cc
+#	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+#	mv $@ ../src/
 
 
 baselineReco:   src/baselineReco.cc $(OBJS) src/BaselineAnalysis.o src/Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
-basePGReco:   src/basePGReco.cc $(OBJS) src/BasePGAnalysis.o src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
+#basePGReco:   src/basePGReco.cc $(OBJS) src/BasePGAnalysis.o src/Dict.o
+#	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
-telescopeAna:   src/telescopeAna.cc $(OBJS) src/TelescopeAnalysis.o src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
+#telescopeAna:   src/telescopeAna.cc $(OBJS) src/TelescopeAnalysis.o src/Dict.o
+#	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
-alignmentReco:   src/alignmentReco.cc $(OBJS) src/AlignmentMultiDimAnalysis.o src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs ` -lMinuit2
+#alignmentReco:   src/alignmentReco.cc $(OBJS) src/AlignmentMultiDimAnalysis.o src/Dict.o
+#	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs ` -lMinuit2
 
 #deltaClusAnalysis: src/dclusAnalysis.cc $(OBJS) src/DeltaClusterAnalysis.o src/Dict.o
 #	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
-eAlignment: src/eAlignment.cc $(OBJS) src/EventAlignment.o  src/Dict.o
-	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
+#eAlignment: src/eAlignment.cc $(OBJS) src/EventAlignment.o  src/Dict.o
+#	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 # Create object files
 %.o : %.$(CSUF)

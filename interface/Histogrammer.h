@@ -5,7 +5,8 @@
 #include "TProfile.h"
 #include "TFile.h"
 #include "Utility.h"
-#include "DataFormats.h"
+//#include "DataFormats.h"
+#include "Event.h"
 #include<string>
 #include<vector>
 class Histogrammer {
@@ -15,7 +16,7 @@ class Histogrammer {
     void bookEventHistograms();
     void bookDUTHistograms(std::string det);
     void bookDUTHistoForColumn(TString& d, TString c);
-    void bookStubHistograms();
+    void bookStubHistograms(TString& d);
     void bookStubHistoForColumn(TString c);
     void bookCorrelationHistograms();
     void bookCorrelationHistoForColumn(TString c);
@@ -76,8 +77,11 @@ class Histogrammer {
     bool fillHistProfile(const std::string& dir, const std::string& hname, T1 xvalue, T2 yvalue) {
       fillHistProfile(dir.c_str(),hname.c_str(), xvalue, yvalue);
     }
+    void fillClusterHistograms( const string& det, const std::vector<tbeam::cluster>& cvec, const char* col) {
+      fillClusterHistograms(det.c_str(), cvec, col);
+    }
 
-    void fillClusterHistograms( const char* det, std::vector<tbeam::cluster>& cvec, const char* col);
+    void fillClusterHistograms( const char* det, const std::vector<tbeam::cluster>& cvec, const char* col);
     void closeFile();
     
     TFile* hfile() const { return fout_;}

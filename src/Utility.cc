@@ -50,23 +50,23 @@ namespace Utility {
   }
 
   void getChannelMaskedClusters( std::vector<tbeam::cluster*>& vec, const std::vector<int>& mch ) {
-    std::vector<tbeam::cluster*> vtemp = vec;
-    vec.clear();
-    for(auto& clus : vtemp) {
-      //std::cout << ch;
-      if( std::find(mch.begin(), mch.end(), clus->x) != mch.end() )   continue;
-      vec.push_back(clus);
-    }
+    //std::vector<tbeam::cluster*> vtemp = vec;
+    //vec.clear();
+    //for(auto& clus : vtemp) {
+    //  //std::cout << ch;
+    //  if( std::find(mch.begin(), mch.end(), clus->x) != mch.end() )   continue;
+    //  vec.push_back(clus);
+    //}
   }
 
   void getChannelMaskedStubs( std::vector<tbeam::stub*>& vec, const std::vector<int>& mch ) {
-    std::vector<tbeam::stub*> vtemp = vec;
-    vec.clear();
-    for(auto& stub : vtemp) {
+    //std::vector<tbeam::stub*> vtemp = vec;
+    //vec.clear();
+    //for(auto& stub : vtemp) {
       //std::cout << ch;
-      if( std::find(mch.begin(), mch.end(), stub->x) != mch.end() )   continue;
-      vec.push_back(stub);
-    }
+    //  if( std::find(mch.begin(), mch.end(), stub->x) != mch.end() )   continue;
+    //  vec.push_back(stub);
+    //}
   }
 
   void fill2DHistofromVec( const std::vector<int>& vecC0, const std::vector<int>& vecC1,const char* h) {
@@ -189,7 +189,7 @@ namespace Utility {
   // ---------------------------------------------
   // Convenience routine for track cleaning
   // ---------------------------------------------
-
+/*
   void removeTrackDuplicates(const tbeam::TelescopeEvent *telEv, std::vector<tbeam::Track>& tkNoOverlap) {
     //Loop over original track collection and compare all track pairs to check for duplicates
     for(unsigned int i = 0; i<telEv->xPos->size(); i++) {
@@ -209,7 +209,8 @@ namespace Utility {
       }      
     }
   }
-
+*/
+/*
   void cutTrackFei4Residuals(const tbeam::FeIFourEvent* fei4ev ,const std::vector<tbeam::Track>& tkNoOverlap, std::vector<tbeam::Track>& selectedTk, 
                              const double xResMean, const double yResMean, const double xResPitch, const double yResPitch, bool doClosestTrack) {
    
@@ -254,37 +255,37 @@ namespace Utility {
       selectedTk.push_back(tClosest);
     }
   }
-
+*/
   double extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset, double zDUT, double theta){
 
     //Compute distance between DUT center and track impact at DUT along X 
-    double xTkAtDUT = track.xPos + (zDUT - FEI4_z) * track.dxdz;
+    double xTkAtDUT = track.xPos() + (zDUT - FEI4_z) * track.dxdz();
 #ifdef OCT_16
-    xTkAtDUT = track.yPos + (zDUT - FEI4_z) * track.dydz;
+    xTkAtDUT = track.yPos() + (zDUT - FEI4_z) * track.dydz();
     xTkAtDUT *= -1.;
 #endif
-    xTkAtDUT = (xTkAtDUT + offset)/ (cos(theta)*(1.-track.dxdz*tan(theta)));
+    xTkAtDUT = (xTkAtDUT + offset)/ (cos(theta)*(1.-track.dxdz()*tan(theta)));
     return xTkAtDUT; 
   }
 
   std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta){
 
     //Compute distance between DUT center and track impact at DUT along X 
-    double xTkAtDUT_d0 = track.xPos + (zDUT_d0 - FEI4_z) * track.dxdz;
+    double xTkAtDUT_d0 = track.xPos() + (zDUT_d0 - FEI4_z) * track.dxdz();
 #ifdef OCT_16
-    xTkAtDUT_d0 = track.yPos + (zDUT_d0 - FEI4_z) * track.dydz;
+    xTkAtDUT_d0 = track.yPos() + (zDUT_d0 - FEI4_z) * track.dydz();
     xTkAtDUT_d0 *= -1.;
 #endif
-    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-track.dxdz*tan(theta)));
+    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-track.dxdz()*tan(theta)));
 
     double zDUT_d1 = zDUT_d0 + deltaZ*cos(theta);
-    double xTkAtDUT_d1 = track.xPos + (zDUT_d1 - FEI4_z) * track.dxdz;
+    double xTkAtDUT_d1 = track.xPos() + (zDUT_d1 - FEI4_z) * track.dxdz();
 #ifdef OCT_16
-    xTkAtDUT_d1 = track.yPos + (zDUT_d1 - FEI4_z) * track.dydz;
+    xTkAtDUT_d1 = track.yPos() + (zDUT_d1 - FEI4_z) * track.dydz();
     xTkAtDUT_d1 *= -1;
 #endif
     double offset_d1 = offset_d0 + sin(theta)*deltaZ;
-    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-track.dxdz*tan(theta)));
+    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-track.dxdz()*tan(theta)));
 
     std::pair<double, double> xTkAtDUT;
     xTkAtDUT.first = xTkAtDUT_d0;
