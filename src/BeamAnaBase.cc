@@ -18,12 +18,7 @@
 BeamAnaBase::BeamAnaBase() :
   fin_(nullptr),
   analysisTree_(nullptr),
-  dutEv_(new tbeam::dutEvent()),
-  condEv_(new tbeam::condEvent()),
-  telEv_(new  tbeam::TelescopeEvent()),
-  fei4Ev_(new tbeam::FeIFourEvent()),
-  periodcictyF_(false),
-  isGood_(false),
+  eventv_(new tbeam::Event()),
   hasTelescope_(false),
   doTelMatching_(false),
   doChannelMasking_(false),  
@@ -31,28 +26,7 @@ BeamAnaBase::BeamAnaBase() :
   offset1_(-1),
   offset2_(-1),
   cwd_(-1),
-  dut0_chtempC0_(new std::vector<int>()),
-  dut0_chtempC1_(new std::vector<int>()),
-  dut1_chtempC0_(new std::vector<int>()),
-  dut1_chtempC1_(new std::vector<int>()),
-  dutRecoClmap_(new std::map<std::string,std::vector<tbeam::cluster>>),
-  dutRecoStubmap_(new std::map<std::string,std::vector<tbeam::stub>>),
-  recostubChipids_(new std::map<std::string,std::vector<unsigned int>>()),
-  cbcstubChipids_(new std::map<std::string,std::vector<unsigned int>>()),
-  dut_maskedChannels_(new std::map<std::string,std::vector<int>>()),
-  nStubsrecoSword_(0),
-  nStubscbcSword_(0)
 {
-  dutRecoClmap_->insert({("det0C0"),std::vector<tbeam::cluster>()});
-  dutRecoClmap_->insert({("det0C1"),std::vector<tbeam::cluster>()});
-  dutRecoClmap_->insert({("det1C0"),std::vector<tbeam::cluster>()});
-  dutRecoClmap_->insert({("det1C1"),std::vector<tbeam::cluster>()});
-  dutRecoStubmap_->insert({("C0"),std::vector<tbeam::stub>()});
-  dutRecoStubmap_->insert({("C1"),std::vector<tbeam::stub>()});
-  recostubChipids_->insert({("C0"),std::vector<unsigned int>()});
-  recostubChipids_->insert({("C1"),std::vector<unsigned int>()});
-  cbcstubChipids_->insert({("C0"),std::vector<unsigned int>()});
-  cbcstubChipids_->insert({("C1"),std::vector<unsigned int>()});
 }
 
 bool BeamAnaBase::readJob(const std::string jfile) {
@@ -170,13 +144,30 @@ void BeamAnaBase::setTelMatching(const bool mtel) {
 
 void BeamAnaBase::bookHistograms() {
   hout_->bookEventHistograms();
-  hout_->bookDUTHistograms("det0");
-  hout_->bookDUTHistograms("det1");
+  /*********
+  Think of ways to do it automatically by reading a json/xml etc.
+  *********/
+  hout_->bookDUTHistograms("50025");
+  hout_->bookDUTHistograms("50026");
   hout_->bookStubHistograms();
-  hout_->bookCorrelationHistograms();
+  //hout_->bookCorrelationHistograms();
 }
 
 void BeamAnaBase::fillCommonHistograms() {
+  //fill sensor hits, cluster
+  for(auto& hitsmap: event_.dutHits){
+    std::string& detid = hitsmap.first;
+    std::vector<tbeam::hit>& hvec = hitsmap.second;
+    hout_->fillHist1D(detid,"chsizeC0", hvec.size());
+    for(auto& h: hvec)
+      hout_->fillHistofromVec(detid ,"hitmapC0");//put check to fill c1 histograms for full module
+    std::vector<tbeam::cluster>& cvec = event_.offlineClusters[detid];
+    hout_->fillClusterHistograms(detid,cvec,"C0");
+    hout_->fillHist2D(detid,"nhitvsnclusC0", hvec.size(), cvec.size());
+  }
+
+
+      /*
       const auto& d0c1 = *det0C1();
       const auto& d1c0 = *det1C0();
       const auto& d1c1 = *det1C1();      
@@ -268,6 +259,7 @@ void BeamAnaBase::fillCommonHistograms() {
       if (nstubrecoSword && nstubscbcSword)   hout_->fillHist1D("StubInfo","stubMatch", 4);
       hout_->fillHist1D("StubInfo","nstubsdiffSword",nstubrecoSword - nstubscbcSword);      
       hout_->fillHist1D("StubInfo","nstubsdiff",totStubReco - nstubscbcSword);  
+*/
 }
 
 void BeamAnaBase::setChannelMasking(const std::string cFile) {
@@ -288,67 +280,11 @@ bool BeamAnaBase::branchFound(const string& b)
 
 void BeamAnaBase::setAddresses() {
   //set the address of the DUT tree
-  if(branchFound("DUT"))    analysisTree_->SetBranchAddress("DUT", &dutEv_);
-  if(branchFound("Condition"))    analysisTree_->SetBranchAddress("Condition", &condEv_);
-  if(branchFound("TelescopeEvent"))    analysisTree_->SetBranchAddress("TelescopeEvent",&telEv_);
-  if(branchFound("Fei4Event"))     analysisTree_->SetBranchAddress("Fei4Event",&fei4Ev_);
-  if(branchFound("periodicityFlag"))    analysisTree_->SetBranchAddress("periodicityFlag",&periodcictyF_);
-  if(branchFound("goodEventFlag"))    analysisTree_->SetBranchAddress("goodEventFlag",&isGood_);
+  if(branchFound("event"))    analysisTree_->SetBranchAddress("event", &event_);
   analysisTree_->SetBranchStatus("*",1);
 }
 
 void BeamAnaBase::setDetChannelVectors() {
-  if(doChannelMasking_) {
-    if( dutEv_->dut_channel.find("det0") != dutEv_->dut_channel.end() )
-      Utility::getChannelMaskedHits(dutEv_->dut_channel.at("det0"), dut_maskedChannels_->at("det0")); 
-    if( dutEv_->dut_channel.find("det1") != dutEv_->dut_channel.end() )
-      Utility::getChannelMaskedHits(dutEv_->dut_channel.at("det1"), dut_maskedChannels_->at("det1")); 
-    if( dutEv_->clusters.find("det1") != dutEv_->clusters.end() )  
-      Utility::getChannelMaskedClusters(dutEv_->clusters.at("det0"), dut_maskedChannels_->at("det0"));
-    if( dutEv_->clusters.find("det1") != dutEv_->clusters.end() )
-      Utility::getChannelMaskedClusters(dutEv_->clusters.at("det1"), dut_maskedChannels_->at("det1"));
-    //stub seeding layer os det1
-    Utility::getChannelMaskedStubs(dutEv_->stubs,dut_maskedChannels_->at("det1"));
-  }
-  //std::cout << "setP1" << std::endl;
-  if( dutEv_->dut_channel.find("det0") != dutEv_->dut_channel.end() ) {
-      for( unsigned int j = 0; j<(dutEv_->dut_channel.at("det0")).size(); j++ ) {
-        int ch = (dutEv_->dut_channel.at("det0")).at(j);
-	if( ch <= 1015 )  dut0_chtempC0_->push_back(ch);
-	else dut0_chtempC1_->push_back(ch-1016);
-      }
-  }
-  if( dutEv_->dut_channel.find("det1") != dutEv_->dut_channel.end() ) {
-      for( unsigned int j = 0; j<(dutEv_->dut_channel.at("det1")).size(); j++ ) {
-        int ch = (dutEv_->dut_channel.at("det1")).at(j);
-        if( ch <= 1015 )  dut1_chtempC0_->push_back(ch);
-        else  dut1_chtempC1_->push_back(ch-1016);
-      }
-  }
-  //std::cout << "setP2" << std::endl;
-  for(auto& cl : (dutEv_->clusters)){
-    std::string ckey = cl.first;//keys are det0 and det1
-    for(auto& c : cl.second)  {
-      if(c->x <= 1015)  dutRecoClmap_->at(ckey +"C0").push_back(*c);
-      else {
-        auto ctemp = *c;
-        ctemp.x -= 1016;//even for column 1 we fill histograms between 0 and 1015 
-        dutRecoClmap_->at( ckey + "C1").push_back(ctemp);
-      }
-    }    
-  }
-  //std::cout << "setP3" << std::endl;
-  for(auto& s : dutEv_->stubs) {
-    tbeam::stub st = *s;
-    if(st.x <= 1015)   dutRecoStubmap_->at("C0").push_back(st);
-    else dutRecoStubmap_->at("C1").push_back(st);
-  }
-  
-  //for(auto& t:*recostubChipids_) std::cout << t.first << ",";
-  //for(auto& t:*cbcstubChipids_) std::cout << t.first << ",";
-  nStubsrecoSword_ = Utility::readStubWord(*recostubChipids_,dutEv_->stubWordReco);
-  nStubscbcSword_ = Utility::readStubWord(*cbcstubChipids_,dutEv_->stubWord);
-  //std::cout << "Leaving set" << std::endl;
 }
 
 
@@ -362,43 +298,32 @@ void BeamAnaBase::getCbcConfig(uint32_t cwdWord, uint32_t windowWord){
 }
 
 bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, const double ytrk0Pos, const double ytrk1Pos) {
+   
   //DUT x acceptance
   if( (std::fabs(xtrk0Pos) > pitchDUT_*nStrips_/2.) 
      || (std::fabs(xtrk1Pos) > pitchDUT_*nStrips_/2.))  return false;
   //DUT y acceptance
-#if defined(OCT_16) || defined(MAY_16)
   if(std::fabs(ytrk0Pos) > 25. || std::fabs(ytrk1Pos) > 25.)  return false; 
-#elif NOV_15
-  if(std::fabs(ytrk0Pos) > 25. || std::fabs(ytrk1Pos) > 25.)  return false;
-#endif
+  /*think about this
   if(doChannelMasking_) {
     int xtkdutStrip0 = xtrk0Pos/pitchDUT_ + nStrips_/2; 
     int xtkdutStrip1 = xtrk1Pos/pitchDUT_ + nStrips_/2; 
     bool mtk = std::find(dut_maskedChannels_->at("det0").begin(), dut_maskedChannels_->at("det0").end(), xtkdutStrip0) == dut_maskedChannels_->at("det0").end();
     mtk = mtk && std::find( dut_maskedChannels_->at("det1").begin(), dut_maskedChannels_->at("det1").end(), xtkdutStrip1) == dut_maskedChannels_->at("det1").end();
-#ifdef MAY_16
-    mtk = mtk && xtkdutStrip0 > 127 && xtkdutStrip1 > 127;
-#endif
     return mtk;
-  }
+  }*/
   return true;
 }
 
 void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
+  
   //Tk overlap removal
-  std::vector<tbeam::Track>  tkNoOv;
-  Utility::removeTrackDuplicates(telEv_, tkNoOv);
   //Match with FEI4
-  std::vector<tbeam::Track>  selectedTk;
-  Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, alPars_.offsetFEI4x(), alPars_.offsetFEI4y(), alPars_.residualSigmaFEI4x(), alPars_.residualSigmaFEI4y(), true); 
-  for(unsigned int itrk = 0; itrk<selectedTk.size();itrk++) {
-    //do track fei4 matching
-    double YTkatDUT0_itrk = selectedTk[itrk].yPos + (alPars_.d0Z() - alPars_.FEI4z())*selectedTk[itrk].dydz;
-    double YTkatDUT1_itrk = selectedTk[itrk].yPos + (alPars_.d1Z() - alPars_.FEI4z())*selectedTk[itrk].dydz;
-#ifdef OCT_16
-    YTkatDUT0_itrk = selectedTk[itrk].xPos + (alPars_.d0Z() - alPars_.FEI4z())*selectedTk[itrk].dxdz;
-    YTkatDUT1_itrk = selectedTk[itrk].xPos + (alPars_.d1Z() - alPars_.FEI4z())*selectedTk[itrk].dxdz;
-#endif
+  //std::vector<tbeam::Track>  tracks;
+  for(unsigned int itrk = 0; itrk<event_.tracks.size();itrk++) {
+    double YTkatDUT0_itrk = selectedTk[itrk].yPos() + (alPars_.d0Z() - alPars_.FEI4z())*selectedTk[itrk].dydz();
+    double YTkatDUT1_itrk = selectedTk[itrk].yPos() + (alPars_.d1Z() - alPars_.FEI4z())*selectedTk[itrk].dydz();
+
     std::pair<double,double>  xtkdut = Utility::extrapolateTrackAtDUTwithAngles(selectedTk[itrk], 
                                        alPars_.FEI4z(), alPars_.d0Offset(), alPars_.d0Z(), 
                                        alPars_.deltaZ(), alPars_.theta());
@@ -415,6 +340,7 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
 }
 
 void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
+  /*
   std::ifstream fin(cmaskF.c_str(),std::ios::in);
   if(!fin) {
     std::cout << "Channel Mask File could not be opened!!" << std::endl;
@@ -472,6 +398,7 @@ void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
       std::cout << ch << ",";
     std::cout << std::endl;
   } 
+  */
 }
 
 void readAlignmentConstant(const std::string& aFname) {
@@ -487,18 +414,6 @@ void BeamAnaBase::endJob() {
   
 }
 void BeamAnaBase::clearEvent() {
-  dut0_chtempC0_->clear();
-  dut0_chtempC1_->clear();
-  dut1_chtempC0_->clear();
-  dut1_chtempC1_->clear();
-  for(auto& c: *dutRecoClmap_)
-    c.second.clear();
-  for(auto& s: *dutRecoStubmap_)
-    s.second.clear();
-  for(auto& rs : *recostubChipids_)
-    rs.second.clear();
-  for(auto& rs : *cbcstubChipids_)
-    rs.second.clear();
   nStubsrecoSword_ = 0;
   nStubscbcSword_ = 0;
 }

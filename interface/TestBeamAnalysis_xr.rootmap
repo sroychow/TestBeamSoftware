@@ -1,7 +1,7 @@
 { decls }
 namespace tbeam {  }
 
-[  ]
+[ ]
 # List of selected classes
 class tbeam::Event
 class tbeam::Track

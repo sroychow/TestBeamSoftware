@@ -28,7 +28,7 @@ BaselineAnalysis::BaselineAnalysis() :
 }
 void BaselineAnalysis::bookHistograms() {
   BeamAnaBase::bookHistograms();
-  hist_->bookTrackMatchHistograms();
+  //hist_->bookTrackMatchHistograms();
 }
 
 void BaselineAnalysis::beginJob() {
@@ -37,8 +37,8 @@ void BaselineAnalysis::beginJob() {
   hist_ = outFile();
   setAddresses();
   bookHistograms();
-  analysisTree()->GetEntry(0);
-  getCbcConfig(condEv()->cwd, condEv()->window);
+  //analysisTree()->GetEntry(0);
+  //getCbcConfig(condEv()->cwd, condEv()->window);
 }
  
 void BaselineAnalysis::eventLoop()
@@ -46,17 +46,37 @@ void BaselineAnalysis::eventLoop()
   Long64_t nbytes = 0, nb = 0;
   cout << "#Events=" << nEntries_ << endl;
   hist_->fillHist1D("EventInfo","nevents", nEntries_);
+  for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
+    clearEvent();
+    Long64_t ientry = analysisTree()->GetEntry(jentry);
+    if (ientry < 0) break;
+    if (jentry%1000 == 0) {
+      cout << " Events processed. " << std::setw(8) << jentry 
+	   << endl;
+    }
+    if(jentry==0) {
+      hist_->fillHist1D("EventInfo","hvSettings", event()->HVsettings);
+      hist_->fillHist1D("EventInfo","dutAngle", event()->DUTangle);
+      hist_->fillHist1D("EventInfo","vcth", event()->vcth);
+      //hist_->fillHist1D("EventInfo","offset", cbcOffset1());
+      //hist_->fillHist1D("EventInfo","offset", cbcOffset2());
+      //hist_->fillHist1D("EventInfo","window", stubWindow());
+      //hist_->fillHist1D("EventInfo","tilt", static_cast<unsigned long int>(condEv()->tilt));
+      cout << "Alignment Parameters" << aLparameteres();
+    }
+    hist_->fillHist1D("EventInfo","condData", static_cast<unsigned int>(event()->condData));
+    hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(event()->tdcPhase));
+    //fill common histograms for dut hits, clusters
+    fillCommonHistograms();
+  }
+  //std::cout << "CBC configuration:: SW=" << stubWindow()
+  //	    << "\tCWD=" << cbcClusterWidth()
+  //	    << "\tOffset1="<< cbcOffset1() 
+  //	    << "\tOffset2" << cbcOffset2()
+  //	    << std::endl;
+  
 
-  std::cout << "CBC configuration:: SW=" << stubWindow()
-	    << "\tCWD=" << cbcClusterWidth()
-	    << "\tOffset1="<< cbcOffset1() 
-	    << "\tOffset2" << cbcOffset2()
-	    << std::endl;
-#ifdef MAY_16
-  std::cout << "Processing May16 data" << std::endl; 
-#elif NOV_15
-  std::cout << "Processing Nov15 data" << std::endl;
-#endif
+/*
   unsigned int nfidtrk_1k = 0; 
   unsigned int nmatchedstub_1k = 0; 
   unsigned int eventCounter_1k = 1;
@@ -302,6 +322,7 @@ void BaselineAnalysis::eventLoop()
 	    << "\n#Abs Stub Efficiency=" << double(recostubMatchD1)/double(trkFid) << "\tError=" 
 	    << TMath::Sqrt(recostubMatchD1*(1.- double(recostubMatchD1)/double(trkFid) ))/double(trkFid)
 	    << std::endl;
+  */
 }
 
 void BaselineAnalysis::clearEvent() {

@@ -41,24 +41,22 @@ void Histogrammer::bookEventHistograms() {
   new TH1I("tilt", ";tilt;#Events", 200,-0.5,199.5);
   new TH1I("condData", ";condData;#Events", 20,-0.5,19.5);
   new TH1I("tdcPhase",";tdc;#Events",17,-0.5,16.5);
-  new TH1I("isPeriodic",";isPeriodic;#Events",2,-0.5,1.5);
-  new TH1I("isGoodFlag",";isGood;#Events",2,-0.5,1.5);
+  //new TH1I("isPeriodic",";isPeriodic;#Events",2,-0.5,1.5);
+  //new TH1I("isGoodFlag",";isGood;#Events",2,-0.5,1.5);
 }
 
 void Histogrammer::bookDUTHistograms(std::string det) 
 {
-  int nStrips = 254; 
-
-#ifdef NOV_15
-  nStrips = nStrips*4;
-#endif
+  int nStrips = 254; //remove hard coding
 
   TString d(det);
   fout_->cd();
   fout_->mkdir(d);
   fout_->cd(d);
-  new TH2I("hitmapfull",d + " hitmap;strip no.;#Events",1016,-0.5,1015.5,2,-0.5,1.5);
+  new TH2D("hitmapfull",d + " hitmap;strip no.;#Events",2032,-0.5,1015.5,2,-0.5,1.5);
   bookDUTHistoForColumn(d,"C0");
+  //put a check here to create histo for clumn 1 incase it is full module
+  /*
   //bookDUTHistoForColumn(d,"C1");
 
   new TH1D("nFiducialTracks","Number of Fiducial Tracks; Number of Fiducial Tracks; Number of Events", 100 ,-0.5,99.5); 
@@ -264,38 +262,40 @@ void Histogrammer::bookDUTHistograms(std::string det)
   
 
   new TH1D("noisePerStrip","Noise Occupancy on DUT; Strip Number; Number of Events" , nStrips+1,-0.5, nStrips - 0.5 );
+  */
 }
 
 void Histogrammer::bookDUTHistoForColumn(TString& d, TString c) 
 {
   fout_->cd(d);    
   new TH1I("chsize" + c ,"dut0 channel occupancy per event" + c + ";#Channels;#Events",51,-0.5,50.5);
-  new TH1I("hitmap" + c,"dut0 hitmap " + c + ";strip no.;#Events",1016,-0.5,1015.5);
+  new TH1I("hitmap" + c,"dut0 hitmap " + c + ";strip no.;#Events",2032,-0.5,1015.5);//move to half-strip precision
   new TH1D("ncluster" + c,"#cluster dut0 " + c + ";#Clusters;#Events",51,-0.5,50.5);
   new TH1I("clusterWidth" + c,"dut0 clusterWidth " + c +";#ClusterWidth;#Events",128,-0.5,127.5);
-  new TH1D("clusterPos" + c,"dut0 clusterPos " + c + ";Strip Number;#Events",1016,-0.5,1015.5);
-  new TProfile("clusterWidthVsPosProf" + c,"dut0 clusterWidthVsPos " + c + ";Strip Number;Cluster Width",1016,-0.5,1015.5);
-  new TH2D("clusterWidthVsPos2D" + c ,"dut0 clusterWidthVsPos " + c + ";Strip Number;Cluster Width",1016,-0.5,1015.5, 20,-0.5,19.5);
-   new TH2D("nhitvsnclus" + c,"#Clusters vs #Hits;#Hits;#Clusters",50,-0.5,49.5, 50,-0.5,49.5);
-   new TH2D("nhitvsHitClusPosDiff" + c,"Cluster-Hit MinPosDiff vs #Hits;#Hits;#Pos Diff",50,-0.5,49.5, 256,-0.5,255.5);
-   new TH2D("propertyVsTDC2D" + c, "Hit Property vs TDC " + d + c + ";TDC;",17,-0.5,16.5, 10, 0.5, 10.5);
+  new TH1D("clusterPos" + c,"dut0 clusterPos " + c + ";Strip Number;#Events",2032,-0.5,1015.5);
+  new TProfile("clusterWidthVsPosProf" + c,"dut0 clusterWidthVsPos " + c + ";Strip Number;Cluster Width",2032,-0.5,1015.5);
+  new TH2D("clusterWidthVsPos2D" + c ,"dut0 clusterWidthVsPos " + c + ";Strip Number;Cluster Width",2032,-0.5,1015.5, 20,-0.5,19.5);
+  new TH2D("nhitvsnclus" + c,"#Clusters vs #Hits;#Hits;#Clusters",50,-0.5,49.5, 50,-0.5,49.5);
+  new TH2D("nhitvsHitClusPosDiff" + c,"Cluster-Hit MinPosDiff vs #Hits;#Hits;#Pos Diff",50,-0.5,49.5, 256,-0.5,255.5);
+  new TH2D("propertyVsTDC2D" + c, "Hit Property vs TDC " + d + c + ";TDC;",17,-0.5,16.5, 10, 0.5, 10.5);
 }
 
-void Histogrammer::bookStubHistograms() 
+void Histogrammer::bookStubHistograms(TString& det) 
 {
   fout_->cd();
-  fout_->mkdir("StubInfo");
-  fout_->cd("StubInfo");
+  fout_->mkdir(TString("StubInfo") + d);
+  fout_->cd(TString("StubInfo") + d);
 
-  new TH1I("cbcStubWord","Stub Bit from CBC",16,-0.5,15.5);
-  new TH1I("recoStubWord","Stub Bit from offline CBC logic emulation",16,-0.5,15.5);
-  new TH1I("nstubsFromCBCSword","Total number of stubs from CBC stub word",20,-.5,19.5);
-  new TH1I("nstubsFromRecoSword","Total number of stubs from Reco Stub word",20,-.5,19.5); 
+  //new TH1I("cbcStubWord","Stub Bit from CBC",16,-0.5,15.5);
+  //new TH1I("recoStubWord","Stub Bit from offline CBC logic emulation",16,-0.5,15.5);
+  new TH1I("nstubsFromCBC","Total number of stubs from CB",20,-.5,19.5);
   new TH1I("nstubsFromReco","Total number of stubs from Reconstruction",20,-.5,19.5); 
   new TH1I("stubMatch","Matching between CBC Stub and Reco Stub",4,0.5,4.5);
   new TH1I("nstubsdiffSword","#StubsRecoStubword - #StubsfromStubWord",20,-0.5,19.5);
-  new TH1I("nstubsdiff","#StubsReco - #StubsfromStubWord",20,-0.5,19.5);
-  bookStubHistoForColumn("C0");
+  //new TH1I("nstubsdiff","#StubsReco - #StubsfromStubWord",20,-0.5,19.5);
+  new TH1I("stubPosmap","StubPosition in Det " + d + " Column0;strip no.;#Events",2032,-0.5,1015.5);//move to half-strip precision
+  //new TH1I("stubPosmap","StubPosition in Det " + d + " Column1;strip no.;#Events",2032,-0.5,1015.5);//move to half-strip precision
+  //bookStubHistoForColumn("C0");
   //bookStubHistoForColumn("C1");
 }
 
@@ -317,7 +317,7 @@ void Histogrammer::bookCorrelationHistoForColumn(TString c) {
   //new TH1D("nhitdiff" + c,"#Hits det0 - #Hits det1 " + c,100,-.5,99.5);
 }
 
-
+/*
 void Histogrammer::bookTrackMatchHistograms() 
 {
   int nStrips = 254; 
@@ -707,7 +707,8 @@ void Histogrammer::bookTrackMatchHistograms()
   new TProfile("nfidtrk_1k","#Events with 1 Fiducial Tracks;Event Number (#times 1000);Entries for 1000 events",10000,0.5,10000.5);
   new TProfile("nmatchedStub_1k","#Events with Stub Matched;Event Number (#times 1000);Entries for 1000 events",10000,-0.5,10000.5);
 }
-
+*/
+/*
 void Histogrammer::bookTelescopeAnalysisHistograms() {
   fout_->cd();
   fout_->mkdir("TelescopeAnalysis");
@@ -816,7 +817,8 @@ void Histogrammer::bookTelescopeAnalysisHistograms() {
   h1f->SetLineColor(kBlue);
 
 }
-
+*/
+/*
 void Histogrammer::bookTrackFitHistograms(float zMin, float zStep, int zNsteps){
   fout_->cd();
   fout_->mkdir("TrackFit");
@@ -857,7 +859,8 @@ void Histogrammer::bookTrackFitHistograms(float zMin, float zStep, int zNsteps){
   new TH1F("bothPlanesConstraint_chi2VsDeltaZ","chi2 vs injected #deltaZ", 41, 0.-0.125, 10.25-0.125);
 
 }
-
+*/
+/*
 void Histogrammer::bookFeI4Histograms()
 {
   fout_->mkdir("FeI4");
@@ -919,7 +922,8 @@ void Histogrammer::bookFeI4Histograms()
   new TProfile("EventAlignment_Offset", "; Group ID; Percentage of Correlated Events;" , nGroups , groupID_min , groupID_max);
 
 } 
-
+*/
+/*
 void Histogrammer::bookCBCHistograms(std::string cbc)
 {
   TString d(cbc);
@@ -966,7 +970,7 @@ void Histogrammer::bookCBCHistograms(std::string cbc)
   new TH2D("stubMatching_CW", "; ; Number of Events" , 5 , -0.5 , 5.0 -0.5 , 20 , -0.5 , 19.5);
   new TH2D("stubMatching_TDC", "; ; Number of Events" , 5 , -0.5 , 5.0 -0.5 , 20 , -0.5 , 19.5);
 }
-
+*/
 TH1* Histogrammer::GetHistoByName(const char* dir, const char* hname){
   fout_->cd(dir);
   return Utility::getHist1D(hname);
