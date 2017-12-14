@@ -8,7 +8,7 @@ d0minZ=657.622
 d1minZ=659.481
 d0Offsetaligned=2.42379
 d1Offsetaligned=2.40335
-doTelescopeMatching=1
+doTelescopeMatching=0
 doChannelMasking_=0
 channelMaskFile=chmask.txt
 residualSigmaDUT=0.026
@@ -22,6 +22,6 @@ offsetFEI4Y=-0.0495546
 nStrips=254
 pitchDUT=0.09
 #only needed by Alignment Analysis
-isProductionmode=1
+isProductionmode=0
 alignmentOutputFile=alignmentparOutput_926.txt
 #END

@@ -128,7 +128,7 @@ bool BeamAnaBase::setInputFile(const std::string& fname) {
     std::cout <<  "File " << fname << " could not be opened!!" << std::endl;
     return false;
   }
-  analysisTree_ = dynamic_cast<TTree*>(fin_->Get("analysisTree"));
+  analysisTree_ = dynamic_cast<TTree*>(fin_->Get("treeMaker/tbeamTree"));
   if(analysisTree_)    return true;
   return false; 
 }
@@ -183,7 +183,7 @@ bool BeamAnaBase::branchFound(const string& b)
 
 void BeamAnaBase::setAddresses() {
   //set the address of the DUT tree
-  if( branchFound("event") )    analysisTree_->SetBranchAddress("event", &event_);
+  if( branchFound("event") )    analysisTree_->SetBranchAddress("Event", &event_);
   analysisTree_->SetBranchStatus("*",1);
 }
 

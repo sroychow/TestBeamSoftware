@@ -15,6 +15,7 @@ namespace tbeam {
       channel_ = ch;
       overThreshold_ = oTh;
     }
+
     virtual ~hit(){ }
     
     unsigned int row()     const { return row_; }
