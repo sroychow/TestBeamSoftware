@@ -8,25 +8,19 @@
         Support :            mail to : suvankar.roy.chowdhury@cern.ch
 */
 
+
 #include "BeamAnaBase.h"
 #include "Utility.h"
-#include "TSystem.h"
-#include "TChain.h"
 #include <algorithm>
-//#include <fstream>
 
+int aa=5;
 BeamAnaBase::BeamAnaBase() :
-  fin_(nullptr),
+  fin_( nullptr ),
   analysisTree_(nullptr),
-  event_(new tbeam::Event()),
+  event_( new tbeam::Event() ),
   hasTelescope_(false),
   doTelMatching_(false),
-  doChannelMasking_(false) 
-  //,sw_(-1),
-  //offset1_(-1),
-  //offset2_(-1),
-  //cwd_(-1),
-{
+  doChannelMasking_(false) {
 }
 
 bool BeamAnaBase::readJob(const std::string jfile) {
@@ -127,6 +121,7 @@ void BeamAnaBase::beginJob(){
   hout_ = new Histogrammer(outFilename_);
   //  cout<<hout_->hfile()<<endl;
 }
+
 bool BeamAnaBase::setInputFile(const std::string& fname) {
   fin_ = TFile::Open(fname.c_str());
   if(!fin_)    {
@@ -151,8 +146,9 @@ void BeamAnaBase::bookHistograms() {
   hout_->bookDUTHistograms("50026");
   TString detid_lower = "50025";
   hout_->bookStubHistograms(detid_lower);
-  //hout_->bookCorrelationHistograms();
+  hout_->bookCorrelationHistograms();
 }
+
 
 void BeamAnaBase::fillCommonHistograms() {
   //fill sensor hits, cluster
@@ -166,106 +162,13 @@ void BeamAnaBase::fillCommonHistograms() {
     hout_->fillClusterHistograms(detid, cvec, "C0");
     hout_->fillHist2D(detid,"nhitvsnclusC0", hvec.size(), cvec.size());
   }
-  
-  
-  /*
-    const auto& d0c1 = *det0C1();
-    const auto& d1c0 = *det1C0();
-    const auto& d1c1 = *det1C1();      
-    //Fill histo for det0
-    hout_->fillHist1D("det0","chsizeC0", dut0_chtempC0_->size());
-    //hout_->fillHist1D("det0","chsizeC1", dut0_chtempC1_->size());
-    hout_->fillHistofromVec(*dut0_chtempC0_,"det0","hitmapC0");
-    //hout_->fillHistofromVec(dut0_chtempC1_,"det0","hitmapC1");
-    hout_->fill2DHistofromVec(*dut0_chtempC0_,*dut0_chtempC1_,"det0","hitmapfull");
-    hout_->fillClusterHistograms("det0",dutRecoClmap_->at("det0C0"),"C0");
-    //hout_->fillClusterHistograms("det0",dutRecoClmap_->at("dut0_chtempC1_"),"C1");
-    hout_->fillHist2D("det0","nhitvsnclusC0", dut0_chtempC0_->size(), dutRecoClmap_->at("det0C0").size());
-    for(const auto& h: *dut0_chtempC0_) {
-    int minposdiff = 255;
-    for(const auto& cl:dutRecoClmap_->at("det0C0")) {
-    if(std::abs(cl.x-h) < minposdiff)   minposdiff = std::abs(cl.x-h);
-    }
-    hout_->fillHist2D("det0","nhitvsHitClusPosDiffC0", dut0_chtempC0_->size(), minposdiff);
-    }
-    
-    
-    //Fill histo for det1
-    hout_->fillHist1D("det1","chsizeC0", dut1_chtempC0_->size());
-    //hout_->fillHist1D("det1","chsizeC1", dut1_chtempC1_->size());
-    hout_->fillHistofromVec(*dut1_chtempC0_,"det1","hitmapC0");
-    //hout_->fillHistofromVec(*dut1_chtempC1_,"det1","hitmapC1");
-    hout_->fill2DHistofromVec(*dut1_chtempC0_,*dut1_chtempC1_,"det1","hitmapfull");
-    hout_->fillClusterHistograms("det1",dutRecoClmap_->at("det1C0"),"C0");
-    //hout_->fillClusterHistograms("det1",dutRecoClmap_->at("det1C1"),"C1");
-    hout_->fillHist2D("det1","nhitvsnclusC0", dut1_chtempC0_->size(), dutRecoClmap_->at("det1C0").size());
-    for(const auto& h: *dut1_chtempC0_) {
-    int minposdiff = 255;
-    for(const auto& cl:dutRecoClmap_->at("det1C0")) {
-    if(std::abs(cl.x-h) < minposdiff)   minposdiff = std::abs(cl.x-h);
-    }
-    hout_->fillHist2D("det1","nhitvsHitClusPosDiffC0", dut1_chtempC0_->size(), minposdiff);
-    }
-    
-    if(dut0_chtempC0_->size() && !dut1_chtempC0_->size()) hout_->fillHist1D("Correlation","cor_hitC0", 1);
-    if(!dut0_chtempC0_->size() && dut1_chtempC0_->size()) hout_->fillHist1D("Correlation","cor_hitC0", 2);
-    if(dut0_chtempC0_->size() && dut1_chtempC0_->size()) hout_->fillHist1D("Correlation","cor_hitC0", 3);
-    if(!dut0_chtempC0_->size() && !dut1_chtempC0_->size()) hout_->fillHist1D("Correlation","cor_hitC0", 4);
-    hout_->fillHist1D("Correlation","nclusterdiffC0", std::abs(dutRecoClmap_->at("det1C0").size() - 
-    dutRecoClmap_->at("det1C0").size())); 
-    
-    unsigned int tdc_phase = static_cast<unsigned int>(condEv()->tdcPhase);
-    hout_->fillHist2D("det0", "propertyVsTDC2DC0",tdc_phase, 1.0);
-    hout_->fillHist2D("det0", "propertyVsTDC2DC0",0.0, 1.0);
-    hout_->fillHist2D("det1", "propertyVsTDC2DC0",tdc_phase, 1.0);
-    hout_->fillHist2D("det1", "propertyVsTDC2DC0",0.0, 1.0);
-    if (dut0_chtempC0_->size()) {
-    hout_->fillHist2D("det0", "propertyVsTDC2DC0",tdc_phase, 3.0);
-    hout_->fillHist2D("det0", "propertyVsTDC2DC0",0.0, 3.0);
-    }
-    if (dut1_chtempC0_->size()) {
-    hout_->fillHist2D("det1", "propertyVsTDC2DC0",tdc_phase, 3.0);
-    hout_->fillHist2D("det1", "propertyVsTDC2DC0",0.0, 3.0);
-    }
-    if (dutRecoClmap_->at("det0C0").size()) {
-    hout_->fillHist2D("det0", "propertyVsTDC2DC0",tdc_phase, 5.0);
-    hout_->fillHist2D("det0", "propertyVsTDC2DC0",0.0, 5.0);
-    }
-    if (dutRecoClmap_->at("det1C0").size()) {
-    hout_->fillHist2D("det1", "propertyVsTDC2DC0",tdc_phase, 5.0);
-    hout_->fillHist2D("det1", "propertyVsTDC2DC0",0.0, 5.0);
-    }
-    if (dutRecoStubmap_->at("C0").size()) {
-    hout_->fillHist2D("det0", "propertyVsTDC2DC0",tdc_phase, 7.0);
-    hout_->fillHist2D("det0", "propertyVsTDC2DC0",0.0, 7.0);
-    hout_->fillHist2D("det1", "propertyVsTDC2DC0",tdc_phase, 7.0);
-    hout_->fillHist2D("det1", "propertyVsTDC2DC0",0.0, 7.0);
-    }
-    
-    int totStubReco = dutEv_->stubs.size();
-    int nstubrecoSword = nStubsrecoSword_;
-    int nstubscbcSword = nStubscbcSword_;
-    hout_->fillHist1D("StubInfo","nstubRecoC0", dutRecoStubmap_->at("C0").size());      
-    hout_->fillHist1D("StubInfo","nstubsFromReco",totStubReco);
-    hout_->fillHist1D("StubInfo","nstubsFromCBCSword",nstubrecoSword);
-    hout_->fillHist1D("StubInfo","nstubsFromRecoSword",nstubscbcSword);
-    for(auto& c : *recostubChipids_)  
-    hout_->fillHistofromVec(c.second,"StubInfo","recoStubWord");
-    for(auto& c : *cbcstubChipids_)  
-    hout_->fillHistofromVec(c.second,"StubInfo","cbcStubWord");
-    
-    if (!nstubrecoSword && !nstubscbcSword) hout_->fillHist1D("StubInfo","stubMatch", 1);
-    if (!nstubrecoSword && nstubscbcSword)  hout_->fillHist1D("StubInfo","stubMatch", 2);
-    if (nstubrecoSword && !nstubscbcSword)  hout_->fillHist1D("StubInfo","stubMatch", 3);
-    if (nstubrecoSword && nstubscbcSword)   hout_->fillHist1D("StubInfo","stubMatch", 4);
-    hout_->fillHist1D("StubInfo","nstubsdiffSword",nstubrecoSword - nstubscbcSword);      
-    hout_->fillHist1D("StubInfo","nstubsdiff",totStubReco - nstubscbcSword);  
-  */
+
 }
 
 void BeamAnaBase::setChannelMasking(const std::string cFile) {
   readChannelMaskData(cFile);
 }
+
 bool BeamAnaBase::branchFound(const string& b)
 {
   TBranch* branch = analysisTree_->GetBranch(b.c_str());
@@ -278,26 +181,25 @@ bool BeamAnaBase::branchFound(const string& b)
   return true;
 }
 
-
 void BeamAnaBase::setAddresses() {
   //set the address of the DUT tree
-  if(branchFound("event"))    analysisTree_->SetBranchAddress("event", &event_);
+  if( branchFound("event") )    analysisTree_->SetBranchAddress("event", &event_);
   analysisTree_->SetBranchStatus("*",1);
 }
 
-void BeamAnaBase::setDetChannelVectors() {
-}
+void BeamAnaBase::setDetChannelVectors() {}
 
 //these should be available from Tracker header or Event
-void BeamAnaBase::getCbcConfig(uint32_t cwdWord, uint32_t windowWord){
+//void BeamAnaBase::getCbcConfig(uint32_t cwdWord, uint32_t windowWord){}
   //  sw_ = windowWord >>4;
   //  offset1_ = (cwdWord)%4;
   //  if ((cwdWord>>2)%2) offset1_ = -offset1_;
   //  offset2_ = (cwdWord>>3)%4;
   //  if ((cwdWord>>5)%2) offset2_ = -offset2_;
   //  cwd_ = (cwdWord>>6)%4;
-}
+//}
 
+/*
 bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, const double ytrk0Pos, const double ytrk1Pos) {
   
   //DUT x acceptance
@@ -312,11 +214,13 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
     bool mtk = std::find(dut_maskedChannels_->at("det0").begin(), dut_maskedChannels_->at("det0").end(), xtkdutStrip0) == dut_maskedChannels_->at("det0").end();
     mtk = mtk && std::find( dut_maskedChannels_->at("det1").begin(), dut_maskedChannels_->at("det1").end(), xtkdutStrip1) == dut_maskedChannels_->at("det1").end();
     return mtk;
-    }*/
+    }
   return true;
 }
+*/
 
-void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
+//void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {}
+
   //Think how to implement track extrapolation 
   /*
   //Tk overlap removal
@@ -341,9 +245,10 @@ void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {
   } 
   }
   */
-}
+//}
 
 void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
+
   /*
     std::ifstream fin(cmaskF.c_str(),std::ios::in);
     if(!fin) {
@@ -405,6 +310,9 @@ void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
   */
 }
 
+
+  // nStubsrecoSword_ = 0;
+  // nStubscbcSword_ = 0;
 void readAlignmentConstant(const std::string& aFname) {
   std::ifstream fin(aFname.c_str(),std::ios::in);
   if(!fin) {
@@ -414,13 +322,8 @@ void readAlignmentConstant(const std::string& aFname) {
   fin.close();
 }
 
-void BeamAnaBase::endJob() {
-  
-}
-void BeamAnaBase::clearEvent() {
-  // nStubsrecoSword_ = 0;
-  // nStubscbcSword_ = 0;
-}
+void BeamAnaBase::endJob() {}
 
-BeamAnaBase::~BeamAnaBase() {
-}
+void BeamAnaBase::clearEvent() {}
+
+BeamAnaBase::~BeamAnaBase() {}
