@@ -16,9 +16,17 @@ class Histogrammer {
     void bookEventHistograms();
     void bookDUTHistograms(std::string det);
     void bookDUTHistoForColumn(TString& d, TString c);
+    void bookStubHistograms(std::string& d) {
+      TString td(d);
+      bookStubHistograms(td);
+    }
     void bookStubHistograms(TString& d);
     void bookStubHistoForColumn(TString c);
-    void bookCorrelationHistograms();
+    void bookCorrelationHistograms(std::string& modId) {
+      TString td(modId);
+      bookCorrelationHistograms(td);
+    }
+    void bookCorrelationHistograms(TString& modId);
     void bookCorrelationHistoForColumn(TString c);
     void bookTrackMatchHistograms();
     void bookTrackFitHistograms(float, float, int);

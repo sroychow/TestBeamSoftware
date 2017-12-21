@@ -12,7 +12,7 @@
 #include "BeamAnaBase.h"
 #include "Utility.h"
 #include <algorithm>
-
+#include <stdlib.h>
 int aa=5;
 BeamAnaBase::BeamAnaBase() :
   fin_( nullptr ),
@@ -21,6 +21,7 @@ BeamAnaBase::BeamAnaBase() :
   hasTelescope_(false),
   doTelMatching_(false),
   doChannelMasking_(false) {
+  vmod = new std::vector<tbeam::Module>();
 }
 
 bool BeamAnaBase::readJob(const std::string jfile) {
@@ -56,6 +57,9 @@ bool BeamAnaBase::readJob(const std::string jfile) {
       else if(key=="nStrips") nStrips_ = atoi(value.c_str());
       else if(key=="pitchDUT") pitchDUT_ = std::atof(value.c_str());
       else if(key=="maximumEVT") maxEvent_ = std::atoi(value.c_str());
+      else if(key=="geomFile")  {
+        readGeometry(value);
+      }
     }
   }
   jobcardFile.close();
@@ -112,10 +116,28 @@ bool BeamAnaBase::readJob(const std::string jfile) {
   std::cout << alPars_ << std::endl;
   if(doChannelMasking_)  setChannelMasking(chmaskFilename_);
 }
+bool BeamAnaBase::readGeometry(const std::string gfile) {
+  std::string path = getenv ("WORKDIR");
+  std::cout << "Reading geometry from file=" << (path +"/data/"+ gfile) << std::endl;
+  std::ifstream geomFile((path +"/data/"+ gfile).c_str());
+  json geom;
+  geomFile >> geom;
+  std::cout << std::setw(4) << geom << std::endl;
+  // range-based for
+  for (auto& element : geom["Module"]) {
+    //std::cout << element << '\n';
+    tbeam::Module tmod(element["name"], element["detidLower"], element["detidUpper"], element["Z"], element["Xrot"], element["Yrot"]);
+    vmod->push_back(tmod);
+  }
+  geomFile.close();
+  std::cout << "NModules from Geometry = " << vmod->size() << std::endl;
+  
+  return true;
+}
 
 void BeamAnaBase::beginJob(){
   if( setInputFile(iFilename_) == 0 ) {
-    std::cout << "Empty Chain!!";
+    std::cout << "Empty Chain!!" << std::endl;
     exit(1);
   }
   hout_ = new Histogrammer(outFilename_);
@@ -128,7 +150,7 @@ bool BeamAnaBase::setInputFile(const std::string& fname) {
     std::cout <<  "File " << fname << " could not be opened!!" << std::endl;
     return false;
   }
-  analysisTree_ = dynamic_cast<TTree*>(fin_->Get("treeMaker/tbeamTree"));
+  analysisTree_ = dynamic_cast<TTree*>(fin_->Get("analysisTree"));
   if(analysisTree_)    return true;
   return false; 
 }
@@ -142,16 +164,24 @@ void BeamAnaBase::bookHistograms() {
   /*********
 	    Think of ways to do it automatically by reading a json/xml etc.
   *********/
+  /*
   hout_->bookDUTHistograms("50025");
   hout_->bookDUTHistograms("50026");
   TString detid_lower = "50025";
-  hout_->bookStubHistograms(detid_lower);
-  hout_->bookCorrelationHistograms();
+  hout_->bookStubHistograms(detid_lower);*/
+  //hout_->bookCorrelationHistograms();
+  for(auto& m : *vmod) {
+    hout_->bookDUTHistograms(m.hdirLower_);
+    hout_->bookDUTHistograms(m.hdirUpper_);
+    hout_->bookStubHistograms(m.name);
+    hout_->bookCorrelationHistograms(m.name);
+  }
 }
 
 
 void BeamAnaBase::fillCommonHistograms() {
   //fill sensor hits, cluster
+  /*
   for(auto& hitsmap: event_->dutHits){
     const std::string& detid = hitsmap.first;
     const std::vector<tbeam::hit>& hvec = hitsmap.second;
@@ -161,8 +191,42 @@ void BeamAnaBase::fillCommonHistograms() {
     const std::vector<tbeam::cluster>& cvec = event_->offlineClusters[detid];
     hout_->fillClusterHistograms(detid, cvec, "C0");
     hout_->fillHist2D(detid,"nhitvsnclusC0", hvec.size(), cvec.size());
+  }*/
+  for(auto& m : *vmod) {
+    hout_->fillHist1D(m.hdirLower_,"chsizeC0", m.lowerHits.size());
+    hout_->fillHist1D(m.hdirUpper_,"chsizeC0", m.upperHits.size());
+    for(auto& h: m.lowerHits) {
+      hout_->fillHist1D(m.hdirLower_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
+      for(auto& hup: m.upperHits)  hout_->fillHist2D(m.name+"/Correlation", "hitposcorrelationC0", h.strip(), hup.strip());
+    }
+    for(auto& h: m.upperHits)
+      hout_->fillHist1D(m.hdirUpper_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
+    //Offline clusters only
+    hout_->fillClusterHistograms(m.hdirLower_, m.lowerOfflineCls, "C0");
+    hout_->fillHist2D(m.hdirLower_,"nhitvsnclusC0", m.lowerHits.size(), m.lowerOfflineCls.size());
+    hout_->fillClusterHistograms(m.hdirUpper_, m.upperOfflineCls, "C0");
+    hout_->fillHist2D(m.hdirUpper_,"nhitvsnclusC0", m.upperHits.size(), m.upperOfflineCls.size());
+    //correlation histo for clusters
+    for(auto& lcls : m.lowerOfflineCls) {
+      for(auto& ucls : m.upperOfflineCls) {
+         hout_->fillHist2D(m.name+"/Correlation", "clusterposcorrelationC0", lcls.center(), ucls.center());    
+      }
+    }
+    //stub histos
+    std::string sdname = m.name + "/StubInfo";
+    hout_->fillHist1D(sdname,"nstubsFromCBC",  m.cbcStubs.size());
+    hout_->fillHist1D(sdname,"nstubsFromReco", m.offlineStubs.size());
+    hout_->fillHist2D(sdname,"nstubMatch", m.offlineStubs.size(), m.cbcStubs.size());
+    for(auto& os : m.offlineStubs) {
+      hout_->fillHist1D(sdname,"offlinestubPosmap", os.positionX());
+      for(auto& cs : m.cbcStubs) {
+        hout_->fillHist2D(sdname,"stubCorrelation", os.positionX(), cs.positionX());
+      }
+    }
+    for(auto& cs : m.cbcStubs) {
+      hout_->fillHist1D(sdname,"cbcstubPosmap", cs.positionX());
+    }
   }
-
 }
 
 void BeamAnaBase::setChannelMasking(const std::string cFile) {
@@ -187,7 +251,24 @@ void BeamAnaBase::setAddresses() {
   analysisTree_->SetBranchStatus("*",1);
 }
 
-void BeamAnaBase::setDetChannelVectors() {}
+void BeamAnaBase::setDetChannelVectors() {
+  for(auto& m : *vmod) {
+    if(event_->dutHits.find(m.detidLower_) != event_->dutHits.end() && event_->dutHits.find(m.detidUpper_) != event_->dutHits.end())  {
+      m.lowerHits = event_->dutHits.at(m.detidLower_);
+      m.upperHits = event_->dutHits.at(m.detidUpper_);
+    } 
+    if(event_->cbcClusters.find(m.detidLower_) != event_->cbcClusters.end() && event_->cbcClusters.find(m.detidUpper_) != event_->cbcClusters.end())  {
+      m.lowerCbcCls = event_->cbcClusters.at(m.detidLower_);//only in sparsified mode
+      m.upperCbcCls = event_->cbcClusters.at(m.detidUpper_);//only in sparsified mode
+    }
+    if(event_->offlineClusters.find(m.detidLower_) != event_->offlineClusters.end() && event_->offlineClusters.find(m.detidUpper_) != event_->offlineClusters.end())  {
+      m.lowerOfflineCls = event_->offlineClusters.at(m.detidLower_);//only in unsparsified mode
+      m.upperOfflineCls = event_->offlineClusters.at(m.detidUpper_);//only in unsparsified mode
+    }
+    if(event_->cbcStubs.find(m.detidLower_) != event_->cbcStubs.end()) m.cbcStubs = event_->cbcStubs.at(m.detidLower_);//
+    if(event_->offlineStubs.find(m.detidLower_) != event_->offlineStubs.end()) m.offlineStubs = event_->offlineStubs.at(m.detidLower_);
+  }
+}
 
 //these should be available from Tracker header or Event
 //void BeamAnaBase::getCbcConfig(uint32_t cwdWord, uint32_t windowWord){}
@@ -326,4 +407,6 @@ void BeamAnaBase::endJob() {}
 
 void BeamAnaBase::clearEvent() {}
 
-BeamAnaBase::~BeamAnaBase() {}
+BeamAnaBase::~BeamAnaBase() {
+  delete vmod;
+}

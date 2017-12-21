@@ -66,6 +66,8 @@ void BaselineAnalysis::eventLoop()
     }
     hist_->fillHist1D("EventInfo","condData", static_cast<unsigned int>(event()->condData));
     hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(event()->tdcPhase));
+    //set the hits/cluster/stubs from the sensors in user accessable module
+    setDetChannelVectors();
     //fill common histograms for dut hits, clusters
     fillCommonHistograms();
   }

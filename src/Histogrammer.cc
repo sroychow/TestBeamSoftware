@@ -283,17 +283,20 @@ void Histogrammer::bookDUTHistoForColumn(TString& d, TString c)
 void Histogrammer::bookStubHistograms(TString& det) 
 {
   fout_->cd();
-  fout_->mkdir(TString("StubInfo") + det);
-  fout_->cd(TString("StubInfo") + det);
+  TString dname = det + "/StubInfo";
+  fout_->mkdir(dname);
+  fout_->cd(dname);
 
   //new TH1I("cbcStubWord","Stub Bit from CBC",16,-0.5,15.5);
   //new TH1I("recoStubWord","Stub Bit from offline CBC logic emulation",16,-0.5,15.5);
-  new TH1I("nstubsFromCBC","Total number of stubs from CB",20,-.5,19.5);
-  new TH1I("nstubsFromReco","Total number of stubs from Reconstruction",20,-.5,19.5); 
-  new TH1I("stubMatch","Matching between CBC Stub and Reco Stub",4,0.5,4.5);
-  new TH1I("nstubsdiffSword","#StubsRecoStubword - #StubsfromStubWord",20,-0.5,19.5);
+  new TH1I("nstubsFromCBC","Total number of stubs from CBC",20,-.5,19.5);
+  new TH1I("nstubsFromReco","Total number of stubs from offline reconstruction",20,-.5,19.5); 
+  new TH2I("nstubMatch","Matching between #CBC Stubs and #Reco Stubs;#stubs reco;#stubs cbc", 20,-.5,19.5, 20,-.5,19.5);
+  //new TH1I("nstubsdiffSword","#StubsRecoStubword - #StubsfromStubWord",20,-0.5,19.5);
   //new TH1I("nstubsdiff","#StubsReco - #StubsfromStubWord",20,-0.5,19.5);
-  new TH1I("stubPosmap","StubPosition in Det " + det + " Column0;strip no.;#Events",2032,-0.5,1015.5);//move to half-strip precision
+  new TH1I("offlinestubPosmap","Offline StubPosition in Det " + det + " Column0;strip no.;#Events",1016,-0.5,1015.5);//move to half-strip precision
+  new TH1I("cbcstubPosmap","CBC StubPosition in Det " + det + " Column0;strip no.;#Events",1016,-0.5,1015.5);//move to half-strip precision
+  new TH2D("stubCorrelation" ,"Offline stub position vs CBC stub position;Offline Stub Position;CBC stub position", 1016,-0.5,1015.5, 1016,-0.5,1015.5);
   //new TH1I("stubPosmap","StubPosition in Det " + det + " Column1;strip no.;#Events",2032,-0.5,1015.5);//move to half-strip precision
   //bookStubHistoForColumn("C0");
   //bookStubHistoForColumn("C1");
@@ -304,17 +307,19 @@ void Histogrammer::bookStubHistoForColumn(TString c) {
   new TH1I("nstubReco" + c,"Number of stubs for " + c + " from offline reconstruction;#stubs;Events",20,-0.5,19.5);
 }
 
-void Histogrammer::bookCorrelationHistograms() {
-  fout_->mkdir("Correlation");
-  fout_->cd("Correlation");
+void Histogrammer::bookCorrelationHistograms(TString& modId) {
+  TString dname = modId + +"/Correlation"; 
+  fout_->mkdir(dname);
+  fout_->cd(dname);
   bookCorrelationHistoForColumn("C0");
   //bookCorrelationHistoForColumn("C1");
 }
     
 void Histogrammer::bookCorrelationHistoForColumn(TString c) {
-  new TH1D("cor_hit" + c,"Sensor Hit Correlation " + c,4,0.5,4.5);
-  new TH1I("nclusterdiff" + c,"Difference in #clusters between dut0 and dut1() for " + c + ";#cluster_{det0} - #cluster_  {det1_};Events",20,-0.5,19.5);
-  //new TH1D("nhitdiff" + c,"#Hits det0 - #Hits det1 " + c,100,-.5,99.5);
+  //new TH1D("nhitscorrelation" + c,"Sensor #Hits Correlation " + c, 4, 0.5, 4.5);
+  new TH2D("hitposcorrelation" + c ,"Hit position upper vs Hit position lower;Hit Position(lower sensor);Hit Position(upper sensor)", 1016,-0.5,1015.5, 1016,-0.5,1015.5);
+  new TH2D("clusterposcorrelation" + c ,"Offline cluster position upper vs Offline cluster position lower;Offline cluster Position(lower sensor);Offline cluster Position(upper sensor)", 1016,-0.5,1015.5, 1016,-0.5,1015.5);
+  //new TH1I("nclusterdiff" + c,"Difference in #clusters between dut0 and dut1() for " + c + ";#cluster_{det0} - #cluster_  {det1_};Events",20,-0.5,19.5);
 }
 
 /*

@@ -16,12 +16,13 @@
 #include <map>
 #include <string>
 #include <fstream>
-
+#include "json.hpp"
 
 //#include "DataFormats.h"
 #include "Histogrammer.h"
 #include "Event.h"
 #include "AlignmentParameters.h"
+#include "Module.h"
 
 using std::cout;
 using std::endl;
@@ -29,7 +30,7 @@ using std::string;
 using std::vector;
 using std::map;
 using std::cerr;
-
+using json = nlohmann::json;
 
 class BeamAnaBase {
 
@@ -68,6 +69,7 @@ class BeamAnaBase {
     virtual void bookHistograms();
     virtual void clearEvent();
     virtual bool readJob(const std::string jfile);
+    virtual bool readGeometry(const std::string gfile);
     
     void getCbcConfig(uint32_t cwdWord, uint32_t windowWord);
     //void getExtrapolatedTracks(std::vector<tbeam::Track>& fidTkColl);
@@ -126,5 +128,6 @@ class BeamAnaBase {
 
     int nStrips_;
     double pitchDUT_;
+    std::vector<tbeam::Module>* vmod;
 };
 #endif

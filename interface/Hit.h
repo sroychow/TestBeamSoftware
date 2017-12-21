@@ -45,7 +45,7 @@ namespace tbeam {
     unsigned int edge_;
     unsigned int channel_;
     bool overThreshold_;
-    ClassDef(hit,1)
+    //ClassDef(hit,1)
       };
 }
 #endif
