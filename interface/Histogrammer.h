@@ -30,7 +30,8 @@ class Histogrammer {
     void bookCorrelationHistoForColumn(TString c);
     void bookTrackMatchHistograms();
     void bookTrackFitHistograms(float, float, int);
-    void bookTelescopeAnalysisHistograms();
+    //void bookTelescopeAnalysisHistograms();
+    void bookTrackCommonHistograms();
     void bookFeI4Histograms();
     void bookCBCHistograms(std::string cbc);
     TH1* GetHistoByName(const char*, const char* );

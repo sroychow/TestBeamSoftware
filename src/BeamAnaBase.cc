@@ -176,6 +176,8 @@ void BeamAnaBase::bookHistograms() {
     hout_->bookStubHistograms(m.name);
     hout_->bookCorrelationHistograms(m.name);
   }
+  //book common histograms of track propoerties
+  hout_->bookTrackCommonHistograms();
 }
 
 
@@ -226,6 +228,29 @@ void BeamAnaBase::fillCommonHistograms() {
     for(auto& cs : m.cbcStubs) {
       hout_->fillHist1D(sdname,"cbcstubPosmap", cs.positionX());
     }
+  }
+  //Fill common track histograms
+  hout_->fillHist1D("TrackCommon","nTracks", event_->tracks.size());
+  for(auto& tk: event_->tracks) {
+    hout_->fillHist1D("TrackCommon","tkXPosref", tk.xPos());
+    hout_->fillHist1D("TrackCommon","tkYPosref", tk.yPos());
+    hout_->fillHist1D("TrackCommon","errtkXPosref", tk.xPosErr());
+    hout_->fillHist1D("TrackCommon","errtkYPosref", tk.yPosErr());
+
+
+    hout_->fillHist1D("TrackCommon","tkXPosprev", tk.xPosPrevHit());
+    hout_->fillHist1D("TrackCommon","tkYPosprev", tk.yPosPrevHit());
+    hout_->fillHist1D("TrackCommon","errtkXPosprev", tk.xPosErrsPrevHit());
+    hout_->fillHist1D("TrackCommon","errtkYPosprev", tk.yPosErrsPrevHit());
+
+    hout_->fillHist1D("TrackCommon","tkXPosnext", tk.xPosNextHit());
+    hout_->fillHist1D("TrackCommon","tkYPosnext", tk.yPosNextHit());
+    hout_->fillHist1D("TrackCommon","errtkXPosnext", tk.xPosErrNextHit());
+    hout_->fillHist1D("TrackCommon","errtkYPosnext", tk.yPosErrNextHit());
+
+    hout_->fillHist1D("TrackCommon","tkChi2", tk.chi2());
+    hout_->fillHist1D("TrackCommon","tkdXdZ", tk.dxdz());
+    hout_->fillHist1D("TrackCommon","tkdYdZ", tk.dydz());
   }
 }
 

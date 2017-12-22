@@ -713,35 +713,43 @@ void Histogrammer::bookTrackMatchHistograms()
   new TProfile("nmatchedStub_1k","#Events with Stub Matched;Event Number (#times 1000);Entries for 1000 events",10000,-0.5,10000.5);
 }
 */
-/*
-void Histogrammer::bookTelescopeAnalysisHistograms() {
+
+void Histogrammer::bookTrackCommonHistograms() {
   fout_->cd();
-  fout_->mkdir("TelescopeAnalysis");
-  fout_->cd("TelescopeAnalysis");
-  new TH1D("nTrack_noduplicate","#Tracks Telescope(after duplicate removal);#tracks;#events",30,-0.5,29.5);
-  new TH1D("nTrack_fiducial","#Tracks Telescope(fiducial);#tracks;#events",30,-0.5,29.5);
+  fout_->mkdir("TrackCommon");
+  fout_->cd("TrackCommon");
+  new TH1D("nTracks","#Tracks from Telescope;#tracks;#events",30,-0.5,29.5);
+  //implement later
+  //new TH1D("nTracksfiducial","#Tracks from Telescope(fiducial);#tracks;#events",30,-0.5,29.5);
  
+  new TH1F("tkXPosref", "Track Impact on reference plane; Track X (mm); Number of Events",(int)(40.0/(250e-3)) , 10000., 30000. );
+  new TH1F("tkYPosref", "Track Impact on reference plane; Track Y (mm); Number of Events",(int)(40.0/(250e-3)) ,  10000., 30000. );
+  new TH1F("errtkXPosref", "Error on Track Impact on reference plane; Error track X (mm); Number of Events",(int)(40.0/(250e-3)) , -20.0, 20.0 );
+  new TH1F("errtkYPosref", "Error on Track Impact on reference plane; Error track Y (mm); Number of Events",(int)(40.0/(50e-3)) , -20.0, 20.0 );
+
+  new TH1D("tkdXdZ","dxdz of tracks;dxdz; [a.u.]; Count [a.u]",(20e-4/1e-5),-10e-4,10e-4); 
+  new TH1D("tkdYdZ","dydz of tracks;dydz; [a.u.]; Count [a.u]",(20e-4/1e-5),-10e-4,10e-4);
+
+  new TH1F("tkXPosprev", "Track Impact on plane before dut; Track X (mm); Number of Events",(int)(40.0/(250e-3)) , 10000., 30000. );
+  new TH1F("tkYPosprev", "Track Impact on plane before dut; Track Y (mm); Number of Events",(int)(40.0/(250e-3)) , 10000., 30000. );
+  new TH1F("errtkXPosprev", "Error on Track Impact on plane before dut; Error track X (mm); Number of Events",(int)(40.0/(250e-3)) , -20.0, 20.0 );
+  new TH1F("errtkYPosprev", "Error on Track Impact on plane before dut; Error track Y (mm); Number of Events",(int)(40.0/(50e-3)) , -20.0, 20.0 );
+
+
+  new TH1F("tkXPosnext", "Track Impact on plane after dut; Track X (mm); Number of Events",(int)(40.0/(250e-3)) , 10000., 30000. );
+  new TH1F("tkYPosnext", "Track Impact on plane after dut; Track Y (mm); Number of Events",(int)(40.0/(250e-3)) , 10000., 30000. );
+  new TH1F("errtkXPosnext", "Error on Track Impact on plane after dut; Error track X (mm); Number of Events",(int)(40.0/(250e-3)) , -20.0, 20.0 );
+  new TH1F("errtkYPosnext", "Error on Track Impact on plane after dut; Error track Y (mm); Number of Events",(int)(40.0/(50e-3)) , -20.0, 20.0 );
+
+  new TH1F("tkChi2", "Chi Squared Tracks", (100.0)/0.05 , -0.5, 99.5);
+}
+
+  /*
   new TH1F("deltaXPos_fit", "Difference in Track impact and Hit X Position", 40000, -20.0, 20.0);
   new TH1F("deltaYPos_fit", "Difference in Track Impact and Hit Y Position", 40000, -20.0, 20.0);
 
   new TH1F("hMatchingEfficiency_Angle","Cluster Matching Efficiency;#theta;#Matching Efficiency", (30/1.0) , -15.0 , 15.0 );
   new TH1D("hMatchingEfficiency_YOffset","Cluster Matching Efficiency;Y_{Offset} [#mum]; Matching Efficiency", (int)(200/10.0) , -200.5 , 199.5 );
- 
-  new TH1D("tk_dYdZ","dydz of tracks;dydz; [a.u.]; Count [a.u]",(20e-4/1e-5),-10e-4,10e-4);
-  new TH1D("tk_dXdZ","dxdz of tracks;dxdz; [a.u.]; Count [a.u]",(20e-4/1e-5),-10e-4,10e-4);
-
-
-  new TH1I("nTrack","Number Telescope Tracks Per Event;#tracks;#events",30,-0.5,100.5);
-  new TH1I("nTracks","Number Telescope Tracks Per Event (after duplicate removal);#tracks;#events",100,-0.5,100.5);
-  new TH1I("nTrackM","#Tracks Telescope (Matched);#tracks;#events",30,-0.5,29.5);
-  new TH1I("nhitsFei4","#Hits in FeI4;#hitsFEI4;#Events",100,-0.5,99.5);
-  new TH1D("nPxlClusterFei4","Number of Pixels per cluster in Fei4 plane;Pixels in Cluster;Clusters",100,-0.5,99.5);
-  new TH1D("nClustersFei4","Number of Clusters per Event;Number of Clusters Per Event;Count",100,-0.5,99.5);
-  new TH1F("hTotFei4","Time Over Threshold FeI4 Hits;Time Over Threshold [a.u];Number of Events [a.u]",100,-0.5,99.5);
-  new TH1F("hLv1Fei4","L1 FeI4 Hits;L1 FeI4 Cluster [a.u];Number of Events [a.u]",100,-0.5,99.5);
- 
-  new TH1F("TkXPos", "Track Impact on Fei4 Plane; FEI4 X (mm); Number of Events",(int)(40.0/(250e-3)) , -20.0, 20.0 );
-  new TH1F("TkYPos", "Track Impact on Fei4 Plane; FEI4 Y (mm); Number of Events",(int)(40.0/(50e-3)) , -20.0, 20.0 );
   new TH1F("HtColumn", "Hit Column", 85, -0.5, 84.5);
   new TH1F("HtRow", "Hit Row", 340, -0.5, 339.5);
   new TH1F("HtXPos", "FEI4 X; x_{FeI4} (mm); Number of Events",(int)(40.0/(250e-3)) , -20.0, 20.0 );
@@ -820,9 +828,8 @@ void Histogrammer::bookTelescopeAnalysisHistograms() {
   h1f->SetLineColor(kGreen);
   h1f = dynamic_cast<TH1F*>(Utility::getHist1D("deltaYPos"));
   h1f->SetLineColor(kBlue);
+ */
 
-}
-*/
 /*
 void Histogrammer::bookTrackFitHistograms(float zMin, float zStep, int zNsteps){
   fout_->cd();
