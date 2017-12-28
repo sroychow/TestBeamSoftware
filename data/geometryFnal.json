@@ -1,24 +1,26 @@
 {
-  "Module": [ 
+  "Module": [
     {
       "name": "Module1",
       "detidLower" : "50025",
       "detidUpper" : "50026",
-      "Z"          : -6,
+      "Z"          : -60000,
       "Xrot"       : 0,
-      "Yrot"       : 0
-      
+      "Yrot"       : 0,
+      "nstrips"    : 254,
+      "ncbc"       : 2,
+      "pitch"      : 90
     }
   ],
   "Telescope": [
     { "name" : "Previous",
-      "Z"    : -24.9,
+      "Z"    : -249000,
       "Xrot"       : 0,
       "Yrot"       : 24.0
     },
     {
       "name"       : "Next",
-      "Z"          : 25.9,
+      "Z"          : 259000,
       "Xrot"       : 0,
       "Yrot"       : 26.0
     }

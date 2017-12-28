@@ -22,18 +22,33 @@ class Histogrammer {
     }
     void bookStubHistograms(TString& d);
     void bookStubHistoForColumn(TString c);
+    void bookCorrelationHistograms(TString& modId);
     void bookCorrelationHistograms(std::string& modId) {
       TString td(modId);
       bookCorrelationHistograms(td);
     }
-    void bookCorrelationHistograms(TString& modId);
     void bookCorrelationHistoForColumn(TString c);
-    void bookTrackMatchHistograms();
-    void bookTrackFitHistograms(float, float, int);
-    //void bookTelescopeAnalysisHistograms();
+
+    //histograms for common track propoerties
     void bookTrackCommonHistograms();
-    void bookFeI4Histograms();
+
+    //Histograms to be used by alignment analysis
+    void bookTrackFitHistograms(TString& detId, float zMin = 0., float zStep = 0., int zNsteps = 0);
+    void FillAlignmentOffsetVsZ(const char*, const char*, int, float, float, float);
+
+    //Hisograms used by analysis with stub match
+    void bookTrackMatchHistograms(TString& detId);
+    void bookTrackMatchHistograms(std::string& d) {
+      TString td(d);
+      std::cout << "Entering bookTrackMatchHistograms with dnmae" << d << std::endl;
+      bookTrackMatchHistograms(d);
+    }
+
+    //void bookTelescopeAnalysisHistograms();
+
+    //void bookFeI4Histograms();
     void bookCBCHistograms(std::string cbc);
+    //common histogram utility functions
     TH1* GetHistoByName(const char*, const char* );
     TH1* GetHistoByName(const std::string& dir, const std::string& hname);
 
@@ -42,9 +57,6 @@ class Histogrammer {
 
     TProfile* GetProfileByName(const char*, const char* );
     TProfile* GetProfileByName(const std::string& dir, const std::string& hname);
-
-    void FillAlignmentOffsetVsZ(const char*, const char*, int, float, float, float);
-
 
     template <class T>
     void fillHist1D(const char* dir, const char* histo, T val, double w=1.0) {
@@ -63,20 +75,20 @@ class Histogrammer {
     template <class T1, class T2>
     void fillHist2D(const std::string& dir, const std::string& histo, T1 xval, T2 yval) {
       fillHist2D(dir.c_str(), histo.c_str(), xval, yval);
-    } 
- 
+    }
+
     template <class T>
     void fillHistofromVec( const std::vector<T>& vec, const char* dir, const char* h) {
       fout_->cd(dir);
-      Utility::fillHistofromVec( vec, h); 
+      Utility::fillHistofromVec( vec, h);
     }
     template <class T1, class T2>
-    void fill2DHistofromVec( const std::vector<T1>& vecC0, const std::vector<T2>& vecC1, 
+    void fill2DHistofromVec( const std::vector<T1>& vecC0, const std::vector<T2>& vecC1,
                              const char* dir, const char* h) {
       fout_->cd(dir);
       Utility::fill2DHistofromVec( vecC0, vecC1,h);
     }
-     
+
     template <class T1, class T2>
     bool fillHistProfile(const char* dir, const char* hname, T1 xvalue, T2 yvalue) {
       fout_->cd(dir);
@@ -92,10 +104,10 @@ class Histogrammer {
 
     void fillClusterHistograms( const char* det, const std::vector<tbeam::cluster>& cvec, const char* col);
     void closeFile();
-    
+
     TFile* hfile() const { return fout_;}
   private:
     TFile* fout_;
-    bool isFileopen_;  
+    bool isFileopen_;
 };
 #endif

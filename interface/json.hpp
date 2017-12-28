@@ -14725,6 +14725,7 @@ inline bool operator!=(json_pointer const& lhs, json_pointer const& rhs) noexcep
 {
     return not (lhs == rhs);
 }
+
 } // namespace nlohmann
 
 
@@ -14820,6 +14821,19 @@ object if no parse error occurred.
 inline nlohmann::json::json_pointer operator "" _json_pointer(const char* s, std::size_t n)
 {
     return nlohmann::json::json_pointer(std::string(s, n));
+}
+
+inline nlohmann::json merge(const nlohmann::json &a, const nlohmann::json &b)
+{
+    nlohmann::json result = a.flatten();
+    nlohmann::json tmp = b.flatten();
+
+    for (nlohmann::json::iterator it = tmp.begin(); it != tmp.end(); ++it)
+    {
+        result[it.key()] = it.value();
+    }
+
+    return result.unflatten();
 }
 
 // restore GCC/clang diagnostic settings

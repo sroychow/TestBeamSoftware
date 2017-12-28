@@ -13,6 +13,7 @@
 #include "Utility.h"
 #include <algorithm>
 #include <stdlib.h>
+
 int aa=5;
 BeamAnaBase::BeamAnaBase() :
   fin_( nullptr ),
@@ -21,7 +22,10 @@ BeamAnaBase::BeamAnaBase() :
   hasTelescope_(false),
   doTelMatching_(false),
   doChannelMasking_(false) {
-  vmod = new std::vector<tbeam::Module>();
+  //vmod_ = new std::vector<tbeam::Module>();
+  vmod_ =  std::unique_ptr<std::vector<tbeam::Module>>(new std::vector<tbeam::Module>());
+  //telPlanes_ = new std::map<std::string, telescopePlane>();
+  workDir_ = getenv ("WORKDIR");
 }
 
 bool BeamAnaBase::readJob(const std::string jfile) {
@@ -44,10 +48,10 @@ bool BeamAnaBase::readJob(const std::string jfile) {
       std::string key   = tokens.at(0);
       std::string value = tokens.at(1);
       jobCardmap_[key] = value;
-      if(key=="inputFile")  iFilename_ = value; 
+      if(key=="inputFile")  iFilename_ = value;
       else if(key=="outputFile")  outFilename_ = value;
       else if(key=="Run")  run = atoi(value.c_str());
-      else if(key=="fei4Z")  alPars_.FEI4z(std::atof(value.c_str()));
+      //else if(key=="fei4Z")  alPars_.FEI4z(std::atof(value.c_str()));
       else if(key=="readAlignmentFromfile")  ralignmentFromfile = (atoi(value.c_str()) > 0) ? true : false;
       else if(key=="alignmentOutputFile")  alignParfile = value;
       else if(key=="residualSigmaDUT")     residualSigmaDUT_ = std::atof(value.c_str());
@@ -87,21 +91,21 @@ bool BeamAnaBase::readJob(const std::string jfile) {
           std::string key = vtemp[0];
           std::string value = vtemp[1];
           std::cout << key << ":::" << value << std::endl;
-          if(key=="offsetFEI4X") alPars_.offsetFEI4x(std::atof(value.c_str())); 
-          else if(key=="offsetFEI4Y") alPars_.offsetFEI4y(std::atof(value.c_str())); 
-          else if(key=="residualSigmaFEI4X") alPars_.residualSigmaFEI4x(std::atof(value.c_str())); 
-          else if(key=="residualSigmaFEI4Y") alPars_.residualSigmaFEI4y(std::atof(value.c_str())); 
-          else if(key=="zD0")  alPars_.d0Z(std::atof(value.c_str()));
+          //if(key=="offsetFEI4X") alPars_.offsetFEI4x(std::atof(value.c_str()));
+          //else if(key=="offsetFEI4Y") alPars_.offsetFEI4y(std::atof(value.c_str()));
+          //else if(key=="residualSigmaFEI4X") alPars_.residualSigmaFEI4x(std::atof(value.c_str()));
+          //else if(key=="residualSigmaFEI4Y") alPars_.residualSigmaFEI4y(std::atof(value.c_str()));
+          if(key=="zD0")  alPars_.d0Z(std::atof(value.c_str()));
           else if(key=="offsetD0")  alPars_.d0Offset(std::atof(value.c_str()));
           else if(key=="deltaZ")  alPars_.deltaZ(std::atof(value.c_str()));
           else if(key=="angle")  alPars_.theta(std::atof(value.c_str()));
-        }        
+        }
       }
       alf.close();
     } else {
       std::cout << "Alignment File not found!!" << std::endl;
     }
-    
+
   }
   alPars_.setD1parametersfromD0();
   std::cout << "Initialized with the following options::"
@@ -117,21 +121,34 @@ bool BeamAnaBase::readJob(const std::string jfile) {
   if(doChannelMasking_)  setChannelMasking(chmaskFilename_);
 }
 bool BeamAnaBase::readGeometry(const std::string gfile) {
-  std::string path = getenv ("WORKDIR");
-  std::cout << "Reading geometry from file=" << (path +"/data/"+ gfile) << std::endl;
-  std::ifstream geomFile((path +"/data/"+ gfile).c_str());
+
+  std::cout << "Reading geometry from file=" << (workDir_ +"/data/"+ gfile) << std::endl;
+  std::ifstream geomFile((workDir_ +"/data/"+ gfile).c_str());
   json geom;
   geomFile >> geom;
   std::cout << std::setw(4) << geom << std::endl;
-  // range-based for
+  // look for modules
   for (auto& element : geom["Module"]) {
     //std::cout << element << '\n';
-    tbeam::Module tmod(element["name"], element["detidLower"], element["detidUpper"], element["Z"], element["Xrot"], element["Yrot"]);
-    vmod->push_back(tmod);
+    tbeam::Module tmod(element["name"], element["detidLower"], element["detidUpper"],
+                       element["Z"], element["Xrot"], element["Yrot"],
+                       element["nstrips"], element["ncbc"], element["pitch"]);
+    vmod_->push_back(tmod);
   }
+  // look for Telescope planes
+  telPlaneprev_ = {"Previous", -999., -999., -999.};
+  telPlanenext_ = {"Next", -999., -999., -999.};
+  for (auto& element : geom["Telescope"]) {
+    if(element["name"] == "Previous")
+      telPlaneprev_ = {element["name"], element["Z"], element["Xrot"], element["Yrot"]};
+    else if (element["name"] == "Next")
+      telPlanenext_ = {element["name"], element["Z"], element["Xrot"], element["Yrot"]};
+   }
+
   geomFile.close();
-  std::cout << "NModules from Geometry = " << vmod->size() << std::endl;
-  
+  std::cout << "NModules from Geometry = " << vmod_->size() << std::endl;
+  std::cout << "Previous plane at Z=" << telPlaneprev_.z << " cm" << std::endl;
+  std::cout << "Next plane at Z="     << telPlanenext_.z << " cm" << std::endl;
   return true;
 }
 
@@ -152,7 +169,7 @@ bool BeamAnaBase::setInputFile(const std::string& fname) {
   }
   analysisTree_ = dynamic_cast<TTree*>(fin_->Get("analysisTree"));
   if(analysisTree_)    return true;
-  return false; 
+  return false;
 }
 
 void BeamAnaBase::setTelMatching(const bool mtel) {
@@ -164,13 +181,8 @@ void BeamAnaBase::bookHistograms() {
   /*********
 	    Think of ways to do it automatically by reading a json/xml etc.
   *********/
-  /*
-  hout_->bookDUTHistograms("50025");
-  hout_->bookDUTHistograms("50026");
-  TString detid_lower = "50025";
-  hout_->bookStubHistograms(detid_lower);*/
-  //hout_->bookCorrelationHistograms();
-  for(auto& m : *vmod) {
+
+  for(auto& m : *vmod_) {
     hout_->bookDUTHistograms(m.hdirLower_);
     hout_->bookDUTHistograms(m.hdirUpper_);
     hout_->bookStubHistograms(m.name);
@@ -183,24 +195,17 @@ void BeamAnaBase::bookHistograms() {
 
 void BeamAnaBase::fillCommonHistograms() {
   //fill sensor hits, cluster
-  /*
-  for(auto& hitsmap: event_->dutHits){
-    const std::string& detid = hitsmap.first;
-    const std::vector<tbeam::hit>& hvec = hitsmap.second;
-    hout_->fillHist1D(detid,"chsizeC0", hvec.size());
-    for(auto& h: hvec)
-      hout_->fillHist1D(detid ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
-    const std::vector<tbeam::cluster>& cvec = event_->offlineClusters[detid];
-    hout_->fillClusterHistograms(detid, cvec, "C0");
-    hout_->fillHist2D(detid,"nhitvsnclusC0", hvec.size(), cvec.size());
-  }*/
-  for(auto& m : *vmod) {
+  for(auto& m : *vmod_) {
+    //Fill hit size
     hout_->fillHist1D(m.hdirLower_,"chsizeC0", m.lowerHits.size());
     hout_->fillHist1D(m.hdirUpper_,"chsizeC0", m.upperHits.size());
+    //Fill lower sensor hit info
     for(auto& h: m.lowerHits) {
       hout_->fillHist1D(m.hdirLower_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
+      hout_->fillHist1D(m.hdirLower_ ,"hitmapXposC0", (h.strip() - m.nstrips_/2.)*m.pitch_);
       for(auto& hup: m.upperHits)  hout_->fillHist2D(m.name+"/Correlation", "hitposcorrelationC0", h.strip(), hup.strip());
     }
+    //Fill upper sensor hit info
     for(auto& h: m.upperHits)
       hout_->fillHist1D(m.hdirUpper_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
     //Offline clusters only
@@ -211,10 +216,10 @@ void BeamAnaBase::fillCommonHistograms() {
     //correlation histo for clusters
     for(auto& lcls : m.lowerOfflineCls) {
       for(auto& ucls : m.upperOfflineCls) {
-         hout_->fillHist2D(m.name+"/Correlation", "clusterposcorrelationC0", lcls.center(), ucls.center());    
+         hout_->fillHist2D(m.name+"/Correlation", "clusterposcorrelationC0", lcls.center(), ucls.center());
       }
     }
-    //stub histos
+    //Fill stub histos
     std::string sdname = m.name + "/StubInfo";
     hout_->fillHist1D(sdname,"nstubsFromCBC",  m.cbcStubs.size());
     hout_->fillHist1D(sdname,"nstubsFromReco", m.offlineStubs.size());
@@ -277,11 +282,11 @@ void BeamAnaBase::setAddresses() {
 }
 
 void BeamAnaBase::setDetChannelVectors() {
-  for(auto& m : *vmod) {
+  for(auto& m : *vmod_) {
     if(event_->dutHits.find(m.detidLower_) != event_->dutHits.end() && event_->dutHits.find(m.detidUpper_) != event_->dutHits.end())  {
       m.lowerHits = event_->dutHits.at(m.detidLower_);
       m.upperHits = event_->dutHits.at(m.detidUpper_);
-    } 
+    }
     if(event_->cbcClusters.find(m.detidLower_) != event_->cbcClusters.end() && event_->cbcClusters.find(m.detidUpper_) != event_->cbcClusters.end())  {
       m.lowerCbcCls = event_->cbcClusters.at(m.detidLower_);//only in sparsified mode
       m.upperCbcCls = event_->cbcClusters.at(m.detidUpper_);//only in sparsified mode
@@ -307,16 +312,16 @@ void BeamAnaBase::setDetChannelVectors() {
 
 /*
 bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, const double ytrk0Pos, const double ytrk1Pos) {
-  
+
   //DUT x acceptance
-  if( (std::fabs(xtrk0Pos) > pitchDUT_*nStrips_/2.) 
+  if( (std::fabs(xtrk0Pos) > pitchDUT_*nStrips_/2.)
       || (std::fabs(xtrk1Pos) > pitchDUT_*nStrips_/2.))  return false;
   //DUT y acceptance
-  if(std::fabs(ytrk0Pos) > 25. || std::fabs(ytrk1Pos) > 25.)  return false; 
+  if(std::fabs(ytrk0Pos) > 25. || std::fabs(ytrk1Pos) > 25.)  return false;
   /*think about this
     if(doChannelMasking_) {
-    int xtkdutStrip0 = xtrk0Pos/pitchDUT_ + nStrips_/2; 
-    int xtkdutStrip1 = xtrk1Pos/pitchDUT_ + nStrips_/2; 
+    int xtkdutStrip0 = xtrk0Pos/pitchDUT_ + nStrips_/2;
+    int xtkdutStrip1 = xtrk1Pos/pitchDUT_ + nStrips_/2;
     bool mtk = std::find(dut_maskedChannels_->at("det0").begin(), dut_maskedChannels_->at("det0").end(), xtkdutStrip0) == dut_maskedChannels_->at("det0").end();
     mtk = mtk && std::find( dut_maskedChannels_->at("det1").begin(), dut_maskedChannels_->at("det1").end(), xtkdutStrip1) == dut_maskedChannels_->at("det1").end();
     return mtk;
@@ -327,7 +332,7 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
 
 //void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {}
 
-  //Think how to implement track extrapolation 
+  //Think how to implement track extrapolation
   /*
   //Tk overlap removal
   //Match with FEI4
@@ -336,9 +341,9 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
   tbeam::Track tk = event_->tracks[itrk];
   double YTkatDUT0_itrk = tk.yPos() + (alPars_.d0Z() - alPars_.FEI4z())*tk.dydz();
   double YTkatDUT1_itrk = tk.yPos() + (alPars_.d1Z() - alPars_.FEI4z())*tk.dydz();
-  
-  std::pair<double,double>  xtkdut = Utility::extrapolateTrackAtDUTwithAngles(tk, 
-  alPars_.FEI4z(), alPars_.d0Offset(), alPars_.d0Z(), 
+
+  std::pair<double,double>  xtkdut = Utility::extrapolateTrackAtDUTwithAngles(tk,
+  alPars_.FEI4z(), alPars_.d0Offset(), alPars_.d0Z(),
   alPars_.deltaZ(), alPars_.theta());
   //Selected tracks within DUT acceptance FEI4
   if(isTrkfiducial(xtkdut.first, xtkdut.second, YTkatDUT0_itrk, YTkatDUT1_itrk)) {
@@ -348,7 +353,7 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
   selectedTk[itrk].ytkDut1 = YTkatDUT1_itrk;
   //tbeam::Track temp(selectedTk[itrk]);
   fidTkColl.push_back(temp);
-  } 
+  }
   }
   */
 //}
@@ -365,7 +370,7 @@ void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
     std::string line;
     std::getline(fin,line);
     //std::cout << "Line=" << line << ">>" << fin << std::endl;
-    if(fin) {  
+    if(fin) {
     if (line.substr(0,1) == "#" || line.substr(0,2) == "//") continue;
     std::vector<std::string> tokens;
     //first split against :
@@ -379,8 +384,8 @@ void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
     }
     }
     }
-    fin.close();  
-    
+    fin.close();
+
     std::cout << "Masked Channels List" << std::endl;
     dut_maskedChannels_->insert({("det0"),std::vector<int>()});
     dut_maskedChannels_->insert({("det1"),std::vector<int>()});
@@ -394,25 +399,25 @@ void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
     if(cbcId <= 7) {
     hitposX = 127*cbcId + ichan;
     } else {
-    hitposX = 2032 - (127*cbcId + ichan);  
+    hitposX = 2032 - (127*cbcId + ichan);
     }
-    if( ch % 2 == 0 ) 
+    if( ch % 2 == 0 )
     for(int ic = hitposX-2; ic <= hitposX+2; ic++)
     dut_maskedChannels_->at("det1").push_back(ic);
-    else 
+    else
     for(int ic = hitposX-2; ic <= hitposX+2; ic++)
     dut_maskedChannels_->at("det0").push_back(ic);
     }
     std::cout << std::endl;
     }
-    
+
     std::cout << "Masked Channels Unfolded>>" << std::endl;
     for( auto& d : *dut_maskedChannels_) {
     std::cout << "DET=" << d.first << "  Masked Channels>>";
-    for(auto& ch : d.second) 
+    for(auto& ch : d.second)
     std::cout << ch << ",";
     std::cout << std::endl;
-    } 
+    }
   */
 }
 
@@ -433,5 +438,5 @@ void BeamAnaBase::endJob() {}
 void BeamAnaBase::clearEvent() {}
 
 BeamAnaBase::~BeamAnaBase() {
-  delete vmod;
+  //delete vmod_;
 }

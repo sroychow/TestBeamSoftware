@@ -29,6 +29,16 @@ BaselineAnalysis::BaselineAnalysis() :
 void BaselineAnalysis::bookHistograms() {
   BeamAnaBase::bookHistograms();
   //hist_->bookTrackMatchHistograms();
+  //implement histograms specific to this application
+  //if(vmod_) std::cout << "modVec pointer exists!! Size=" << vmod_->size() << std::endl ;
+  //if(hist_) std::cout << "Histogtammer pointer exists\n" ;
+  for(auto& m : *modVec()){
+    std::cout << "DetidLower=" << m.hdirLower_ << std::endl;
+    TString s = TString(m.hdirLower_);
+    hist_->bookTrackFitHistograms(s);
+    s = TString(m.hdirUpper_);
+    hist_->bookTrackFitHistograms(s);
+  }
 }
 
 void BaselineAnalysis::beginJob() {
@@ -40,18 +50,21 @@ void BaselineAnalysis::beginJob() {
   //analysisTree()->GetEntry(0);
   //getCbcConfig(condEv()->cwd, condEv()->window);
 }
- 
+
 void BaselineAnalysis::eventLoop()
 {
   Long64_t nbytes = 0, nb = 0;
-  cout << "#Events=" << nEntries_ << endl;
+  maxEvent_ = getMaxEvt();
+  if(nEntries_ < maxEvent_ || maxEvent_ == 0) maxEvent_ = nEntries_;
+  cout << "#Events=" << nEntries_ <<" -->  MAX EVENTS TO BE PROCESSED : "<< maxEvent_ <<endl;
   hist_->fillHist1D("EventInfo","nevents", nEntries_);
-  for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
+
+  for (Long64_t jentry=0; jentry < maxEvent_; jentry++) {
     clearEvent();
     Long64_t ientry = analysisTree()->GetEntry(jentry);
     if (ientry < 0) break;
     if (jentry%1000 == 0) {
-      cout << " Events processed. " << std::setw(8) << jentry 
+      cout << " Events processed. " << std::setw(8) << jentry
 	   << endl;
     }
     if(jentry==0) {
@@ -70,6 +83,35 @@ void BaselineAnalysis::eventLoop()
     setDetChannelVectors();
     //fill common histograms for dut hits, clusters
     fillCommonHistograms();
+    //Fill track match histograms
+    for(auto& m : *modVec()){
+      std::string dnameLower = m.hdirLower_ + "/TrackFit";
+      //loop over tracks
+      for(auto& tk: event()->tracks) {
+        //previous hit
+        float xtk_prev = tk.xPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
+        float ytk_prev = tk.yPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
+        hist_->fillHist1D(dnameLower, "tkposx_prev", xtk_prev/1000.);
+        hist_->fillHist1D(dnameLower, "tkposy_prev", ytk_prev/1000.);
+        //next hit
+        float xtk_next = tk.xPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
+        float ytk_next = tk.yPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
+        hist_->fillHist1D(dnameLower, "tkposx_next", xtk_next/1000.);
+        hist_->fillHist1D(dnameLower, "tkposy_next", ytk_next/1000.);
+        //Fill hit residuals
+        for(auto& h: m.lowerHits) {
+          float hx = (h.strip() - 127)*.090;
+          hist_->fillHist1D(dnameLower, "hitresidualX_prev", hx - xtk_prev/1000.);
+          hist_->fillHist1D(dnameLower, "hitresidualX_next", hx - xtk_next/1000.);
+        }
+        //Fill cluster residuals
+        for(auto& c: m.lowerOfflineCls) {
+          float cx = (c.center() - 127.0)*.090;
+          hist_->fillHist1D(dnameLower, "clusresidualX_prev", cx - xtk_prev/1000.);
+          hist_->fillHist1D(dnameLower, "clusresidualX_next", cx - xtk_next/1000.);
+        }
+      }
+    }
   }
 
 }
