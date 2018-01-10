@@ -1,24 +1,35 @@
 ## Beam Test Data Analysis Software
 ##FOR NOV17 FNAL testbeam
-## Installation
+## Set up gcc and ROOT(works with ROOT 6, requires ROOT to be compiled with libminut2)
+##On lxplus: you can setup gcc and root as follows
+cmsrel CMSSW_9_3_0
 
-Set up ROOT(works with ROOT 5, requires ROOT to be compiled with libminut2)
-##On lxplus, you can setup gcc and root as follows
-source /afs/cern.ch/sw/lcg/external/gcc/4.9/x86_64-slc6-gcc49-opt/setup.sh
+cd CMSSW_9_3_0/src
 
-source /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.36/x86_64-slc6-gcc49-opt/root/bin/thisroot.sh
+cmsenv
 
+This will set the required gcc and ROOT required.
+
+##Fetch the software and compile
 git clone https://github.com/sroychow/TestBeamSoftware.git
 
 cd TestBeamSoftware
 
-git checkout may16dev
+git checkout nov17
 
-#Set to NOV_15 or MAY_16 or OCT_16
-setenv  BT_ERA OCT_16
+setenv  SOURCE_DIR $PWD
 
 make cint
+
 make
+
+**Set SOURCE_DIR environment variable:Should point to the directory where TestBeamSoftware 
+is checked out. This must be set evrtytime a new shell is opened. 
+
+**For mac users with Xcode 9, change the compiler in MakeFile to clag++ instead of g++
+
+##Basic usage :-
+./<application name> <jobcard-name>
 
 ## Usage
 ##Running on tuple

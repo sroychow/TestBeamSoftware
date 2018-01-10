@@ -145,10 +145,10 @@ void AlignmentMultiDimAnalysis::eventLoop()
     clearEvent();
     Long64_t ientry = analysisTree()->GetEntry(jentry);
     if (ientry < 0) break;
-    if (jentry%1000 == 0) {
+    //if (jentry%1000 == 0) {
       cout << " Events processed. " << std::setw(8) << jentry
 	   << endl;
-    }
+    //}
     if(jentry==0) {
       hist_->fillHist1D("EventInfo","hvSettings", event()->HVsettings);
       hist_->fillHist1D("EventInfo","dutAngle", event()->DUTangle);
@@ -166,13 +166,17 @@ void AlignmentMultiDimAnalysis::eventLoop()
     //fill common histograms for dut hits, clusters//Optional
     fillCommonHistograms();
     //Fill track match histograms
+    if(event()->tracks.size() != 1)  continue;
     for(auto& m : *modVec()){
       std::string dnameLower = m.hdirLower_ + "/TrackFit";
       //loop over tracks
       for(auto& tk: event()->tracks) {
+        if(m.lowerHits.size() != 1) continue;
         //previous hit
         float xtk_prev = tk.xPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
         float ytk_prev = tk.yPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
+        std::cout << "Previous hit tk extrapolated Xpos=" << xtk_prev/1000. << "\n";
+        std::cout << "Previous hit tk extrapolated Ypos=" << ytk_prev/1000. << "\n";
         hist_->fillHist1D(dnameLower, "tkposx_prev", xtk_prev/1000.);
         hist_->fillHist1D(dnameLower, "tkposy_prev", ytk_prev/1000.);
         //next hit
@@ -182,13 +186,17 @@ void AlignmentMultiDimAnalysis::eventLoop()
         hist_->fillHist1D(dnameLower, "tkposy_next", ytk_next/1000.);
         //Fill hit residuals
         for(auto& h: m.lowerHits) {
-          float hx = (h.strip() - m.nstrips_/2.)*m.pitch_;
+          float hx = (float(h.strip()) - float(m.nstrips_)/2.)*m.pitch_;
           hist_->fillHist1D(dnameLower, "hitresidualX_prev", hx - xtk_prev/1000.);
           hist_->fillHist1D(dnameLower, "hitresidualX_next", hx - xtk_next/1000.);
         }
+        std::cout << "NStrips = " << float(m.nstrips_)/2. << "\tPitch=" << m.pitch_ << "\n";
         //Fill cluster residuals
         for(auto& c: m.lowerOfflineCls) {
+
           float cx = (c.center() - m.nstrips_/2.)*m.pitch_;
+          std::cout << "Offline clus pos(lower) =" << c.center() << " in mm=" << (c.center() - 127)*0.09<< "\n";
+          std::cout << "Cluster Xpos(in align)=" << cx << "\tresidual=" << cx - xtk_prev/1000. <<"\n";
           hist_->fillHist1D(dnameLower, "clusresidualX_prev", cx - xtk_prev/1000.);
           hist_->fillHist1D(dnameLower, "clusresidualX_next", cx - xtk_next/1000.);
         }
