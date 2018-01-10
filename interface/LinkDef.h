@@ -9,7 +9,7 @@
 #pragma link C++ class tbeam::cluster+;
 #pragma link C++ class tbeam::cbc+;
 #pragma link C++ class tbeam::stub+;
-#pragma link C++ class tbeam::Hit+;
+#pragma link C++ class tbeam::hit+;
 #pragma link C++ class tbeam::Event+;
 #pragma link C++ class tbeam::Track+;
 #endif
