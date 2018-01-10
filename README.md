@@ -9,7 +9,7 @@ cd CMSSW_9_3_0/src
 
 cmsenv
 
-This will set the required gcc and ROOT required.
+This will set the appropriate gcc and ROOT required.
 
 ##Fetch the software and compile
 
