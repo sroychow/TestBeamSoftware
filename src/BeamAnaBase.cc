@@ -25,7 +25,7 @@ BeamAnaBase::BeamAnaBase() :
   //vmod_ = new std::vector<tbeam::Module>();
   vmod_ =  std::unique_ptr<std::vector<tbeam::Module>>(new std::vector<tbeam::Module>());
   //telPlanes_ = new std::map<std::string, telescopePlane>();
-  workDir_ = getenv ("WORKDIR");
+  workDir_ = getenv ("SOURCE_DIR");
 }
 
 bool BeamAnaBase::readJob(const std::string jfile) {
