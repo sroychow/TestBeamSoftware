@@ -2,6 +2,7 @@
 ##FOR NOV17 FNAL testbeam
 ## Set up gcc and ROOT(works with ROOT 6, requires ROOT to be compiled with libminut2)
 ##On lxplus: you can setup gcc and root as follows
+
 cmsrel CMSSW_9_3_0
 
 cd CMSSW_9_3_0/src
@@ -11,6 +12,7 @@ cmsenv
 This will set the required gcc and ROOT required.
 
 ##Fetch the software and compile
+
 git clone https://github.com/sroychow/TestBeamSoftware.git
 
 cd TestBeamSoftware
@@ -29,6 +31,7 @@ is checked out. This must be set evrtytime a new shell is opened.
 **For mac users with Xcode 9, change the compiler in MakeFile to clag++ instead of g++
 
 ##Basic usage :-
+
 ./<application name> <jobcard-name>
 
 ## Usage
