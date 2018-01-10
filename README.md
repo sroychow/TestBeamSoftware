@@ -32,7 +32,7 @@ is checked out. This must be set evrtytime a new shell is opened.
 
 ##Basic usage :-
 
-./<application name> <jobcard-name>
+./\<application name\> \<jobcard-name\>
 
 ## Usage
 ##Running on tuple
