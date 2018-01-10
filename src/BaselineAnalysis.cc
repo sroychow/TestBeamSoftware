@@ -35,9 +35,9 @@ void BaselineAnalysis::bookHistograms() {
   for(auto& m : *modVec()){
     std::cout << "DetidLower=" << m.hdirLower_ << std::endl;
     TString s = TString(m.hdirLower_);
-    hist_->bookTrackFitHistograms(s);
+    hist_->bookTrackMatchHistograms(s);
     s = TString(m.hdirUpper_);
-    hist_->bookTrackFitHistograms(s);
+    hist_->bookTrackMatchHistograms(s);
   }
 }
 
@@ -73,9 +73,26 @@ void BaselineAnalysis::eventLoop()
       hist_->fillHist1D("EventInfo","vcth", event()->vcth);
       //hist_->fillHist1D("EventInfo","offset", cbcOffset1());
       //hist_->fillHist1D("EventInfo","offset", cbcOffset2());
-      //hist_->fillHist1D("EventInfo","window", stubWindow());
+      hist_->fillHist1D("EventInfo","window", event()->cwd);
       //hist_->fillHist1D("EventInfo","tilt", static_cast<unsigned long int>(condEv()->tilt));
       cout << "Alignment Parameters" << aLparameteres();
+      for(auto& cm: event()->conddatamap){
+        uint8_t uid = (cm.first >> 24) & MASK_BITS_8;
+        uint8_t i2cReg  = (cm.first >> 16)  & MASK_BITS_8;
+        uint8_t i2cPage = (cm.first >> 12)  & MASK_BITS_4;
+        uint8_t roId    = (cm.first >> 8)   & MASK_BITS_4;
+        uint8_t feId    = (cm.first)        & MASK_BITS_8;
+        std::cout << "uid=" << (int)uid
+                  << ":i2cReg="<< (int)i2cReg
+                  << ":i2cPage="<< (int)i2cPage
+                  << ":roId="<< (int)roId
+                  << ":feId="<< (int)feId
+                  << ":value=" << (int)cm.second
+                  << std::endl;
+        //if(uid == 1)
+        //  std::cout << "Value for uid=1>>>" << (int)cm.second << std::endl;
+      }
+
     }
     hist_->fillHist1D("EventInfo","condData", static_cast<unsigned int>(event()->condData));
     hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(event()->tdcPhase));
@@ -85,7 +102,7 @@ void BaselineAnalysis::eventLoop()
     fillCommonHistograms();
     //Fill track match histograms
     for(auto& m : *modVec()){
-      std::string dnameLower = m.hdirLower_ + "/TrackFit";
+      std::string dnameLower = m.hdirLower_ + "/TrackMatch";
       //loop over tracks
       for(auto& tk: event()->tracks) {
         //previous hit
@@ -100,13 +117,13 @@ void BaselineAnalysis::eventLoop()
         hist_->fillHist1D(dnameLower, "tkposy_next", ytk_next/1000.);
         //Fill hit residuals
         for(auto& h: m.lowerHits) {
-          float hx = (h.strip() - 127)*.090;
+          float hx = (h.strip() - m.nstrips_/2.)*m.pitch_;
           hist_->fillHist1D(dnameLower, "hitresidualX_prev", hx - xtk_prev/1000.);
           hist_->fillHist1D(dnameLower, "hitresidualX_next", hx - xtk_next/1000.);
         }
         //Fill cluster residuals
         for(auto& c: m.lowerOfflineCls) {
-          float cx = (c.center() - 127.0)*.090;
+          float cx = (c.center() - m.nstrips_/2.)*m.pitch_;
           hist_->fillHist1D(dnameLower, "clusresidualX_prev", cx - xtk_prev/1000.);
           hist_->fillHist1D(dnameLower, "clusresidualX_next", cx - xtk_next/1000.);
         }

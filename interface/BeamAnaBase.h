@@ -38,6 +38,8 @@ struct telescopePlane {
   float xrot;
   float yrot;
 };
+static constexpr unsigned int MASK_BITS_8 = 0xFF;
+static constexpr unsigned int MASK_BITS_4 = 0xF;
 class BeamAnaBase {
 
   public :

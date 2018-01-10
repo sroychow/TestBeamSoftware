@@ -1,6 +1,6 @@
 #START
 Run=131
-inputFile=/home/sroychow/BeamTest/Dec2017/AnalysisTree_000131.root
+inputFile=AnalysisTree_000131.root
 outputFile=test.root
 //Run=926:zD0=657.622:offsetD0=2.42379:zD1=659.481:offsetD1=2.40335
 fei4Z=688
@@ -8,10 +8,11 @@ d0minZ=657.622
 d1minZ=659.481
 d0Offsetaligned=2.42379
 d1Offsetaligned=2.40335
-doTelescopeMatching=0
+doTelescopeMatching=1
 doChannelMasking_=0
 channelMaskFile=chmask.txt
 residualSigmaDUT=0.026
+maximumEVT=50000
 //Summary of the Step convolved with Gauss Fits to the residuals:
 //Residual X>>>Mean=-0.499878>>>Pitch=0.250008
 //Residual Y>>>Mean=-0.0530388>>>Pitch=0.0499252
@@ -24,5 +25,5 @@ pitchDUT=0.09
 geomFile=geometryFnal.json
 #only needed by Alignment Analysis
 isProductionmode=0
-alignmentOutputFile=alignmentparOutput_926.txt
+alignmentOutputFile=alignmentparOutput_000131.json
 #END
