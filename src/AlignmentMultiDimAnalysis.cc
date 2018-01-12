@@ -6,7 +6,7 @@
  *         Support :            mail to : nicolas.pierre.chanon@cern.ch
  * */
 
-#include "TROOT.h"
+//#include "TROOT.h"
 #include "TInterpreter.h"
 #include "TF1.h"
 #include "TH1.h"
@@ -34,9 +34,10 @@ using namespace std;
 
 AlignmentMultiDimAnalysis::AlignmentMultiDimAnalysis() :
   BeamAnaBase::BeamAnaBase(),
-  isProduction_(false),
-  alignparFile_("alignmentParameters.txt")
+  isProduction_(false)
 {
+  alignparFile_ = workDir() + "/data/alignmentParameters.txt";
+
 }
 
 void AlignmentMultiDimAnalysis::beginJob() {
@@ -45,37 +46,57 @@ void AlignmentMultiDimAnalysis::beginJob() {
   setAddresses();
   nEntries_ = analysisTree()->GetEntries();
 
-#if defined(MAY_16) || defined(OCT_16)
-   zMin = 200.;
-#elif NOV_15
-   zMin = 1000.;
-#endif
-  
+  zMin = 300.;
+
   zStep = 20.;
   zNsteps = 50;
 
   bookHistograms();
-  analysisTree()->GetEntry(0);
-  getCbcConfig(condEv()->cwd, condEv()->window);
-  
+  //analysisTree()->GetEntry(0);
+  //getCbcConfig(condEv()->cwd, condEv()->window);
+
   if(jobCardmap().find("isProductionmode") != jobCardmap().end())
     isProduction_ = (atoi(jobCardmap().at("isProductionmode").c_str()) > 0) ? true : false;
   if(jobCardmap().find("alignmentOutputFile") != jobCardmap().end())
-    alignparFile_ = jobCardmap().at("alignmentOutputFile");
+    alignparFile_ = workDir() + "/data/" + jobCardmap().at("alignmentOutputFile");
   if(jobCardmap().find("Run") != jobCardmap().end())
     runNumber_ = jobCardmap().at("Run");
-  
-  std::cout << "Additional Parameter specific to AlignmentReco>>" 
+
+  std::cout << "Additional Parameter specific to AlignmentReco>>"
             << "\nisProductionMode:" << isProduction_
             << "\nalignparameterOutputFile:" << alignparFile_
             << std::endl;
-
-} 
+  //If Production mode, read the existing alignment json into a json array.
+  //Later, the alignment from this code will be added to this json array
+  alignmentDump_ = json::array();
+  if(isProduction_) {
+    std::ifstream fileAlignment(alignparFile_.c_str());
+    fileAlignment >> alignmentDump_;
+    fileAlignment.close();
+  }
+}
 
 void AlignmentMultiDimAnalysis::bookHistograms() {
-  hist_->bookEventHistograms();
-  hist_->bookTelescopeAnalysisHistograms();
-  hist_->bookTrackFitHistograms(zMin, zStep, zNsteps);
+  BeamAnaBase::bookHistograms();
+
+  for(auto& m : *modVec()){
+    TString s = TString(m.hdirLower_);
+    hist_->bookTrackFitHistograms(s,zMin, zStep, zNsteps);
+    s = TString(m.hdirUpper_);
+    hist_->bookTrackFitHistograms(s,zMin, zStep, zNsteps);
+  }
+}
+
+void AlignmentMultiDimAnalysis::dumpAlignment(const tbeam::alignmentPars& a) {
+  json o;
+  o.emplace("d0_chi2_min_z", a.d0Z());
+  o.emplace("d0_chi2_min_z", a.d0Z());
+  o.emplace("d0_Offset_aligned", a.d0Offset());
+  o.emplace("deltaz", a.deltaZ());
+  o.emplace("theta", a.deltaZ());
+  o.emplace("sensorId" , a.sensorId());
+  alignmentDump_.push_back({runNumber_, o});
+
 }
 
 void AlignmentMultiDimAnalysis::eventLoop()
@@ -106,42 +127,105 @@ void AlignmentMultiDimAnalysis::eventLoop()
   minimizerBothPlanesConstraint->SetFunction(*toMinimizeBothPlanesConstraint);
 
 
-  if (!doTelMatching() || !hasTelescope()) return;
-  //First do telescope-fei4 matching 
-  al = aLparameteres();
-  doTelescopeAnalysis(al);
-#if defined(MAY_16) || defined(OCT_16)
-  float DUT_z = 460.0;//oct16=460;//may16=435
-  float DUT_z_try = 400;  
-#elif NOV_15
-  float DUT_z = 1400.;//oct16=460;//may16=435//nov 15 approx=1400
-  float DUT_z_try = 1200;
-#endif
+  if (!doTelMatching()) return;
 
-  std::string filename=inFile();
-  run_ = std::stoi(filename.substr(filename.find(".root")-3,3));
-  cout<<"Run Number : "<<run_<<endl;
-  maxEvent = getMaxEvt();
-  cout<<maxEvent<<endl;
-  if(nEntries_<maxEvent || maxEvent==0) maxEvent=nEntries_;
-  
+  float DUT_z = 460.0;//oct16=460;//may16=435
+  float DUT_z_try = 400;
+
+  //std::string filename=inFile();
+  //run_ = std::stoi(filename.substr(filename.find(".root")-3,3));
+  //cout<<"Run Number : "<<run_<<endl;
+  maxEvent_ = getMaxEvt();
+  if(nEntries_<maxEvent_ || maxEvent_==0) maxEvent_=nEntries_;
   Long64_t nbytes = 0, nb = 0;
-  cout << "#Events=" << nEntries_ <<" -->  MAX EVENTS TO BE PROCESSED : "<<maxEvent<<endl;
+  cout << "#Events=" << nEntries_ <<" -->  MAX EVENTS TO BE PROCESSED : "<<maxEvent_<<endl;
   hist_->fillHist1D("EventInfo","nevents", nEntries_);
-  
-  std::cout << "CBC configuration:: SW=" << stubWindow()
-	    << "\tCWD=" << cbcClusterWidth()
-             << "\tOffset1="<< cbcOffset1() 
-	    << "\tOffset2" << cbcOffset2()
-	    << std::endl;
+
+  for (Long64_t jentry=0; jentry < maxEvent_; jentry++) {
+    clearEvent();
+    Long64_t ientry = analysisTree()->GetEntry(jentry);
+    if (ientry < 0) break;
+    //if (jentry%1000 == 0) {
+      cout << " Events processed. " << std::setw(8) << jentry
+	   << endl;
+    //}
+    if(jentry==0) {
+      hist_->fillHist1D("EventInfo","hvSettings", event()->HVsettings);
+      hist_->fillHist1D("EventInfo","dutAngle", event()->DUTangle);
+      hist_->fillHist1D("EventInfo","vcth", event()->vcth);
+      //hist_->fillHist1D("EventInfo","offset", cbcOffset1());
+      //hist_->fillHist1D("EventInfo","offset", cbcOffset2());
+      //hist_->fillHist1D("EventInfo","window", stubWindow());
+      //hist_->fillHist1D("EventInfo","tilt", static_cast<unsigned long int>(condEv()->tilt));
+    }
+    hist_->fillHist1D("EventInfo","condData", static_cast<unsigned int>(event()->condData));
+    hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(event()->tdcPhase));
+    //****set the hits/cluster/stubs from the sensors in user accessable module*******
+    //CANNOT REMOVE THIS LINE
+    setDetChannelVectors();
+    //fill common histograms for dut hits, clusters//Optional
+    fillCommonHistograms();
+    //Fill track match histograms
+    if(event()->tracks.size() != 1)  continue;
+    for(auto& m : *modVec()){
+      std::string dnameLower = m.hdirLower_ + "/TrackFit";
+      //loop over tracks
+      for(auto& tk: event()->tracks) {
+        if(m.lowerHits.size() != 1) continue;
+        //previous hit
+        float xtk_prev = tk.xPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
+        float ytk_prev = tk.yPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
+        std::cout << "Previous hit tk extrapolated Xpos=" << xtk_prev/1000. << "\n";
+        std::cout << "Previous hit tk extrapolated Ypos=" << ytk_prev/1000. << "\n";
+        hist_->fillHist1D(dnameLower, "tkposx_prev", xtk_prev/1000.);
+        hist_->fillHist1D(dnameLower, "tkposy_prev", ytk_prev/1000.);
+        //next hit
+        float xtk_next = tk.xPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
+        float ytk_next = tk.yPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
+        hist_->fillHist1D(dnameLower, "tkposx_next", xtk_next/1000.);
+        hist_->fillHist1D(dnameLower, "tkposy_next", ytk_next/1000.);
+        //Fill hit residuals
+        for(auto& h: m.lowerHits) {
+          float hx = (float(h.strip()) - float(m.nstrips_)/2.)*m.pitch_;
+          hist_->fillHist1D(dnameLower, "hitresidualX_prev", hx - xtk_prev/1000.);
+          hist_->fillHist1D(dnameLower, "hitresidualX_next", hx - xtk_next/1000.);
+        }
+        std::cout << "NStrips = " << float(m.nstrips_)/2. << "\tPitch=" << m.pitch_ << "\n";
+        //Fill cluster residuals
+        for(auto& c: m.lowerOfflineCls) {
+
+          float cx = (c.center() - m.nstrips_/2.)*m.pitch_;
+          std::cout << "Offline clus pos(lower) =" << c.center() << " in mm=" << (c.center() - 127)*0.09<< "\n";
+          std::cout << "Cluster Xpos(in align)=" << cx << "\tresidual=" << cx - xtk_prev/1000. <<"\n";
+          hist_->fillHist1D(dnameLower, "clusresidualX_prev", cx - xtk_prev/1000.);
+          hist_->fillHist1D(dnameLower, "clusresidualX_next", cx - xtk_next/1000.);
+        }
+      }
+    }
+  }
+
+  //Simple extraction of mean and sigma of rsidual histograms and dumping...no fitting involved
+  //To be removed once the code is updated
+  //Check mean sigma from histograms
+  //json alignmentDump = json::array();
+  for(auto& m : *modVec()){
+    std::string dnameLower = m.hdirLower_ + "/TrackFit";
+    TH1* hclusres = hist_->GetHistoByName(dnameLower, "clusresidualX_prev");
+    tbeam::alignmentPars tal(m.name, hclusres->GetMean(),m.z, 2., 0.);//this is temporary
+    dumpAlignment(tal);
+  }
+
+
   //First Loop over events-inject z and compute residual
   //evaluate the best z alignment
+  /*
+  //BEGIN MAY16 code-------------Check with Nicolas
   for (Long64_t jentry=0; jentry<nEntries_ && jentry<maxEvent;jentry++) {
     clearEvent();
     Long64_t ientry = analysisTree()->GetEntry(jentry);
     if (ientry < 0) break;
     if (jentry%1000 == 0) {
-       cout << " Events processed. " << std::setw(8) << jentry 
+       cout << " Events processed. " << std::setw(8) << jentry
 	    << endl;
     }
     if(jentry==0) {
@@ -155,30 +239,30 @@ void AlignmentMultiDimAnalysis::eventLoop()
     }
     hist_->fillHist1D("EventInfo","isPeriodic",isPeriodic());
     hist_->fillHist1D("EventInfo","isGoodFlag",isGoodEvent());
-    
+
     if(!isGoodEvent())   continue;
-   
+
     if(fei4Ev()->nPixHits != 1)    continue;
- 
+
     hist_->fillHist1D("EventInfo","condData", condEv()->condData);
     hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(condEv()->tdcPhase));
-    
+
     setDetChannelVectors();
     const auto& d0c0 = *det0C0();
     const auto& d0c1 = *det0C1();
     const auto& d1c0 = *det1C0();
     const auto& d1c1 = *det1C1();
     //fillCommonHistograms();
-    //Remove track duplicates 
+    //Remove track duplicates
     std::vector<tbeam::Track>  tkNoOv;
     Utility::removeTrackDuplicates(telEv(), tkNoOv);
 
-    hist_->fillHist1D("TelescopeAnalysis","nTrack_noduplicate", tkNoOv.size());	
+    hist_->fillHist1D("TelescopeAnalysis","nTrack_noduplicate", tkNoOv.size());
     //Match with FEI4
     std::vector<tbeam::Track>  selectedTk;
-    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, al.offsetFEI4x(), al.offsetFEI4y(), al.residualSigmaFEI4x(), al.residualSigmaFEI4y(), true); 
-    hist_->fillHist1D("TelescopeAnalysis","nTrack_fiducial", selectedTk.size());	
-    //Find mean of residuals, scanning zDUT      
+    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, al.offsetFEI4x(), al.offsetFEI4y(), al.residualSigmaFEI4x(), al.residualSigmaFEI4y(), true);
+    hist_->fillHist1D("TelescopeAnalysis","nTrack_fiducial", selectedTk.size());
+    //Find mean of residuals, scanning zDUT
     if (selectedTk.size()!=1) continue;
     //cout << "NHits: d0, "<<d0c0.size()<<" ; d1, "<<d1c0.size()<<endl;
     if (d0c0.size()==1) {
@@ -240,7 +324,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
       selectedTk_bothPlanes_1Cls.push_back(selectedTk[0]);
       bothPlanes_DutXposD0.push_back(D0xDUT);
       bothPlanes_DutXposD1.push_back(D1xDUT);
-      //      std::cout << "Selected Tk:xpos=" << xTkAtDUT << "//ypos=" << yTkAtDUT  
+      //      std::cout << "Selected Tk:xpos=" << xTkAtDUT << "//ypos=" << yTkAtDUT
       //      << "//cls0=" <<  D0xDUT << "//cls1=" << D1xDUT << std::endl;
       hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_ter", D0xDUT-xTkAtDUT);
       hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_ter", D1xDUT-xTkAtDUT);
@@ -252,7 +336,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   double offset_init_d0 = ((float)hTmp->GetMaximumBin())*(hTmp->GetXaxis()->GetXmax()-hTmp->GetXaxis()->GetXmin())/((float)hTmp->GetNbinsX()) + hTmp->GetXaxis()->GetXmin();//hTmp->GetMean();
   hTmp->SetAxisRange(offset_init_d0-1., offset_init_d0+1., "X");
   double cte = (hTmp->GetBinContent(hTmp->FindBin(offset_init_d0-1.))+hTmp->GetBinContent(hTmp->FindBin(offset_init_d0+1.)))/2.;
-  
+
   fGausExtractedX->SetParameter(0, hTmp->GetMaximum());
   //  fGausExtractedX->SetParLimits(1, -50., 50.);
   fGausExtractedX->SetParameter(1, offset_init_d0);
@@ -268,7 +352,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   double offset_init_d1 = ((float)hTmp->GetMaximumBin())*(hTmp->GetXaxis()->GetXmax()-hTmp->GetXaxis()->GetXmin())/((float)hTmp->GetNbinsX()) + hTmp->GetXaxis()->GetXmin();//hTmp->GetMean();
   hTmp->SetAxisRange(offset_init_d1-1., offset_init_d1+1., "X");
   cte = (hTmp->GetBinContent(hTmp->FindBin(offset_init_d1-1.))+hTmp->GetBinContent(hTmp->FindBin(offset_init_d1+1.)))/2.;
-  
+
   fGausExtractedX->SetParameter(0, hTmp->GetMaximum());
   fGausExtractedX->SetParameter(1, offset_init_d1);
   fGausExtractedX->SetParameter(2, 0.03);
@@ -277,10 +361,10 @@ void AlignmentMultiDimAnalysis::eventLoop()
   hTmp->Fit("fGausExtractedX", "WW");
   offset_init_d1 = fGausExtractedX->GetParameter(1);
 
-  cout << "offset_init_d0="<<offset_init_d0<<endl; 
+  cout << "offset_init_d0="<<offset_init_d0<<endl;
   cout << "offset_init_d1="<<offset_init_d1<<endl;
-  
-  
+
+
   doD0 = true;
   doD1 = false;
   double chi2 = 0;
@@ -307,8 +391,8 @@ void AlignmentMultiDimAnalysis::eventLoop()
     double xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d0_1Hit.at(i), al.FEI4z(), resultD0[0], resultD0[1], resultD0[2]);
     double resDUT_d0 = xDUT_d0 - xTkAtDUT_d0;
     hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_aligned", resDUT_d0);
-  }  
-  
+  }
+
 
   doD0 = false;
   doD1 = true;
@@ -371,7 +455,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   resultBothPlanes[4] = resultMinimizerBothPlanes[4];
   double chi2BothPlanes = ComputeChi2BothPlanes(resultBothPlanes);
   cout << "BothPlanes offset_d0="<< resultBothPlanes[0]<<" zDUT_d0="<<resultBothPlanes[1]<<" offset_d1="<< resultBothPlanes[2]<<" zDUT_d1="<<resultBothPlanes[3] << " theta="<<resultBothPlanes[4]*180./TMath::Pi()<< " chi2="<<chi2BothPlanes<<endl;
-  
+
   for (unsigned int i=0; i<selectedTk_bothPlanes_1Cls.size(); i++){
     double xDUT_d0 =   bothPlanes_DutXposD0.at(i);
     double xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), resultBothPlanes[0], resultBothPlanes[1], resultBothPlanes[4]);
@@ -384,7 +468,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
     hist_->fillHist1D("TrackFit","d1_1tk1ClusterBothPlanes_diffX_aligned", resDUT_d1);
   }
 
-  
+
   doConstrainDeltaOffset = true;
   doD0 = true;
   doD1 = true;
@@ -423,21 +507,21 @@ void AlignmentMultiDimAnalysis::eventLoop()
     hist_->fillHist1D("TrackFit","d0_1tk1ClusterBothPlanesConstraint_diffX_aligned", resDUT_d0);
     hist_->fillHist1D("TrackFit","d1_1tk1ClusterBothPlanesConstraint_diffX_aligned", resDUT_d1);
   }
-  
+
   //Fit Residuals Gaussian convulated with Step Function
   TF1* fGausResiduals = new TF1("fGausResiduals", "gaus", -100, 100);
-  TH1* htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d0_1tk1Hit_diffX_aligned"));   
+  TH1* htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d0_1tk1Hit_diffX_aligned"));
   float center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
   fGausResiduals->SetRange(center-0.3, center+0.3);
   fGausResiduals->SetParameter(1, center);
   fGausResiduals->SetParameter(2, 0.026);
   htmp->Fit("fGausResiduals");
-  
+
   center = fGausResiduals->GetParameter(1);
   float rms = 5*fGausResiduals->GetParameter(2);
   htmp->SetAxisRange(center-rms, center+rms, "X");
-  
+
   TF1* fStepGaus = new TF1("FuncStepGaus", FuncStepGaus, -0.1, 0.1, 4);
   fStepGaus->SetLineWidth(2);
   fStepGaus->SetLineColor(kRed);
@@ -448,17 +532,17 @@ void AlignmentMultiDimAnalysis::eventLoop()
   fStepGaus->SetParameter(2, htmp->GetMaximum());
   fStepGaus->SetParLimits(3, 0, 50);
   fStepGaus->SetParameter(3, 0);
-  
+
   htmp->Fit(fStepGaus);
-  
-  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d1_1tk1Hit_diffX_aligned"));   
+
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d1_1tk1Hit_diffX_aligned"));
   center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
   fGausResiduals->SetRange(center-0.3, center+0.3);
   fGausResiduals->SetParameter(1, center);
   fGausResiduals->SetParameter(2, 0.026);
   htmp->Fit("fGausResiduals");
-  
+
   center = fGausResiduals->GetParameter(1);
   rms = 5*fGausResiduals->GetParameter(2);
   htmp->SetAxisRange(center-rms, center+rms, "X");
@@ -469,7 +553,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
 
   htmp->Fit(fStepGaus);
 
-  
+
   htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d0_1tk1ClusterBothPlanes_diffX_aligned"));
   center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
@@ -545,7 +629,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   bool doMinimizerChecks = true;
   if (doMinimizerChecks){
 
-    doConstrainDeltaOffset = false; 
+    doConstrainDeltaOffset = false;
     doD0 = true;
     doD1 = true;
     TH1* hChi2vsTheta = dynamic_cast<TH1F*>(hist_->GetHistoByName("TrackFit","bothPlanes_chi2VsTheta"));
@@ -583,7 +667,9 @@ void AlignmentMultiDimAnalysis::eventLoop()
     resultBothPlanesConstraint[2] = deltaZ_save;
 
   }
-  
+  //END MAY16 code
+  */
+  /*NOT required
   cout << "------------------"<<endl;
   cout << "Telescope Fei4 matching summary" << endl;
   std::cout << "offsetFEI4X=" << al.offsetFEI4x() << endl;
@@ -591,6 +677,8 @@ void AlignmentMultiDimAnalysis::eventLoop()
   std::cout << "residualSigmaFEI4X=" << al.residualSigmaFEI4x() << endl;
   std::cout << "residualSigmaFEI4Y=" << al.residualSigmaFEI4y() << endl;
   cout << "------------------"<<endl;
+  */
+  /*
   cout << "Alignment summary: "<<endl;
   cout << "D0 offset="<< resultD0[0]<<" zDUT="<<resultD0[1]<<" theta="<<resultD0[2]*180./TMath::Pi()<<" chi2="<<chi2D0<<endl;
   cout << "D1 offset="<< resultD1[0]<<" zDUT="<<resultD1[1]<<" theta="<<resultD1[2]*180./TMath::Pi()<<" chi2="<<chi2D1<<endl;
@@ -605,21 +693,21 @@ void AlignmentMultiDimAnalysis::eventLoop()
   }
   if(fileAlignment) {
     fileAlignment << "Run="<< runNumber_
-                  << ":offsetFEI4X=" << al.offsetFEI4x()
-                  << ":offsetFEI4Y=" << al.offsetFEI4y()
-                  << ":residualSigmaFEI4X=" << al.residualSigmaFEI4x()
-                  << ":residualSigmaFEI4Y=" << al.residualSigmaFEI4y()
+                  //<< ":offsetFEI4X=" << al.offsetFEI4x()
+                  //<< ":offsetFEI4Y=" << al.offsetFEI4y()
+                  //<< ":residualSigmaFEI4X=" << al.residualSigmaFEI4x()
+                  //<< ":residualSigmaFEI4Y=" << al.residualSigmaFEI4y()
                   << ":zD0="<< resultBothPlanesConstraint[1]
                   << ":offsetD0=" << resultBothPlanesConstraint[0]
                   << ":deltaZ=" << resultBothPlanesConstraint[2]
                   << ":angle=" << resultBothPlanesConstraint[3]*180./TMath::Pi() << endl;
     fileAlignment.close();
   } else std::cout << "Dump File could not be opened!!" << std::endl;
-  
+  */
 }
 
 double AlignmentMultiDimAnalysis::ComputeChi2(const double* x) const{
-
+  /*
   double chi2 = 0;
   double offset = x[0];
   double zDUT = x[1];
@@ -720,10 +808,11 @@ double AlignmentMultiDimAnalysis::ComputeChi2(const double* x) const{
 
 
   return chi2;
+  */
 }
 
 double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
-
+/*
   double chi2 = 0;
   double offset_d0 = 0;
   double zDUT_d0 = 0;
@@ -810,7 +899,7 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
   fGausExtractedX->SetParameter(3, cte_d0);
   //fGausExtractedX->SetParLimits(4, 0., 0.);
   //fGausExtractedX->SetParameter(4, 0.);
-  fGausExtractedX->FixParameter(4, 0); 
+  fGausExtractedX->FixParameter(4, 0);
   htmp0->Fit("fGausExtractedX", "WW"); //WW
 
   center_d0 = fGausExtractedX->GetParameter(1);
@@ -843,7 +932,7 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
   fGausExtractedX->SetParameter(3, cte_d1);
   //fGausExtractedX->SetParLimits(4, 0., 0.);
   //fGausExtractedX->SetParameter(4, 0.);
-  fGausExtractedX->FixParameter(4, 0);  
+  fGausExtractedX->FixParameter(4, 0);
   htmp1->Fit("fGausExtractedX", "WW"); //WW
 
   center_d1 = fGausExtractedX->GetParameter(1);
@@ -869,7 +958,7 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
       xDUT_d1 = bothPlanes_DutXposD1.at(i);
       if (!doConstrainDeltaOffset){
         xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), offset_d0, zDUT_d0, theta);
-        xTkAtDUT_d1 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), offset_d1, 
+        xTkAtDUT_d1 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), offset_d1,
 zDUT_d1, theta);
       }
       if (doConstrainDeltaOffset){
@@ -892,292 +981,22 @@ zDUT_d1, theta);
   else chi2 = 99999.;
 
   if (!doConstrainDeltaOffset) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" offset_d1=" << offset_d1<< " zDUT_d1="<< zDUT_d1<<" theta="<<theta*180./TMath::Pi()<<" chi2="<<chi2<<endl;
-  if (doConstrainDeltaOffset) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" deltaZ="<<deltaZ<<" theta="<<theta*180./TMath::Pi()<<" chi2="<<chi2<<endl; 
+  if (doConstrainDeltaOffset) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" deltaZ="<<deltaZ<<" theta="<<theta*180./TMath::Pi()<<" chi2="<<chi2<<endl;
 
   return chi2;
+  */
 }
-
-//TelescopeAnalysis Part//
-//Compute track residuals at FeI4 plane and compute offset and mean
-void AlignmentMultiDimAnalysis::doTelescopeAnalysis(tbeam::alignmentPars& aLp) {
-    for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
-    clearEvent();
-    Long64_t ientry = analysisTree()->GetEntry(jentry);
-    if (ientry < 0) break;
-    if (jentry%1000 == 0) 
-      cout << " Events processed. " << std::setw(8) << jentry 
-	   << endl;
-    hist_->fillHist1D("TelescopeAnalysis","nhitsFei4", fei4Ev()->nPixHits);
-    hist_->fillHist1D("TelescopeAnalysis","nTrack", telEv()->nTrackParams);
-    
-    if(fei4Ev()->nPixHits > 2)    continue;
-    if (fei4Ev()->nPixHits==0) continue;
-    if(telEv()->xPos->empty())    continue;
-
-    std::vector<tbeam::Track>  tkNoOv;
-    Utility::removeTrackDuplicates(telEv(), tkNoOv);
-    //if(tkNoOv.size() != 1)   continue;
-    //if(tkNoOv.size() > 20)   continue;
-
-    for(unsigned int i = 0; i<tkNoOv.size(); i++) {
-      //std::cout << i<< std::endl;
-      double tkX = tkNoOv[i].xPos;//-1.*tkNoOv[i].xPos;
-      double tkY = tkNoOv[i].yPos;
-#ifdef OCT_16
-      tkX = tkNoOv[i].yPos;
-      tkX *= -1.;
-      tkY = tkNoOv[i].xPos;
-#endif
-      hist_->fillHist1D("TelescopeAnalysis","TkXPos", tkX);
-      hist_->fillHist1D("TelescopeAnalysis","TkYPos", tkY);
-    }
-
-    for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
-      hist_->fillHist1D("TelescopeAnalysis","HtColumn", fei4Ev()->col->at(i));
-      hist_->fillHist1D("TelescopeAnalysis","HtRow", fei4Ev()->row->at(i));
-      //double xval = -9.875 + (fei4Ev()->col->at(i)-1)*0.250;
-      //double yval = -8.375 + (fei4Ev()->row->at(i)-1)*0.05;
-      double xval = 8.375 - (fei4Ev()->row->at(i)-1)*0.05;
-      double yval = 9.875 - (fei4Ev()->col->at(i)-1)*0.250;
-      hist_->fillHist1D("TelescopeAnalysis","HtXPos", xval);
-      hist_->fillHist1D("TelescopeAnalysis","HtYPos", yval);
-    }
-
-    //get residuals
-    //now loop over tracks
-    double xmin = 999.9;
-    double ymin = 999.9;
-    double deltamin = 999.9;
-    for(unsigned int itk = 0; itk < tkNoOv.size(); itk++) {
-      double tkX = tkNoOv[itk].xPos;//-1.*tkNoOv[itk].xPos; 
-      double tkY = tkNoOv[itk].yPos; 
-#ifdef OCT_16
-      tkX = tkNoOv[itk].yPos;
-      tkX *= -1.;
-      tkY = tkNoOv[itk].xPos;
-#endif
-      for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
-        double xval = 8.375 - (fei4Ev()->row->at(i)-1)*0.05;
-        double yval = 9.875 - (fei4Ev()->col->at(i)-1)*0.250;
-        hist_->fillHist2D("TelescopeAnalysis","tkXPosVsHtXPos", xval, tkX);
-        hist_->fillHist2D("TelescopeAnalysis","tkYPosVsHtYPos", yval, tkY);
-        //if (std::fabs(xval - tkX) < std::fabs(xmin)) xmin = xval - tkX;
-        //if (std::fabs(yval - tkY) < std::fabs(ymin)) ymin = yval - tkY;
-        if (sqrt((xval - tkX)*(xval - tkX) + (yval - tkY)*(yval - tkY)) < deltamin){
-	  xmin = xval - tkX;
-	  ymin = yval - tkY;
-	  deltamin = sqrt(xmin*xmin + ymin*ymin);
-	}
-      }
-    }
-    hist_->fillHist1D("TelescopeAnalysis","deltaXPos", xmin);
-    hist_->fillHist1D("TelescopeAnalysis","deltaYPos", ymin);
-  }//event loop
-
-  //Fit residual in Y direction//Perpendicular to strips in DUT
-   TH1F* htmp = dynamic_cast<TH1F*>(hist_->GetHistoByName("TelescopeAnalysis","deltaYPos"));
-   if(!htmp) std::cout << "Histo TelescopeAnalysis/deltaYPos does not exist!" << std::endl;
-   float center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();  
-   htmp->SetAxisRange(center-0.5, center+0.5, "X");
-   TF1* fPol1Gaus_y = new TF1("FuncPol1Gausy", Utility::FuncPol1Gaus, center-0.5, center+0.5, 5);
-   float cte = (htmp->GetBinContent(htmp->FindBin(center-0.5))+htmp->GetBinContent(htmp->FindBin(center+0.5)))/2.;
-   fPol1Gaus_y->SetParameter(0, htmp->GetMaximum());
-   fPol1Gaus_y->SetParLimits(1, center-0.5, center+0.5);
-   fPol1Gaus_y->SetParameter(1, center);
-   fPol1Gaus_y->SetParLimits(2, 0, 0.2);
-   fPol1Gaus_y->SetParameter(2, 0.070);
-   fPol1Gaus_y->SetParameter(3, cte);
-   fPol1Gaus_y->SetParameter(4, 0);
-   htmp->Fit("FuncPol1Gausy");
-
-   htmp = dynamic_cast<TH1F*>(hist_->GetHistoByName("TelescopeAnalysis","deltaXPos"));
-   center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();
-   htmp->SetAxisRange(center-0.5, center+0.5, "X");
-   TF1* fPol1Gaus_x = new TF1("FuncPol1Gausx", Utility::FuncPol1Gaus, center-0.5, center+0.5, 5);
-   cte = (htmp->GetBinContent(htmp->FindBin(center-0.5))+htmp->GetBinContent(htmp->FindBin(center+0.5)))/2.;
-   fPol1Gaus_x->SetParameter(0, htmp->GetMaximum());
-   fPol1Gaus_x->SetParLimits(1, center-0.5, center+0.5);
-   fPol1Gaus_x->SetParameter(1, center);
-   fPol1Gaus_x->SetParLimits(2, 0, 0.2);
-   fPol1Gaus_x->SetParameter(2, 0.015);
-   fPol1Gaus_x->SetParameter(3, cte);
-   fPol1Gaus_x->SetParameter(4, 0);
-   htmp->Fit("FuncPol1Gausx");
-
-  double offset_y_tmp = fPol1Gaus_y->GetParameter(1);
-  double offset_x_tmp = fPol1Gaus_x->GetParameter(1);
-
-
-  std::cout << "Summary of the Pol1+Gaussian Fits to the residuals:\n"
-            << "Residual X>>>Mean=" << fPol1Gaus_x->GetParameter(1)
-            << ">>>Sigma=" << fPol1Gaus_x->GetParameter(2)
-            << "\nResidual Y>>>Mean=" << fPol1Gaus_y->GetParameter(1)
-            << ">>>Sigma=" << fPol1Gaus_y->GetParameter(2)
-            << std::endl;
-
-  //Recompute residuals, with offset from previous gaus+pol1 fit
-  for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
-    clearEvent();
-    Long64_t ientry = analysisTree()->GetEntry(jentry);
-    if (ientry < 0) break;
-    if (jentry%1000 == 0)
-      cout << " Events processed. " << std::setw(8) << jentry
-           << endl;
-
-    if(fei4Ev()->nPixHits > 2)    continue;
-    if (fei4Ev()->nPixHits==0) continue;
-    if(telEv()->xPos->empty())    continue;
-
-    std::vector<tbeam::Track>  tkNoOv;
-    Utility::removeTrackDuplicates(telEv(), tkNoOv);
-    double xmin = 999.9;
-    double ymin = 999.9;
-    double deltamin = 999.9;
-    for(unsigned int itk = 0; itk < tkNoOv.size(); itk++) {
-      double tkX = tkNoOv[itk].xPos;//-1.*tkNoOv[itk].xPos;
-      double tkY = tkNoOv[itk].yPos;
-#ifdef OCT_16
-      tkX = tkNoOv[itk].yPos;
-      tkX *= -1.;
-      tkY = tkNoOv[itk].xPos;
-#endif
-      for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {
-        double xval = 8.375 - (fei4Ev()->row->at(i)-1)*0.05;
-        double yval = 9.875 - (fei4Ev()->col->at(i)-1)*0.250;
-        if (sqrt((xval - tkX - offset_x_tmp)*(xval - tkX - offset_x_tmp) + (yval - tkY - offset_y_tmp)*(yval - tkY - offset_y_tmp)) < deltamin){
-          xmin = xval - tkX - offset_x_tmp;
-          ymin = yval - tkY - offset_y_tmp;
-          deltamin = sqrt(xmin*xmin + ymin*ymin);
-        }
-
-      }
-    }
-    hist_->fillHist1D("TelescopeAnalysis","deltaXPos_fit", xmin);
-    hist_->fillHist1D("TelescopeAnalysis","deltaYPos_fit", ymin);
-  }//event loop
-
-  //Fit with Gaussian convoluted with StepFunc  To be Done
-  float height = fPol1Gaus_y->GetParameter(0);
-  center = 0;//fPol1Gaus_y->GetParameter(1);
-  float rms = 5*fPol1Gaus_y->GetParameter(2);
-  cte = fPol1Gaus_y->GetParameter(3);
-
-  TF1* fStepGaus_y = new TF1("FuncStepGausy", Utility::FuncStepGausShift, center-0.5, center+0.5, 5);
-  htmp = dynamic_cast<TH1F*>(hist_->GetHistoByName("TelescopeAnalysis","deltaYPos_fit"));
-  htmp->SetAxisRange(center-0.5, center+0.5, "X");
-  fStepGaus_y->SetLineWidth(2);
-  fStepGaus_y->SetLineColor(kRed);
-  fStepGaus_y->SetParLimits(0, 0., 0.4);
-  fStepGaus_y->SetParameter(0, 0.250);
-  fStepGaus_y->SetParLimits(1, 0.0, 0.1);
-  fStepGaus_y->SetParameter(1, 0.003);
-  fStepGaus_y->SetParLimits(2, 0., height);
-  fStepGaus_y->SetParameter(2, htmp->GetMaximum());
-  fStepGaus_y->SetParLimits(3, 0, 1000);
-  fStepGaus_y->SetParameter(3, cte);
-  fStepGaus_y->SetParLimits(4, -1, 1);
-  fStepGaus_y->SetParameter(4, center);
-  htmp->Fit(fStepGaus_y);
-  
-  //Fit residual in X direction//Parallel to strips in DUT
-  height = fPol1Gaus_x->GetParameter(0);
-  center = 0;//fPol1Gaus_x->GetParameter(1);
-  rms = 5*fPol1Gaus_x->GetParameter(2);
-  cte = fPol1Gaus_x->GetParameter(3);
-
-  TF1* fStepGaus_x = new TF1("FuncStepGausx", Utility::FuncStepGausShift, center-0.5, center+0.5, 5);
-  htmp = dynamic_cast<TH1F*>(hist_->GetHistoByName("TelescopeAnalysis","deltaXPos_fit"));
-  htmp->SetAxisRange(center-0.5, center+0.5, "X");
-  fStepGaus_x->SetLineWidth(2);
-  fStepGaus_x->SetLineColor(kRed);
-  fStepGaus_x->SetParLimits(0, 0., 0.4);
-  fStepGaus_x->SetParameter(0, 0.050);
-  fStepGaus_x->SetParLimits(1, 0.0, 0.1);
-  fStepGaus_x->SetParameter(1, 0.003);
-  fStepGaus_y->SetParLimits(2, 0., height);
-  fStepGaus_x->SetParameter(2, htmp->GetMaximum());
-  fStepGaus_x->SetParLimits(3, 0, 1000);
-  fStepGaus_x->SetParameter(3, cte);
-  fStepGaus_x->SetParLimits(4, -1, 1);
-  fStepGaus_x->SetParameter(4, center);
-  htmp->Fit(fStepGaus_x);
-
-  double offset_y_total = fPol1Gaus_y->GetParameter(1) + fStepGaus_y->GetParameter(4);
-  double offset_x_total = fPol1Gaus_x->GetParameter(1) + fStepGaus_x->GetParameter(4);
-  double res_x_total = fStepGaus_x->GetParameter(0)/2. + 2.*fStepGaus_x->GetParameter(1);
-  double res_y_total = fStepGaus_y->GetParameter(0)/2. + 2.*fStepGaus_y->GetParameter(1); 
-
-  std::cout << "Summary of the Step convolved with Gauss Fits to the residuals:\n"
-            << "Residual X>>>Mean=" << fStepGaus_x->GetParameter(4)
-            << ">>>Pitch=" <<  fStepGaus_x->GetParameter(0)
-            << "\nResidual Y>>>Mean=" << fStepGaus_y->GetParameter(4)
-            << ">>>Pitch=" << fStepGaus_y->GetParameter(0)
-            << std::endl;
-
-  std::cout << "Total offset in x:" << offset_x_total << " ; in y :"<<offset_y_total<<endl;
- 
-  for (Long64_t jentry=0; jentry<nEntries_;jentry++) {
-    clearEvent();
-    Long64_t ientry = analysisTree()->GetEntry(jentry);
-    if (ientry < 0) break;
-    if (jentry%1000 == 0) 
-      cout << " Events processed. " << std::setw(8) << jentry 
-	   << endl;
-    if(fei4Ev()->nPixHits > 2)    continue;
-    //Remove track duplicates
-    std::vector<tbeam::Track>  tkNoOv;
-    Utility::removeTrackDuplicates(telEv(), tkNoOv);
-
-    //get residuals
-    double minresx = 999.;
-    double minresy = 999.;
-    double mindelta = 999.;
-    for(unsigned int itk = 0; itk < tkNoOv.size(); itk++) {
-      double tkX = tkNoOv[itk].xPos;//-1.*tkNoOv[itk].xPos;//-1.*telEv()->xPos->at(itk);
-      double tkY = tkNoOv[itk].yPos;//telEv()->yPos->at(itk);
-#ifdef OCT_16
-      tkX = tkNoOv[itk].yPos;
-      tkX *= -1.;
-      tkY = tkNoOv[itk].xPos;
-#endif
-      for (unsigned int i = 0; i < fei4Ev()->nPixHits; i++) {   
-        //default pitch and dimensions of fei4 plane
-        double xval = 8.375 - (fei4Ev()->row->at(i)-1)*0.05;
-        double yval = 9.875 - (fei4Ev()->col->at(i)-1)*0.250;
-        double xres = xval - tkX - offset_x_total;//fStepGaus_x->GetParameter(4);//fGausResiduals_x->GetParameter("Mean");
-        double yres = yval - tkY - offset_y_total;//fStepGaus_y->GetParameter(4);//fGausResiduals_y->GetParameter("Mean");
-        if (sqrt(xres*xres+yres*yres)<mindelta){
-	  mindelta = sqrt(xres*xres+yres*yres);
-	  minresx = xres;
-	  minresy = yres;
-        }
-      }
-    }
-    hist_->fillHist1D("TelescopeAnalysis","deltaXPos_trkfei4", minresx);
-    hist_->fillHist1D("TelescopeAnalysis","deltaYPos_trkfei4", minresy);
-      if(std::fabs(minresx) < res_x_total &&
-        std::fabs(minresy) < res_y_total) {
-        hist_->fillHist1D("TelescopeAnalysis","deltaXPos_trkfei4M", minresx);
-        hist_->fillHist1D("TelescopeAnalysis","deltaYPos_trkfei4M", minresy);
-      }
-  }//event loop
-
-  aLp.residualSigmaFEI4x(res_x_total);
-  aLp.residualSigmaFEI4y(res_y_total);
-  aLp.offsetFEI4x(offset_x_total);
-  aLp.offsetFEI4y(offset_y_total);
-  //std::cout << "offsetFEI4X=" << offset_x_total << endl;
-  //std::cout << "offsetFEI4Y="<<offset_y_total<<endl;
-  //std::cout << "residualSigmaFEI4X=" <<res_x_total<<endl;
-  //std::cout << "residualSigmaFEI4Y="<< res_y_total <<endl;
-}
-
 
 void AlignmentMultiDimAnalysis::clearEvent() {
   BeamAnaBase::clearEvent();
 }
 void AlignmentMultiDimAnalysis::endJob() {
   BeamAnaBase::endJob();
+  std::cout << std::setw(4) << alignmentDump_ << std::endl;
+  //Dump Alignment output to alignment text file
+  std::ofstream fileAlignment(alignparFile_.c_str(), ios::out);
+  fileAlignment << std::setw(4) << alignmentDump_ << std::endl;
+  fileAlignment.close();
   hist_->closeFile();
 }
 

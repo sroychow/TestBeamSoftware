@@ -4,11 +4,14 @@
 #include "BeamAnaBase.h"
 
 #include "TString.h"
-//#include "Utility.h"
-#include "DataFormats.h"
+#include "Utility.h"
+//#include "DataFormats.h"
 #include "Histogrammer.h"
 #include "Math/Functor.h"
 #include "Minuit2/Minuit2Minimizer.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 class TH1;
 class AlignmentMultiDimAnalysis : public BeamAnaBase {
@@ -16,13 +19,13 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
   AlignmentMultiDimAnalysis();
   ~AlignmentMultiDimAnalysis();
   void beginJob();
-  void eventLoop(); 
+  void eventLoop();
   void bookHistograms();
   void clearEvent();
   void endJob();
   double ComputeChi2(const double* x) const;
   double ComputeChi2BothPlanes(const double* x) const;
-
+  void dumpAlignment(const tbeam::alignmentPars& a);
   static double FuncStepGaus(Double_t * x, Double_t * par){
     double xx = x[0];
     double pitch = par[0];
@@ -35,29 +38,29 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
     f += cte;
     return f;
   }
-  void doTelescopeAnalysis(tbeam::alignmentPars& aLp);
+  //void doTelescopeAnalysis(tbeam::alignmentPars& aLp);
  private:
   std::string runNumber_;
   std::string outFile_;
   Histogrammer* hist_;
   int run_;
   unsigned long int nEntries_;
-  unsigned long int maxEvent;
+  unsigned long int maxEvent_;
   bool isProduction_;
-  std::string alignparFile_; 
+  std::string alignparFile_;
   float zMin;
   float zStep;
   int zNsteps;
 
-  bool doD0, doD1; 
+  bool doD0, doD1;
   std::vector<tbeam::Track>  selectedTk_d0_1Hit;
   std::vector<tbeam::Track>  selectedTk_d1_1Hit;
-  std::vector<tbeam::Track>  selectedTk_bothPlanes_1Cls; 
+  std::vector<tbeam::Track>  selectedTk_bothPlanes_1Cls;
   std::vector<float> d0_DutXpos;
   std::vector<float> d1_DutXpos;
   std::vector<float> bothPlanes_DutXposD0;
   std::vector<float> bothPlanes_DutXposD1;
- 
+
   ROOT::Math::Functor* toMinimize;
   ROOT::Math::Functor* toMinimizeBothPlanes;
   ROOT::Math::Functor* toMinimizeBothPlanesConstraint;
@@ -66,7 +69,9 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
   ROOT::Minuit2::Minuit2Minimizer* minimizerBothPlanesConstraint;
 
   bool doConstrainDeltaOffset;
-  tbeam::alignmentPars al;
+  //tbeam::alignmentPars al;
+  json alignmentDump_;
+
 };
 
 #endif
