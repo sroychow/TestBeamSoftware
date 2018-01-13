@@ -13,19 +13,18 @@
 #include "Stub.h"
 #include "Track.h"
 namespace tbeam {
-  class Event :  public TObject {
+  class OfflineEvent :  public TObject {
   public:
-    Event();
-    virtual ~Event(){};
+    OfflineEvent();
+    virtual ~OfflineEvent(){}
     void reset();
-    void dumpEvent(std::ostream& os = std::cout);
+    void dumpOfflineEvent(std::ostream& os = std::cout);
     //header part
     unsigned int run;//
     unsigned int lumiSection;//
     unsigned int event;//
     unsigned long long time;//
     unsigned long int unixtime;//
-    unsigned long int dt;//is it used?
     bool isSparisified;//
     
     uint8_t dataFormatVersion;//
@@ -39,15 +38,20 @@ namespace tbeam {
     unsigned int tdcPhase;//
     unsigned int HVsettings;//
     unsigned int DUTangle;//
-    uint32_t vcth;//
     
-    uint32_t window;
-    uint32_t offset;
-    uint32_t cwd;
-    uint32_t tilt;
     uint32_t stubLatency;
     uint32_t triggerLatency;
     
+    uint8_t offset1Reg;
+    uint8_t offset2Reg;
+    uint8_t hipRegReg;
+    uint8_t vcth1Reg;
+    uint8_t vcth2Reg;
+    uint8_t compReg;
+    uint8_t logicReg;
+    uint8_t triggerLatencyReg;
+
+
     std::map<uint32_t,uint32_t > conddatamap;//this is kept for now.If not used in offline analysis, it can be dropped
     std::map<unsigned int,std::vector<tbeam::cbc> > cbcs;//
     std::map< std::string,std::vector<tbeam::hit> > dutHits;//
@@ -55,8 +59,11 @@ namespace tbeam {
     std::map<std::string, std::vector<tbeam::stub>> cbcStubs;//
     std::map< std::string, std::vector<tbeam::cluster> > offlineClusters;//only in unsparsified mode
     std::map< std::string, std::vector<tbeam::stub> > offlineStubs;//created from offlineClusters or cbcClusters
-    std::vector<tbeam::Track>  tracks;
-    ClassDef(Event,1)
+    //At the ntuplizer stage this is a empty
+    //This vector of tracks is defined here to avoid redifining OfflineEvent class in offline analysis
+    //This vector will be filled in Merge step of Telescope Ntuple + EdmNtuple
+    std::vector<tbeam::OfflineTrack>  tracks;
+    ClassDef(OfflineEvent,1)
       };
 }
 #endif

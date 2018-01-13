@@ -3,8 +3,8 @@ namespace tbeam {  }
 
 [  ]
 # List of selected classes
-class tbeam::Event
-class tbeam::Track
+class tbeam::OfflineEvent
+class tbeam::OfflineTrack
 class tbeam::cbc
 class tbeam::cluster
 class tbeam::hit

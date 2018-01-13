@@ -254,12 +254,12 @@ void AlignmentMultiDimAnalysis::eventLoop()
     const auto& d1c1 = *det1C1();
     //fillCommonHistograms();
     //Remove track duplicates
-    std::vector<tbeam::Track>  tkNoOv;
+    std::vector<tbeam::OfflineTrack>  tkNoOv;
     Utility::removeTrackDuplicates(telEv(), tkNoOv);
 
     hist_->fillHist1D("TelescopeAnalysis","nTrack_noduplicate", tkNoOv.size());
     //Match with FEI4
-    std::vector<tbeam::Track>  selectedTk;
+    std::vector<tbeam::OfflineTrack>  selectedTk;
     Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, al.offsetFEI4x(), al.offsetFEI4y(), al.residualSigmaFEI4x(), al.residualSigmaFEI4y(), true);
     hist_->fillHist1D("TelescopeAnalysis","nTrack_fiducial", selectedTk.size());
     //Find mean of residuals, scanning zDUT

@@ -53,9 +53,9 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
   int zNsteps;
 
   bool doD0, doD1;
-  std::vector<tbeam::Track>  selectedTk_d0_1Hit;
-  std::vector<tbeam::Track>  selectedTk_d1_1Hit;
-  std::vector<tbeam::Track>  selectedTk_bothPlanes_1Cls;
+  std::vector<tbeam::OfflineTrack>  selectedTk_d0_1Hit;
+  std::vector<tbeam::OfflineTrack>  selectedTk_d1_1Hit;
+  std::vector<tbeam::OfflineTrack>  selectedTk_bothPlanes_1Cls;
   std::vector<float> d0_DutXpos;
   std::vector<float> d1_DutXpos;
   std::vector<float> bothPlanes_DutXposD0;

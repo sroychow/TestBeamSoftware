@@ -18,7 +18,7 @@ int aa=5;
 BeamAnaBase::BeamAnaBase() :
   fin_( nullptr ),
   analysisTree_(nullptr),
-  event_( new tbeam::Event() ),
+  event_( new tbeam::OfflineEvent() ),
   hasTelescope_(false),
   doTelMatching_(false),
   doChannelMasking_(false) {
@@ -340,15 +340,15 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
 }
 */
 
-//void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {}
+//void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::OfflineTrack>&  fidTkColl) {}
 
   //Think how to implement track extrapolation
   /*
   //Tk overlap removal
   //Match with FEI4
-  //std::vector<tbeam::Track>  tracks;
+  //std::vector<tbeam::OfflineTrack>  tracks;
   for(unsigned int itrk = 0; itrk<event_->tracks.size();itrk++) {
-  tbeam::Track tk = event_->tracks[itrk];
+  tbeam::OfflineTrack tk = event_->tracks[itrk];
   double YTkatDUT0_itrk = tk.yPos() + (alPars_.d0Z() - alPars_.FEI4z())*tk.dydz();
   double YTkatDUT1_itrk = tk.yPos() + (alPars_.d1Z() - alPars_.FEI4z())*tk.dydz();
 
@@ -361,7 +361,7 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
   selectedTk[itrk].xtkDut1 = xtkdut.second;
   selectedTk[itrk].ytkDut0 = YTkatDUT0_itrk;
   selectedTk[itrk].ytkDut1 = YTkatDUT1_itrk;
-  //tbeam::Track temp(selectedTk[itrk]);
+  //tbeam::OfflineTrack temp(selectedTk[itrk]);
   fidTkColl.push_back(temp);
   }
   }

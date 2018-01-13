@@ -4,9 +4,9 @@
 #include<iostream>
 #include<iomanip>
 namespace tbeam {
-class Track : public TObject {
+class OfflineTrack : public TObject {
  public:
-  Track():
+  OfflineTrack():
     xPos_(0.),yPos_(0.),dxdz_(0.),dydz_(0.),chi2_(0.),ndof_(0.),xPosError_(0.),yPosError_(0.)
     {
       xPosPrevHit_ = 0.;
@@ -18,7 +18,7 @@ class Track : public TObject {
       xPosErrNextHit_ = 0.;
       yPosErrNextHit_ = 0.;
     } 
-  Track(const float x, const float y, const float dxdz, const float dydz, 
+  OfflineTrack(const float x, const float y, const float dxdz, const float dydz, 
         const float chi2, const float ndof, const float xErr, const float yErr):
     xPos_(x),yPos_(y),dxdz_(dxdz),dydz_(dydz),chi2_(chi2),ndof_(ndof),xPosError_(xErr),yPosError_(yErr)
     {
@@ -31,7 +31,7 @@ class Track : public TObject {
       xPosErrNextHit_ = 0.;
       yPosErrNextHit_ = 0.;
     } 
-  Track(const float x, const float y, const float dxdz, const float dydz, 
+  OfflineTrack(const float x, const float y, const float dxdz, const float dydz, 
         const float chi2, const float ndof, const float xErr, const float yErr,
         const float xposPrevHit, const float yposPrevHit, const float xposErrsPrevHit, const float yposErrsPrevHit,
         const float xposNextHit, const float yposNextHit, const float xposErrNextHit, const float yposErrNextHit):
@@ -65,7 +65,7 @@ class Track : public TObject {
     float xPosErrNextHit() const  { return xPosErrNextHit_; }
     float yPosErrNextHit() const  { return yPosErrNextHit_; }
     
-    friend std::ostream &operator<<(std::ostream& os, const tbeam::Track& tk) {    
+    friend std::ostream &operator<<(std::ostream& os, const tbeam::OfflineTrack& tk) {    
       os << "X="       << std::setw(6) << tk.xPos() 
 	 << " Y="      << std::setw(6) << tk.yPos()
 	 << " dxdz="   << std::setw(6) << tk.dxdz()
@@ -79,16 +79,16 @@ class Track : public TObject {
     }
     
   private:
-    float xPos_;//Track impact x-position at the reference plane
-    float yPos_;//Track impact y-position at the reference plane
+    float xPos_;//OfflineTrack impact x-position at the reference plane
+    float yPos_;//OfflineTrack impact y-position at the reference plane
     float dxdz_;//x-Gradient along beam direction
     float dydz_;//y-Gradient along beam direction
     float chi2_;//Chi-square from track fitting
     float ndof_;//#degrees of freedom
     
     //optional requirement
-    float xPosError_;//Track impact x-position error
-    float yPosError_;//Track impact y-position error 
+    float xPosError_;//OfflineTrack impact x-position error
+    float yPosError_;//OfflineTrack impact y-position error 
     //additional info available from FNAL beam test
     float xPosPrevHit_;
     float yPosPrevHit_;
@@ -98,7 +98,7 @@ class Track : public TObject {
     float yPosNextHit_;
     float xPosErrNextHit_;
     float yPosErrNextHit_;
-    ClassDef(Track,1)
+    ClassDef(OfflineTrack,1)
       };
 }
 #endif

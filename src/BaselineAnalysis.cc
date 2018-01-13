@@ -70,10 +70,10 @@ void BaselineAnalysis::eventLoop()
     if(jentry==0) {
       hist_->fillHist1D("EventInfo","hvSettings", event()->HVsettings);
       hist_->fillHist1D("EventInfo","dutAngle", event()->DUTangle);
-      hist_->fillHist1D("EventInfo","vcth", event()->vcth);
+      //hist_->fillHist1D("EventInfo","vcth", event()->vcth);
       //hist_->fillHist1D("EventInfo","offset", cbcOffset1());
       //hist_->fillHist1D("EventInfo","offset", cbcOffset2());
-      hist_->fillHist1D("EventInfo","window", event()->cwd);
+      //hist_->fillHist1D("EventInfo","window", event()->cwd);
       //hist_->fillHist1D("EventInfo","tilt", static_cast<unsigned long int>(condEv()->tilt));
       cout << "Alignment Parameters" << aLparameteres();
       for(auto& cm: event()->conddatamap){

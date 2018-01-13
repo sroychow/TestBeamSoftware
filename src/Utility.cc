@@ -190,7 +190,7 @@ namespace Utility {
   // Convenience routine for track cleaning
   // ---------------------------------------------
 /*
-  void removeTrackDuplicates(const tbeam::TelescopeEvent *telEv, std::vector<tbeam::Track>& tkNoOverlap) {
+  void removeTrackDuplicates(const tbeam::TelescopeEvent *telEv, std::vector<tbeam::OfflineTrack>& tkNoOverlap) {
     //Loop over original track collection and compare all track pairs to check for duplicates
     for(unsigned int i = 0; i<telEv->xPos->size(); i++) {
       double tkX = telEv->xPos->at(i);
@@ -204,14 +204,14 @@ namespace Utility {
         if (fabs(tkY-tkY_j)<0.001 && fabs(tkX-tkX_j)<0.001) isduplicate = true;
       }
       if (!isduplicate) {
-        tbeam::Track t(i,tkX,tkY,telEv->dxdz->at(i),telEv->dydz->at(i),telEv->chi2->at(i),telEv->ndof->at(i));  
+        tbeam::OfflineTrack t(i,tkX,tkY,telEv->dxdz->at(i),telEv->dydz->at(i),telEv->chi2->at(i),telEv->ndof->at(i));  
         tkNoOverlap.push_back(t);
       }      
     }
   }
 */
 /*
-  void cutTrackFei4Residuals(const tbeam::FeIFourEvent* fei4ev ,const std::vector<tbeam::Track>& tkNoOverlap, std::vector<tbeam::Track>& selectedTk, 
+  void cutTrackFei4Residuals(const tbeam::FeIFourEvent* fei4ev ,const std::vector<tbeam::OfflineTrack>& tkNoOverlap, std::vector<tbeam::Track>& selectedTk, 
                              const double xResMean, const double yResMean, const double xResPitch, const double yResPitch, bool doClosestTrack) {
    
     double mindelta = 999.;
@@ -220,7 +220,7 @@ namespace Utility {
     int itkClosest = -1;
 
     for(unsigned int itk = 0; itk < tkNoOverlap.size(); itk++) {
-      const tbeam::Track tTemp(tkNoOverlap.at(itk));
+      const tbeam::OfflineTrack tTemp(tkNoOverlap.at(itk));
       double tkX = tTemp.xPos;
       double tkY = tTemp.yPos;
 #ifdef OCT_16
@@ -251,12 +251,12 @@ namespace Utility {
       if (!doClosestTrack && (std::fabs(minresx) < xResPitch) && (std::fabs(minresy) < yResPitch)) selectedTk.push_back(tTemp);
     }
     if (doClosestTrack && (std::fabs(minresx) < xResPitch) && (std::fabs(minresy) < yResPitch) && itkClosest!=-1){
-      const tbeam::Track tClosest(tkNoOverlap.at(itkClosest));
+      const tbeam::OfflineTrack tClosest(tkNoOverlap.at(itkClosest));
       selectedTk.push_back(tClosest);
     }
   }
 */
-  double extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset, double zDUT, double theta){
+  double extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset, double zDUT, double theta){
 
     //Compute distance between DUT center and track impact at DUT along X 
     double xTkAtDUT = track.xPos() + (zDUT - FEI4_z) * track.dxdz();
@@ -268,7 +268,7 @@ namespace Utility {
     return xTkAtDUT; 
   }
 
-  std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta){
+  std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta){
 
     //Compute distance between DUT center and track impact at DUT along X 
     double xTkAtDUT_d0 = track.xPos() + (zDUT_d0 - FEI4_z) * track.dxdz();

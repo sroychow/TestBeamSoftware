@@ -52,7 +52,7 @@ class BeamAnaBase {
     void setDetChannelVectors();
 
     TTree* analysisTree() const{ return analysisTree_; }
-    tbeam::Event* event() const { return event_; }
+    tbeam::OfflineEvent* event() const { return event_; }
 
     //int stubWindow()  const { return sw_;}
     //int cbcClusterWidth()  const { return cwd_;}
@@ -80,7 +80,7 @@ class BeamAnaBase {
     virtual bool readGeometry(const std::string gfile);
 
     void getCbcConfig(uint32_t cwdWord, uint32_t windowWord);
-    //void getExtrapolatedTracks(std::vector<tbeam::Track>& fidTkColl);
+    //void getExtrapolatedTracks(std::vector<tbeam::OfflineTrack>& fidTkColl);
     void readChannelMaskData(const std::string cmaskF);
     void setTelMatching(const bool mtel);
     void setChannelMasking(const std::string cFile);
@@ -117,7 +117,7 @@ class BeamAnaBase {
     std::string chmaskFilename_;
     TFile* fin_;
     TTree *analysisTree_;
-    tbeam::Event* event_;
+    tbeam::OfflineEvent* event_;
 
     bool hasTelescope_;
     bool doTelMatching_;

@@ -10,6 +10,6 @@
 #pragma link C++ class tbeam::cbc+;
 #pragma link C++ class tbeam::stub+;
 #pragma link C++ class tbeam::hit+;
-#pragma link C++ class tbeam::Event+;
-#pragma link C++ class tbeam::Track+;
+#pragma link C++ class tbeam::OfflineEvent+;
+#pragma link C++ class tbeam::OfflineTrack+;
 #endif
