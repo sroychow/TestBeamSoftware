@@ -16,6 +16,8 @@ class BaselineAnalysis : public BeamAnaBase {
   void beginJob();
   void eventLoop();
   void bookHistograms();
+  //function to fill some common histograms
+  void fillCommonHistograms();
   void printEfficiency();
   void clearEvent();
   void endJob();
@@ -24,6 +26,6 @@ class BaselineAnalysis : public BeamAnaBase {
   //std::string outFile_;
   Histogrammer* hist_;
   unsigned long int nEntries_;
-  unsigned long int maxEvent_; 
+  unsigned long int maxEvent_;
 };
 #endif

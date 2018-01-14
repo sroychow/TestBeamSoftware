@@ -176,12 +176,8 @@ bool BeamAnaBase::setInputFile(const std::string& fname) {
 void BeamAnaBase::setTelMatching(const bool mtel) {
   doTelMatching_ = mtel;
 }
-
+/*
 void BeamAnaBase::bookHistograms() {
-  hout_->bookEventHistograms();
-  /*********
-	    Think of ways to do it automatically by reading a json/xml etc.
-  *********/
 
   for(auto& m : *vmod_) {
     hout_->bookDUTHistograms(m.hdirLower_);
@@ -192,8 +188,8 @@ void BeamAnaBase::bookHistograms() {
   //book common histograms of track propoerties
   hout_->bookTrackCommonHistograms();
 }
-
-
+*/
+/*
 void BeamAnaBase::fillCommonHistograms() {
   //fill sensor hits, cluster
   for(auto& m : *vmod_) {
@@ -266,7 +262,7 @@ void BeamAnaBase::fillCommonHistograms() {
     hout_->fillHist1D("TrackCommon","tkdYdZ", tk.dydz());
   }
 }
-
+*/
 void BeamAnaBase::setChannelMasking(const std::string cFile) {
   readChannelMaskData(cFile);
 }

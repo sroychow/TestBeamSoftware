@@ -74,7 +74,7 @@ class BeamAnaBase {
     virtual void beginJob();
     virtual void endJob();
     virtual void eventLoop() = 0;
-    virtual void bookHistograms();
+    //virtual void bookHistograms();
     virtual void clearEvent();
     virtual bool readJob(const std::string jfile);
     virtual bool readGeometry(const std::string gfile);
@@ -94,7 +94,7 @@ class BeamAnaBase {
     //bool isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, const double ytrk0Pos, const double ytrk1Pos);
     Histogrammer* outFile() { return hout_; }
 
-    void fillCommonHistograms();
+    //void fillCommonHistograms();
     std::map<std::string,std::string> jobCardmap() const { return jobCardmap_;}
     std::string inFile() { return iFilename_; }
     unsigned long int getMaxEvt() { return maxEvent_; }
