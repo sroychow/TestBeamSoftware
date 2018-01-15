@@ -5,7 +5,6 @@
 
 #include "TString.h"
 //#include "Utility.h"
-//#include "DataFormats.h"
 #include "Histogrammer.h"
 
 class TH1;
@@ -16,8 +15,6 @@ class BaselineAnalysis : public BeamAnaBase {
   void beginJob();
   void eventLoop();
   void bookHistograms();
-  //function to fill some common histograms
-  void fillCommonHistograms();
   void printEfficiency();
   void clearEvent();
   void endJob();

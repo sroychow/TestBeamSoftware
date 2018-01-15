@@ -27,23 +27,14 @@ BaselineAnalysis::BaselineAnalysis() :
 {
 }
 void BaselineAnalysis::bookHistograms() {
-  hist_->bookEventHistograms();
-
-  //BeamAnaBase::bookHistograms();
-
+  BeamAnaBase::bookHistograms();
   for(auto& m : *modVec()){
-    hist_->bookDUTHistograms(m.hdirLower_);
-    hist_->bookDUTHistograms(m.hdirUpper_);
-    hist_->bookStubHistograms(m.name);
-    hist_->bookCorrelationHistograms(m.name);
-    std::cout << "DetidLower=" << m.hdirLower_ << std::endl;
-    TString s = TString(m.hdirLower_);
+    //std::cout << "Detidbottom=" << m.hdirbottom_ << std::endl;
+    TString s = TString(m.hdirbottom_);
     hist_->bookTrackMatchHistograms(s);
-    s = TString(m.hdirUpper_);
+    s = TString(m.hdirtop_);
     hist_->bookTrackMatchHistograms(s);
   }
-  //book common histograms of track propoerties
-  hist_->bookTrackCommonHistograms();
 }
 
 void BaselineAnalysis::beginJob() {
@@ -107,119 +98,35 @@ void BaselineAnalysis::eventLoop()
     fillCommonHistograms();
     //Fill track match histograms
     for(auto& m : *modVec()){
-      std::string dnameLower = m.hdirLower_ + "/TrackMatch";
+      std::string dnamebottom = m.hdirbottom_ + "/TrackMatch";
       //loop over tracks
       for(auto& tk: event()->tracks) {
         //previous hit
         float xtk_prev = tk.xPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
         float ytk_prev = tk.yPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
-        hist_->fillHist1D(dnameLower, "tkposx_prev", xtk_prev/1000.);
-        hist_->fillHist1D(dnameLower, "tkposy_prev", ytk_prev/1000.);
+        hist_->fillHist1D(dnamebottom, "tkposx_prev", xtk_prev/1000.);
+        hist_->fillHist1D(dnamebottom, "tkposy_prev", ytk_prev/1000.);
         //next hit
         float xtk_next = tk.xPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
         float ytk_next = tk.yPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
-        hist_->fillHist1D(dnameLower, "tkposx_next", xtk_next/1000.);
-        hist_->fillHist1D(dnameLower, "tkposy_next", ytk_next/1000.);
+        hist_->fillHist1D(dnamebottom, "tkposx_next", xtk_next/1000.);
+        hist_->fillHist1D(dnamebottom, "tkposy_next", ytk_next/1000.);
         //Fill hit residuals
-        for(auto& h: m.lowerHits) {
+        for(auto& h: m.bottomHits) {
           float hx = (h.strip() - m.nstrips_/2.)*m.pitch_;
-          hist_->fillHist1D(dnameLower, "hitresidualX_prev", hx - xtk_prev/1000.);
-          hist_->fillHist1D(dnameLower, "hitresidualX_next", hx - xtk_next/1000.);
+          hist_->fillHist1D(dnamebottom, "hitresidualX_prev", hx - xtk_prev/1000.);
+          hist_->fillHist1D(dnamebottom, "hitresidualX_next", hx - xtk_next/1000.);
         }
         //Fill cluster residuals
-        for(auto& c: m.lowerOfflineCls) {
+        for(auto& c: m.bottomOfflineCls) {
           float cx = (c.center() - m.nstrips_/2.)*m.pitch_;
-          hist_->fillHist1D(dnameLower, "clusresidualX_prev", cx - xtk_prev/1000.);
-          hist_->fillHist1D(dnameLower, "clusresidualX_next", cx - xtk_next/1000.);
+          hist_->fillHist1D(dnamebottom, "clusresidualX_prev", cx - xtk_prev/1000.);
+          hist_->fillHist1D(dnamebottom, "clusresidualX_next", cx - xtk_next/1000.);
         }
       }
     }
   }
 
-}
-
-void BaselineAnalysis::fillCommonHistograms() {
-  //fill sensor hits, cluster
-  for(auto& m : *modVec()) {
-    //Fill hit size
-    hist_->fillHist1D(m.hdirLower_,"chsizeC0", m.lowerHits.size());
-    hist_->fillHist1D(m.hdirUpper_,"chsizeC0", m.upperHits.size());
-    //Fill lower sensor hit info
-    for(auto& h: m.lowerHits) {
-      hist_->fillHist1D(m.hdirLower_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
-      hist_->fillHist1D(m.hdirLower_ ,"hitmapXposC0", (h.strip() - m.nstrips_/2.)*m.pitch_);
-      std::cout << "Hit (lower) =" << h.strip() << " in mm=" << (float(h.strip()) - 127.)*0.09 << "\n";
-      for(auto& hup: m.upperHits)  hist_->fillHist2D(m.name+"/Correlation", "hitposcorrelationC0", h.strip(), hup.strip());
-    }
-    //Fill upper sensor hit info
-    for(auto& h: m.upperHits) {
-      hist_->fillHist1D(m.hdirUpper_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
-      std::cout << "Hit (upper) =" << h.strip() << " in mm=" << (float(h.strip()) - 127)*0.09<< "\n";
-    }
-    //Offline clusters only
-    //hist_->fillClusterHistograms(m.hdirLower_, m.lowerOfflineCls, "C0");
-    hist_->fillHist1D( m.hdirLower_, "nclusterC0", m.lowerOfflineCls.size() );
-    for( auto& cl : m.lowerOfflineCls) {
-      Utility::fillHist1D( "clusterWidthC0", cl.size() );
-      Utility::fillHist1D( "clusterPosC0", cl.center() );
-      Utility::fillHist1D( "clusterXPosC0", (cl.center() - m.nstrips_/2.)*m.pitch_ );
-      Utility::fillHistProfile( "clusterWidthVsPosProfC0", cl.center(), cl.size() );
-      Utility::fillHist2D( "clusterWidthVsPos2DC0", cl.center(), cl.size() );
-    }
-
-
-
-    hist_->fillHist2D(m.hdirLower_,"nhitvsnclusC0", m.lowerHits.size(), m.lowerOfflineCls.size());
-    hist_->fillClusterHistograms(m.hdirUpper_, m.upperOfflineCls, "C0");
-    hist_->fillHist2D(m.hdirUpper_,"nhitvsnclusC0", m.upperHits.size(), m.upperOfflineCls.size());
-    //correlation histo for clusters
-    for(auto& lcls : m.lowerOfflineCls) {
-        std::cout << "Offline clus pos(lower) =" << lcls.center() << " in mm=" << (lcls.center() - 127)*0.09<< "\n";
-      for(auto& ucls : m.upperOfflineCls) {
-         std::cout << "Offline clus pos(upper) =" << ucls.center() << " in mm=" << (ucls.center() - 127)*0.09 << "\n";
-         hist_->fillHist2D(m.name+"/Correlation", "clusterposcorrelationC0", lcls.center(), ucls.center());
-      }
-    }
-    //Fill stub histos
-    std::string sdname = m.name + "/StubInfo";
-    hist_->fillHist1D(sdname,"nstubsFromCBC",  m.cbcStubs.size());
-    hist_->fillHist1D(sdname,"nstubsFromReco", m.offlineStubs.size());
-    hist_->fillHist2D(sdname,"nstubMatch", m.offlineStubs.size(), m.cbcStubs.size());
-    for(auto& os : m.offlineStubs) {
-      hist_->fillHist1D(sdname,"offlinestubPosmap", os.positionX());
-      std::cout << "Offline stub pos =" << os.positionX() << " in mm=" << (os.positionX() - 127.)*0.09<< "\n";
-      for(auto& cs : m.cbcStubs) {
-        hist_->fillHist2D(sdname,"stubCorrelation", os.positionX(), cs.positionX());
-      }
-    }
-    for(auto& cs : m.cbcStubs) {
-      hist_->fillHist1D(sdname,"cbcstubPosmap", cs.positionX());
-    }
-  }
-  //Fill common track histograms
-  hist_->fillHist1D("TrackCommon","nTracks", event()->tracks.size());
-  for(auto& tk: event()->tracks) {
-    std::cout << "XPos tk=" << tk.xPos() << std::endl;
-    hist_->fillHist1D("TrackCommon","tkXPosref", tk.xPos());
-    hist_->fillHist1D("TrackCommon","tkYPosref", tk.yPos());
-    hist_->fillHist1D("TrackCommon","errtkXPosref", tk.xPosErr());
-    hist_->fillHist1D("TrackCommon","errtkYPosref", tk.yPosErr());
-
-
-    hist_->fillHist1D("TrackCommon","tkXPosprev", tk.xPosPrevHit());
-    hist_->fillHist1D("TrackCommon","tkYPosprev", tk.yPosPrevHit());
-    hist_->fillHist1D("TrackCommon","errtkXPosprev", tk.xPosErrsPrevHit());
-    hist_->fillHist1D("TrackCommon","errtkYPosprev", tk.yPosErrsPrevHit());
-
-    hist_->fillHist1D("TrackCommon","tkXPosnext", tk.xPosNextHit());
-    hist_->fillHist1D("TrackCommon","tkYPosnext", tk.yPosNextHit());
-    hist_->fillHist1D("TrackCommon","errtkXPosnext", tk.xPosErrNextHit());
-    hist_->fillHist1D("TrackCommon","errtkYPosnext", tk.yPosErrNextHit());
-
-    hist_->fillHist1D("TrackCommon","tkChi2", tk.chi2());
-    hist_->fillHist1D("TrackCommon","tkdXdZ", tk.dxdz());
-    hist_->fillHist1D("TrackCommon","tkdYdZ", tk.dydz());
-  }
 }
 
 void BaselineAnalysis::clearEvent() {

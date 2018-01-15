@@ -38,7 +38,9 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
     f += cte;
     return f;
   }
-  //void doTelescopeAnalysis(tbeam::alignmentPars& aLp);
+  //Histograms to be used by alignment analysis
+  void bookTrackFitHistograms(TString& detId, float zMin = 0., float zStep = 0., int zNsteps = 0);
+  void FillAlignmentOffsetVsZ(const char*, const char*, int, float, float, float);
  private:
   std::string runNumber_;
   std::string outFile_;

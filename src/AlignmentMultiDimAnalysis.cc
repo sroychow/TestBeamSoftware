@@ -80,10 +80,10 @@ void AlignmentMultiDimAnalysis::bookHistograms() {
   BeamAnaBase::bookHistograms();
 
   for(auto& m : *modVec()){
-    TString s = TString(m.hdirLower_);
-    hist_->bookTrackFitHistograms(s,zMin, zStep, zNsteps);
-    s = TString(m.hdirUpper_);
-    hist_->bookTrackFitHistograms(s,zMin, zStep, zNsteps);
+    TString s = TString(m.hdirbottom_);
+    bookTrackFitHistograms(s,zMin, zStep, zNsteps);
+    s = TString(m.hdirtop_);
+    bookTrackFitHistograms(s,zMin, zStep, zNsteps);
   }
 }
 
@@ -152,7 +152,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
     if(jentry==0) {
       hist_->fillHist1D("EventInfo","hvSettings", event()->HVsettings);
       hist_->fillHist1D("EventInfo","dutAngle", event()->DUTangle);
-      hist_->fillHist1D("EventInfo","vcth", event()->vcth);
+      //hist_->fillHist1D("EventInfo","vcth", event()->vcth);
       //hist_->fillHist1D("EventInfo","offset", cbcOffset1());
       //hist_->fillHist1D("EventInfo","offset", cbcOffset2());
       //hist_->fillHist1D("EventInfo","window", stubWindow());
@@ -168,37 +168,37 @@ void AlignmentMultiDimAnalysis::eventLoop()
     //Fill track match histograms
     if(event()->tracks.size() != 1)  continue;
     for(auto& m : *modVec()){
-      std::string dnameLower = m.hdirLower_ + "/TrackFit";
+      std::string dnamebottom = m.hdirbottom_ + "/TrackFit";
       //loop over tracks
       for(auto& tk: event()->tracks) {
-        if(m.lowerHits.size() != 1) continue;
+        if(m.bottomHits.size() != 1) continue;
         //previous hit
         float xtk_prev = tk.xPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
         float ytk_prev = tk.yPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
         std::cout << "Previous hit tk extrapolated Xpos=" << xtk_prev/1000. << "\n";
         std::cout << "Previous hit tk extrapolated Ypos=" << ytk_prev/1000. << "\n";
-        hist_->fillHist1D(dnameLower, "tkposx_prev", xtk_prev/1000.);
-        hist_->fillHist1D(dnameLower, "tkposy_prev", ytk_prev/1000.);
+        hist_->fillHist1D(dnamebottom, "tkposx_prev", xtk_prev/1000.);
+        hist_->fillHist1D(dnamebottom, "tkposy_prev", ytk_prev/1000.);
         //next hit
         float xtk_next = tk.xPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
         float ytk_next = tk.yPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
-        hist_->fillHist1D(dnameLower, "tkposx_next", xtk_next/1000.);
-        hist_->fillHist1D(dnameLower, "tkposy_next", ytk_next/1000.);
+        hist_->fillHist1D(dnamebottom, "tkposx_next", xtk_next/1000.);
+        hist_->fillHist1D(dnamebottom, "tkposy_next", ytk_next/1000.);
         //Fill hit residuals
-        for(auto& h: m.lowerHits) {
+        for(auto& h: m.bottomHits) {
           float hx = (float(h.strip()) - float(m.nstrips_)/2.)*m.pitch_;
-          hist_->fillHist1D(dnameLower, "hitresidualX_prev", hx - xtk_prev/1000.);
-          hist_->fillHist1D(dnameLower, "hitresidualX_next", hx - xtk_next/1000.);
+          hist_->fillHist1D(dnamebottom, "hitresidualX_prev", hx - xtk_prev/1000.);
+          hist_->fillHist1D(dnamebottom, "hitresidualX_next", hx - xtk_next/1000.);
         }
         std::cout << "NStrips = " << float(m.nstrips_)/2. << "\tPitch=" << m.pitch_ << "\n";
         //Fill cluster residuals
-        for(auto& c: m.lowerOfflineCls) {
+        for(auto& c: m.bottomOfflineCls) {
 
           float cx = (c.center() - m.nstrips_/2.)*m.pitch_;
-          std::cout << "Offline clus pos(lower) =" << c.center() << " in mm=" << (c.center() - 127)*0.09<< "\n";
+          std::cout << "Offline clus pos(bottom) =" << c.center() << " in mm=" << (c.center() - 127)*0.09<< "\n";
           std::cout << "Cluster Xpos(in align)=" << cx << "\tresidual=" << cx - xtk_prev/1000. <<"\n";
-          hist_->fillHist1D(dnameLower, "clusresidualX_prev", cx - xtk_prev/1000.);
-          hist_->fillHist1D(dnameLower, "clusresidualX_next", cx - xtk_next/1000.);
+          hist_->fillHist1D(dnamebottom, "clusresidualX_prev", cx - xtk_prev/1000.);
+          hist_->fillHist1D(dnamebottom, "clusresidualX_next", cx - xtk_next/1000.);
         }
       }
     }
@@ -209,12 +209,11 @@ void AlignmentMultiDimAnalysis::eventLoop()
   //Check mean sigma from histograms
   //json alignmentDump = json::array();
   for(auto& m : *modVec()){
-    std::string dnameLower = m.hdirLower_ + "/TrackFit";
-    TH1* hclusres = hist_->GetHistoByName(dnameLower, "clusresidualX_prev");
+    std::string dnamebottom = m.hdirbottom_ + "/TrackFit";
+    TH1* hclusres = hist_->GetHistoByName(dnamebottom, "clusresidualX_prev");
     tbeam::alignmentPars tal(m.name, hclusres->GetMean(),m.z, 2., 0.);//this is temporary
     dumpAlignment(tal);
   }
-
 
   //First Loop over events-inject z and compute residual
   //evaluate the best z alignment
@@ -704,6 +703,79 @@ void AlignmentMultiDimAnalysis::eventLoop()
     fileAlignment.close();
   } else std::cout << "Dump File could not be opened!!" << std::endl;
   */
+}
+
+//Each of the following histogramns will be booked for each sensor
+void AlignmentMultiDimAnalysis::bookTrackFitHistograms(TString& detId, float zMin, float zStep, int zNsteps){
+  int nStrips = 254;
+  TString dname = detId + "/TrackFit";
+  //std::cout << "Entering bookTrackMatchHistograms with dnmae=" << dname << std::endl;
+  hist_->hfile()->cd();
+  hist_->hfile()->mkdir(dname);
+  hist_->hfile()->cd(dname);
+  //these will be added back once the zposition of the reference plane is known
+  //new TH1D("tkposx_ref","Xpos of etrapolated track from reference plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  //new TH1D("tkposy_ref","Ypos of etrapolated track from reference plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  //new TH1D("hitresidualX_ref","Residual of extrapolated track(ref plane) with respect to hit; residual [mm]; Events [a.u]",40/(50e-3),-20.,20.);
+  //new TH1D("clusresidualX_ref","Residual of extrapolated track(ref plane) with respect to cluster; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+
+  new TH1D("tkposx_prev","Xpos of etrapolated track from previous plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  new TH1D("tkposy_prev","Ypos of etrapolated track from previous plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  new TH1D("hitresidualX_prev","Residual of extrapolated track(prev plane) with respect to hit; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+  new TH1D("clusresidualX_prev","Residual of extrapolated track(prev plane) with respect to cluster; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+
+  new TH1D("tkposx_next","Xpos of etrapolated track from next plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  new TH1D("tkposy_next","Ypos of etrapolated track from next plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  new TH1D("hitresidualX_next","Residual of extrapolated track(next plane) with respect to hit; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+  new TH1D("clusresidualX_next","Residual of extrapolated track(next plane) with respect to cluster; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+
+  //check with Nicolas about the following histograms
+  /*
+  new TH1I("d0_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
+
+  new TH1I("d0_1tk1Hit_diffX_bis","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1Hit_diffX_bis","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
+
+  new TH1I("d0_1tk1Hit_diffX_ter","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1Hit_diffX_ter","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
+
+  for (int iz=0; iz<zNsteps; iz++){
+    new TH1I(Form("d0_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+    new TH1I(Form("d1_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  }
+
+  float zMax = zMin + ((float)zNsteps) * zStep;
+  float shift = zStep/2.;
+
+  new TH1F("d0_offsetVsZ", "x_{DUT} offset vs injected z_{DUT}, d0", zNsteps, zMin-shift, zMax-shift);
+  new TH1F("d1_offsetVsZ", "x_{DUT} offset vs injected z_{DUT},d1", zNsteps, zMin-shift, zMax-shift);
+
+  new TH1F("d0_chi2VsZ","chi2 vs injected z_{DUT}, d0", zNsteps, zMin-shift, zMax-shift);
+  new TH1F("d1_chi2VsZ","chi2 vs injected z_{DUT}, d1", zNsteps, zMin-shift, zMax-shift);
+
+  new TH1I("d0_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
+  new TH1I("d0_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",100000,-100,100);
+  new TH1I("d0_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",100000,-100,100);
+
+  new TH1F("bothPlanes_chi2VsTheta","chi2 vs injected #theta", 41, -20.-0.5, 21.-0.5);
+  new TH1F("bothPlanesConstraint_chi2VsTheta","chi2 vs injected #theta", 41, -20.-0.5, 21.-0.5);
+  new TH1F("bothPlanesConstraint_chi2VsDeltaZ","chi2 vs injected #deltaZ", 41, 0.-0.125, 10.25-0.125);
+  */
+}
+
+void AlignmentMultiDimAnalysis::FillAlignmentOffsetVsZ(const char* det, const char* histo, int iz, float z, float x, float x_err){
+
+hist_->hfile()->cd("TrackFit");
+char histname[50];
+strcpy( histname, det );
+strcat( histname, histo );
+TH1* h = (TH1*) gDirectory->Get(histname);
+h->Fill(z, x);
+h->SetBinError(iz+1, x_err);
 }
 
 double AlignmentMultiDimAnalysis::ComputeChi2(const double* x) const{

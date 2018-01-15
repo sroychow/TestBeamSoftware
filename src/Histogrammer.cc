@@ -1,6 +1,6 @@
 /*!
         \file                Histogrammer.cc
-        \brief               Class provides user to book, fill histograms
+        \brief               Class allows user to book, fill histograms
         \author              Suvankar Roy Chowdhury
         \date                05/07/16
         Support :            mail to : suvankar.roy.chowdhury@cern.ch
@@ -440,67 +440,7 @@ void Histogrammer::bookTrackCommonHistograms() {
   h1f->SetLineColor(kBlue);
  */
 
-//Each of the following histogramns will be booked for each sensor
-void Histogrammer::bookTrackFitHistograms(TString& detId, float zMin, float zStep, int zNsteps){
-  int nStrips = 254;
-  TString dname = detId + "/TrackFit";
-  //std::cout << "Entering bookTrackMatchHistograms with dnmae=" << dname << std::endl;
-  fout_->cd();
-  fout_->mkdir(dname);
-  fout_->cd(dname);
-  //these will be added back once the zposition of the reference plane is known
-  //new TH1D("tkposx_ref","Xpos of etrapolated track from reference plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  //new TH1D("tkposy_ref","Ypos of etrapolated track from reference plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  //new TH1D("hitresidualX_ref","Residual of extrapolated track(ref plane) with respect to hit; residual [mm]; Events [a.u]",40/(50e-3),-20.,20.);
-  //new TH1D("clusresidualX_ref","Residual of extrapolated track(ref plane) with respect to cluster; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
 
-  new TH1D("tkposx_prev","Xpos of etrapolated track from previous plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  new TH1D("tkposy_prev","Ypos of etrapolated track from previous plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  new TH1D("hitresidualX_prev","Residual of extrapolated track(prev plane) with respect to hit; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
-  new TH1D("clusresidualX_prev","Residual of extrapolated track(prev plane) with respect to cluster; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
-
-  new TH1D("tkposx_next","Xpos of etrapolated track from next plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  new TH1D("tkposy_next","Ypos of etrapolated track from next plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  new TH1D("hitresidualX_next","Residual of extrapolated track(next plane) with respect to hit; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
-  new TH1D("clusresidualX_next","Residual of extrapolated track(next plane) with respect to cluster; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
-
-  //check with Nicolas about the following histograms
-  /*
-  new TH1I("d0_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
-  new TH1I("d1_1tk1Hit_diffX","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
-
-  new TH1I("d0_1tk1Hit_diffX_bis","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
-  new TH1I("d1_1tk1Hit_diffX_bis","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
-
-  new TH1I("d0_1tk1Hit_diffX_ter","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
-  new TH1I("d1_1tk1Hit_diffX_ter","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
-
-  for (int iz=0; iz<zNsteps; iz++){
-    new TH1I(Form("d0_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
-    new TH1I(Form("d1_1tk1Hit_diffX_iz%i", iz),"X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
-  }
-
-  float zMax = zMin + ((float)zNsteps) * zStep;
-  float shift = zStep/2.;
-
-  new TH1F("d0_offsetVsZ", "x_{DUT} offset vs injected z_{DUT}, d0", zNsteps, zMin-shift, zMax-shift);
-  new TH1F("d1_offsetVsZ", "x_{DUT} offset vs injected z_{DUT},d1", zNsteps, zMin-shift, zMax-shift);
-
-  new TH1F("d0_chi2VsZ","chi2 vs injected z_{DUT}, d0", zNsteps, zMin-shift, zMax-shift);
-  new TH1F("d1_chi2VsZ","chi2 vs injected z_{DUT}, d1", zNsteps, zMin-shift, zMax-shift);
-
-  new TH1I("d0_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
-  new TH1I("d1_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
-  new TH1I("d0_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",100000,-100,100);
-  new TH1I("d1_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",100000,-100,100);
-  new TH1I("d0_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",100000,-100,100);
-  new TH1I("d1_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",100000,-100,100);
-
-  new TH1F("bothPlanes_chi2VsTheta","chi2 vs injected #theta", 41, -20.-0.5, 21.-0.5);
-  new TH1F("bothPlanesConstraint_chi2VsTheta","chi2 vs injected #theta", 41, -20.-0.5, 21.-0.5);
-  new TH1F("bothPlanesConstraint_chi2VsDeltaZ","chi2 vs injected #deltaZ", 41, 0.-0.125, 10.25-0.125);
-  */
-}
 
 void Histogrammer::bookTrackMatchHistograms(TString& detId)
 {
@@ -988,35 +928,13 @@ TProfile* Histogrammer::GetProfileByName(const char* dir, const char* hname){
   return Utility::getHistProfile(hname);
 }
 
-void Histogrammer::FillAlignmentOffsetVsZ(const char* det, const char* histo, int iz, float z, float x, float x_err){
 
-  fout_->cd("TrackFit");
-  char histname[50];
-  strcpy( histname, det );
-  strcat( histname, histo );
-  TH1* h = (TH1*) gDirectory->Get(histname);
-  h->Fill(z, x);
-  h->SetBinError(iz+1, x_err);
-}
 
 void Histogrammer::closeFile() {
   fout_->cd();
   fout_->Write();
   fout_->Close();
   isFileopen_=false;
-}
-void Histogrammer::fillClusterHistograms( const char* det, const std::vector<tbeam::cluster>& cvec,
-                                          const char* col) {
-  fout_->cd(det);
-  TString c(col);
-  Utility::fillHist1D( "ncluster" + c, cvec.size() );
-  for( unsigned int i =0; i<cvec.size(); i++ ) {
-    Utility::fillHist1D("clusterWidth" + c,cvec[i].size());
-    Utility::fillHist1D("clusterPos" + c,cvec[i].center());
-    Utility::fillHist1D("clusterXPos" + c,(cvec[i].center() - 127.0)*0.09);
-    Utility::fillHistProfile("clusterWidthVsPosProf" + c,cvec[i].center(),cvec[i].size());
-    Utility::fillHist2D("clusterWidthVsPos2D" + c,cvec[i].center(),cvec[i].size());
-  }
 }
 
 Histogrammer::~Histogrammer() {

@@ -2,8 +2,8 @@
   "Module": [
     {
       "name": "Module1",
-      "detidLower" : "50025",
-      "detidUpper" : "50026",
+      "detidbottom" : "50025",
+      "detidtop" : "50026",
       "Z"          : -60000,
       "Xrot"       : 0,
       "Yrot"       : 0,
