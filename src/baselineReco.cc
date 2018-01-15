@@ -4,12 +4,9 @@
 #include "TROOT.h"
 #include "TStopwatch.h"
 #include "BaselineAnalysis.h"
-#include "argvparser.h"
 using std::cout;
 using std::cerr;
 using std::endl;
-
-using namespace CommandLineProcessing;
 
 int main( int argc,char* argv[] ){
   if(argc<2)  {
