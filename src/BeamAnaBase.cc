@@ -227,7 +227,7 @@ void BeamAnaBase::setDetChannelVectors() {
     }
     if(event_->cbcStubs.find(m.detidbottom_) != event_->cbcStubs.end()) m.cbcStubs = event_->cbcStubs.at(m.detidbottom_);//
     if(event_->offlineStubs.find(m.detidbottom_) != event_->offlineStubs.end()) m.offlineStubs = event_->offlineStubs.at(m.detidbottom_);
-    std::cout << "Set Module with #strips=" << m.nstrips_ << std::endl;
+    //std::cout << "Set Module with #strips=" << m.nstrips_ << std::endl;
   }
 
 }
@@ -242,13 +242,13 @@ void BeamAnaBase::fillCommonHistograms() {
     for(auto& h: m.bottomHits) {
       hist_->fillHist1D(m.hdirbottom_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
       hist_->fillHist1D(m.hdirbottom_ ,"hitmapXposC0", (h.strip() - m.nstrips_/2.)*m.pitch_);
-      std::cout << "Hit (bottom) =" << h.strip() << " in mm=" << (float(h.strip()) - 127.)*0.09 << "\n";
+      //std::cout << "Hit (bottom) =" << h.strip() << " in mm=" << (float(h.strip()) - 127.)*0.09 << "\n";
       for(auto& hup: m.topHits)  hist_->fillHist2D(m.name+"/Correlation", "hitposcorrelationC0", h.strip(), hup.strip());
     }
     //Fill top sensor hit info
     for(auto& h: m.topHits) {
       hist_->fillHist1D(m.hdirtop_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
-      std::cout << "Hit (top) =" << h.strip() << " in mm=" << (float(h.strip()) - 127)*0.09<< "\n";
+      //std::cout << "Hit (top) =" << h.strip() << " in mm=" << (float(h.strip()) - 127)*0.09<< "\n";
     }
     //Offline clusters only
     //bottom hits
@@ -273,9 +273,9 @@ void BeamAnaBase::fillCommonHistograms() {
     hist_->fillHist2D(m.hdirtop_,"nhitvsnclusC0", m.topHits.size(), m.topOfflineCls.size());
     //correlation histo for clusters
     for(auto& lcls : m.bottomOfflineCls) {
-        std::cout << "Offline clus pos(bottom) =" << lcls.center() << " in mm=" << (lcls.center() - 127)*0.09<< "\n";
+        //std::cout << "Offline clus pos(bottom) =" << lcls.center() << " in mm=" << (lcls.center() - 127)*0.09<< "\n";
       for(auto& ucls : m.topOfflineCls) {
-         std::cout << "Offline clus pos(top) =" << ucls.center() << " in mm=" << (ucls.center() - 127)*0.09 << "\n";
+         //std::cout << "Offline clus pos(top) =" << ucls.center() << " in mm=" << (ucls.center() - 127)*0.09 << "\n";
          hist_->fillHist2D(m.name+"/Correlation", "clusterposcorrelationC0", lcls.center(), ucls.center());
       }
     }
@@ -286,7 +286,7 @@ void BeamAnaBase::fillCommonHistograms() {
     hist_->fillHist2D(sdname,"nstubMatch", m.offlineStubs.size(), m.cbcStubs.size());
     for(auto& os : m.offlineStubs) {
       hist_->fillHist1D(sdname,"offlinestubPosmap", os.positionX());
-      std::cout << "Offline stub pos =" << os.positionX() << " in mm=" << (os.positionX() - 127.)*0.09<< "\n";
+      //std::cout << "Offline stub pos =" << os.positionX() << " in mm=" << (os.positionX() - 127.)*0.09<< "\n";
       for(auto& cs : m.cbcStubs) {
         hist_->fillHist2D(sdname,"stubCorrelation", os.positionX(), cs.positionX());
       }
@@ -298,7 +298,7 @@ void BeamAnaBase::fillCommonHistograms() {
   //Fill common track histograms
   hist_->fillHist1D("TrackCommon","nTracks", event()->tracks.size());
   for(auto& tk: event()->tracks) {
-    std::cout << "XPos tk=" << tk.xPos() << std::endl;
+    //std::cout << "XPos tk=" << tk.xPos() << std::endl;
     hist_->fillHist1D("TrackCommon","tkXPosref", tk.xPos());
     hist_->fillHist1D("TrackCommon","tkYPosref", tk.yPos());
     hist_->fillHist1D("TrackCommon","errtkXPosref", tk.xPosErr());

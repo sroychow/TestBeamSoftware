@@ -66,13 +66,21 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
   ROOT::Math::Functor* toMinimize;
   ROOT::Math::Functor* toMinimizeBothPlanes;
   ROOT::Math::Functor* toMinimizeBothPlanesConstraint;
+  ROOT::Math::Functor* toMinimizeBothPlanesConstraintShift;
+
   ROOT::Minuit2::Minuit2Minimizer* minimizer;
   ROOT::Minuit2::Minuit2Minimizer* minimizerBothPlanes;
   ROOT::Minuit2::Minuit2Minimizer* minimizerBothPlanesConstraint;
+  ROOT::Minuit2::Minuit2Minimizer* minimizerBothPlanesConstraintShift;
 
   bool doConstrainDeltaOffset;
+  bool doAllowOffsetPlanes;
   //tbeam::alignmentPars al;
   json alignmentDump_;
+
+  std::string dnamebottom;
+  std::string dnametop;
+  double refPlaneZ;
 
 };
 
