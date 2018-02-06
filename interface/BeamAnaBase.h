@@ -62,14 +62,15 @@ class BeamAnaBase {
 
     bool hasTelescope() const { return hasTelescope_; }
     double resDUT() const { return residualSigmaDUT_; }
-    //double resfei4x() const { return alPars_.residualSigmaFEI4x(); }
-    //double resfei4y() const { return alPars_.residualSigmaFEI4y(); }
-    //double offsetfei4x() const { return alPars_.offsetFEI4x(); }
-    //double offsetfei4y() const { return alPars_.offsetFEI4y(); }
     double nstrips() const { return nStrips_; }
     double dutpitch() const { return pitchDUT_; }
-    //double dutangle() const { return alPars_.theta(); }
-    //double sensordeltaZ() const { return alPars_.deltaZ(); }
+
+    std::map<std::string, double> alignmentPars() const { return alPars_; }
+    double offsetbottom() const { return alPars_.at("offset_d0") ; }
+    double zDUTbottom() const { return alPars_.at("zDUT_d0")  ; }
+    double shiftPlanes() const { return alPars_.at("shiftPlanes"); }
+    double dutangle() const { return alPars_.at("theta") ; }
+    double sensordeltaZ() const { return alPars_.at("deltaZ"); }
 
     virtual void beginJob();
     virtual void endJob();
@@ -89,7 +90,6 @@ class BeamAnaBase {
 
     //std::map<std::string,std::vector<int> >* getMaskedChannelMap() const {return dut_maskedChannels_;}
     void readAlignmentConstant(const std::string& aFname);
-    tbeam::alignmentPars aLparameteres() const { return alPars_; }
 
     //bool isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, const double ytrk0Pos, const double ytrk1Pos);
     Histogrammer* outFile() { return hist_; }
@@ -124,7 +124,7 @@ class BeamAnaBase {
     bool doChannelMasking_;
     unsigned long int maxEvent_=0;
 
-    tbeam::alignmentPars  alPars_;
+    std::map<string,double>  alPars_;
     std::map<std::string,std::string> jobCardmap_;
     std::map<std::string,std::vector<int> >* dut_maskedChannels_;
 

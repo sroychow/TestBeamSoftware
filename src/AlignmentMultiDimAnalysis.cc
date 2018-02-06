@@ -95,17 +95,20 @@ void AlignmentMultiDimAnalysis::bookHistograms() {
   }
 }
 
-void AlignmentMultiDimAnalysis::dumpAlignment(const tbeam::alignmentPars& a) {
+void AlignmentMultiDimAnalysis::dumpAlignment(const double* a) {
   json o;
-  o.emplace("d0_chi2_min_z", a.d0Z());
-  o.emplace("d0_chi2_min_z", a.d0Z());
-  o.emplace("d0_Offset_aligned", a.d0Offset());
-  o.emplace("deltaz", a.deltaZ());
-  o.emplace("theta", a.deltaZ());
-  o.emplace("sensorId" , a.sensorId());
-  alignmentDump_.push_back({runNumber_, o});
+  o.emplace("offset_d0", a[0]);
+  o.emplace("zDUT_d0", a[1]);
+  o.emplace("deltaZ", a[2]);
+  o.emplace("theta", a[3]);
+  o.emplace("shiftPlanes", a[4]);
+  o.emplace("chi2" , a[5]);
+  std::ofstream fileAlignment(alignparFile_.c_str(), ios::out);
+  fileAlignment << std::setw(4) << o << std::endl;
+  fileAlignment.close();
 
 }
+
 
 void AlignmentMultiDimAnalysis::eventLoop()
 {
@@ -824,6 +827,9 @@ void AlignmentMultiDimAnalysis::eventLoop()
   //cout << "BothPlanes offset_d0="<< resultBothPlanes[0]<<" zDUT_d0="<<resultBothPlanes[1]<<" offset_d1="<< resultBothPlanes[2]<<" zDUT_d1="<<resultBothPlanes[3] << " theta="<<resultBothPlanes[4]*180./TMath::Pi()<< " chi2="<<chi2BothPlanes<<endl;
   //cout << "BothPlanesConstraint offset_d0="<< resultBothPlanesConstraint[0]<<" zDUT_d0="<<resultBothPlanesConstraint[1]<<" deltaZ="<< resultBothPlanesConstraint[2]<<" theta="<<resultBothPlanesConstraint[3]*180./TMath::Pi()<< " chi2="<<chi2BothPlanesConstraint<<endl;
   cout << "BothPlanesConstraintShift offset_d0="<< resultBothPlanesConstraintShift[0]<<" zDUT_d0="<<resultBothPlanesConstraintShift[1]<<" deltaZ="<< resultBothPlanesConstraintShift[2]<<" theta="<<resultBothPlanesConstraintShift[3]*180./TMath::Pi()<< " shiftPlanes="<<resultBothPlanesConstraintShift[4] << " chi2="<<chi2BothPlanesConstraintShift<<endl;
+  std::cout << "Dumping alignment in Data directory!!" << std::endl;
+  dumpAlignment(resultBothPlanesConstraintShift);
+
 
 /*
   //Dump Alignment output to alignment text file
@@ -1244,9 +1250,7 @@ void AlignmentMultiDimAnalysis::endJob() {
   BeamAnaBase::endJob();
   std::cout << std::setw(4) << alignmentDump_ << std::endl;
   //Dump Alignment output to alignment text file
-  std::ofstream fileAlignment(alignparFile_.c_str(), ios::out);
-  fileAlignment << std::setw(4) << alignmentDump_ << std::endl;
-  fileAlignment.close();
+
   hist_->closeFile();
 }
 

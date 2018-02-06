@@ -25,7 +25,7 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
   void endJob();
   double ComputeChi2(const double* x) const;
   double ComputeChi2BothPlanes(const double* x) const;
-  void dumpAlignment(const tbeam::alignmentPars& a);
+  void dumpAlignment(const double* a);
   static double FuncStepGaus(Double_t * x, Double_t * par){
     double xx = x[0];
     double pitch = par[0];

@@ -451,19 +451,12 @@ void Histogrammer::bookTrackMatchHistograms(TString& detId)
   fout_->mkdir(dname);
   fout_->cd(dname);
   //these will be added back once the zposition of the reference plane is known
-  //new TH1D("tkposx_ref","Xpos of etrapolated track from reference plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  //new TH1D("tkposy_ref","Ypos of etrapolated track from reference plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  //new TH1D("hitresidualX_ref","Residual of extrapolated track(ref plane) with respect to hit; residual [mm]; Events [a.u]",40/(50e-3),-20.,20.);
 
-  new TH1D("tkposx_prev","Xpos of etrapolated track from previous plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  new TH1D("tkposy_prev","Ypos of etrapolated track from previous plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  new TH1D("hitresidualX_prev","Residual of extrapolated track(prev plane) with respect to hit(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-40.,40.);
-  new TH1D("clusresidualX_prev","Residual of extrapolated track(prev plane) with respect to cluster(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-40.,40.);
-
-  new TH1D("tkposx_next","Xpos of etrapolated track from next plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  new TH1D("tkposy_next","Ypos of etrapolated track from next plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  new TH1D("hitresidualX_next","Residual of extrapolated track(next plane) with respect to hit(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-40.,40.);
-  new TH1D("clusresidualX_next","Residual of extrapolated track(next plane) with respect to cluster(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+  new TH1D("tkposx","Xpos of etrapolated track; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  new TH1D("tkposy","Ypos of etrapolated track; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  //new TH1D("hitresidualX","Residual of extrapolated track(prev plane) with respect to hit(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+  new TH1D("clusresidualX","Residual of extrapolated track(prev plane) with respect to cluster(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+  new TH1D("stubresidualX","Residual of extrapolated track(prev plane) with respect to stub(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-40.,40.);
 
   //Consult with other analysers about which ones to keep --- REMOVE Duplicates
 

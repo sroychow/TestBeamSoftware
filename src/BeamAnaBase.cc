@@ -51,7 +51,6 @@ bool BeamAnaBase::readJob(const std::string jfile) {
       if(key=="inputFile")  iFilename_ = value;
       else if(key=="outputFile")  outFilename_ = value;
       else if(key=="Run")  run = atoi(value.c_str());
-      //else if(key=="fei4Z")  alPars_.FEI4z(std::atof(value.c_str()));
       else if(key=="readAlignmentFromfile")  ralignmentFromfile = (atoi(value.c_str()) > 0) ? true : false;
       else if(key=="alignmentOutputFile")  alignParfile = value;
       else if(key=="residualSigmaDUT")     residualSigmaDUT_ = std::atof(value.c_str());
@@ -68,46 +67,9 @@ bool BeamAnaBase::readJob(const std::string jfile) {
   }
   jobcardFile.close();
   std::cout << run << "::" << ralignmentFromfile << "::" << alignParfile << std::endl;
-  if(ralignmentFromfile) {
-    std::ifstream alf(alignParfile.c_str());
-    if (!alf) {
-      std::cerr << "Alignment File: " << alignParfile << " could not be opened!" << std::endl;
-    }
-    if(alf.is_open()) {
-      while(std::getline(alf,line)) {
-        // enable '#' and '//' style comments
-        //if (line.substr(0,1) == "#" || line.substr(0,2) == "//") continue;
-        std::cout << line << std::endl;
-        std::vector<std::string> tokens;
-        Utility::tokenize(line,tokens,":");
-        std::cout << "Tokens size>>" << tokens.size() << std::endl;
-        std::vector<std::string> rtemp;
-        Utility::tokenize(tokens[0],rtemp,"=");
-        std::cout << "Run number>>" << atoi(rtemp[1].c_str()) << std::endl;
-        if(atoi(rtemp[1].c_str()) != run)  continue;
-        for(unsigned int i = 1; i < tokens.size(); i++) {
-          std::vector<std::string> vtemp;
-          Utility::tokenize(tokens[i],vtemp,"=");
-          std::string key = vtemp[0];
-          std::string value = vtemp[1];
-          std::cout << key << ":::" << value << std::endl;
-          //if(key=="offsetFEI4X") alPars_.offsetFEI4x(std::atof(value.c_str()));
-          //else if(key=="offsetFEI4Y") alPars_.offsetFEI4y(std::atof(value.c_str()));
-          //else if(key=="residualSigmaFEI4X") alPars_.residualSigmaFEI4x(std::atof(value.c_str()));
-          //else if(key=="residualSigmaFEI4Y") alPars_.residualSigmaFEI4y(std::atof(value.c_str()));
-          if(key=="zD0")  alPars_.d0Z(std::atof(value.c_str()));
-          else if(key=="offsetD0")  alPars_.d0Offset(std::atof(value.c_str()));
-          else if(key=="deltaZ")  alPars_.deltaZ(std::atof(value.c_str()));
-          else if(key=="angle")  alPars_.theta(std::atof(value.c_str()));
-        }
-      }
-      alf.close();
-    } else {
-      std::cout << "Alignment File not found!!" << std::endl;
-    }
+  if(ralignmentFromfile) 
+    readAlignmentConstant(jobCardmap_.at("alignmentOutputFile"));
 
-  }
-  alPars_.setD1parametersfromD0();
   std::cout << "Initialized with the following options::"
             << "Infile: " << iFilename_
             << "\nOutFile: " << outFilename_
@@ -117,7 +79,6 @@ bool BeamAnaBase::readJob(const std::string jfile) {
             << "\nnStrips:" << nStrips_
             << "\npitchDUT:" << pitchDUT_
             << std::endl;
-  std::cout << alPars_ << std::endl;
   if(doChannelMasking_)  setChannelMasking(chmaskFilename_);
 }
 bool BeamAnaBase::readGeometry(const std::string gfile) {
@@ -445,13 +406,33 @@ void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
 
   // nStubsrecoSword_ = 0;
   // nStubscbcSword_ = 0;
-void readAlignmentConstant(const std::string& aFname) {
-  std::ifstream fin(aFname.c_str(),std::ios::in);
+void BeamAnaBase::readAlignmentConstant(const std::string& aFname) {
+  std::string alignparFile_ = workDir_ + "/data/" + aFname;
+  std::cout << "Alignment parameters will be read from file:" << alignparFile_ << std::endl;
+  std::ifstream fin(alignparFile_.c_str());
   if(!fin) {
-    std::cout << "Channel Mask File could not be opened!!" << std::endl;
+    std::cout << "Alignment File could not be opened!! All alignment parameters will be set to ZERO!!" << std::endl;
+    alPars_["offset_d0"]   =    0.;
+    alPars_["zDUT_d0"]     =    0.;
+    alPars_["deltaZ"]      =    0.;
+    alPars_["theta"]       =    0.;
+    alPars_["shiftPlanes"] =    0.;
+    alPars_["chi2"]        =    0.;
     return;
   }
+  json alignment;
+  fin >> alignment;
+  alPars_["offset_d0"]   =    alignment["offset_d0"];
+  alPars_["zDUT_d0"]     =    alignment["zDUT_d0"];
+  alPars_["deltaZ"]      =    alignment["deltaZ"];
+  alPars_["theta"]       =    alignment["theta"];
+  alPars_["shiftPlanes"] =    alignment["shiftPlanes"];
+  alPars_["chi2"]        =    alignment["chi2"];
   fin.close();
+  std::cout << "Alignment parameters read from file:" << alignparFile_ << std::endl;
+  for(auto& ap : alPars_)
+    std::cout << ap.first << ":" <<  ap.second << std::endl;
+
 }
 
 void BeamAnaBase::endJob() {}
