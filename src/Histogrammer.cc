@@ -352,6 +352,7 @@ void Histogrammer::bookTrackCommonHistograms() {
   new TH1F("errtkYPosnext", "Error on Track Impact on plane after dut; Error track Y (mm); Number of Events",(int)(40.0/(50e-3)) , -20.0, 20.0 );
 
   new TH1F("tkChi2", "Chi Squared Tracks", (100.0)/0.05 , -0.5, 99.5);
+
 }
  //Check with other analysers about keeping the following-- REMOVE duplicates
   /*
@@ -454,10 +455,14 @@ void Histogrammer::bookTrackMatchHistograms(TString& detId)
 
   new TH1D("tkposx","Xpos of etrapolated track; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
   new TH1D("tkposy","Ypos of etrapolated track; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
-  //new TH1D("hitresidualX","Residual of extrapolated track(prev plane) with respect to hit(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-40.,40.);
-  new TH1D("clusresidualX","Residual of extrapolated track(prev plane) with respect to cluster(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-40.,40.);
-  new TH1D("stubresidualX","Residual of extrapolated track(prev plane) with respect to stub(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+  //new TH1D("hitresidualX","Residual of extrapolated track(prev plane) with respect to hit(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-20.,20.);
+  new TH1D("clusresidualX","Residual of extrapolated track(prev plane) with respect to cluster(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-20.,20.);
+  new TH1D("stubresidualX","Residual of extrapolated track(prev plane) with respect to stub(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-20.,20.);
 
+  new TH2D("moduleSize_Cluster",";cluster position [strip]; yTrack at DUT{Track} [mm]", 1016, -0.5, 1015.5, 100, 1., 100. );
+
+  new TH1F("trackpos_strip","Extrapolated Track position on sensor;#tracks; track position", 1016, -0.5, 1015.5);
+  new TH1F("matchedclusterpos_strip","Mateched cluster position on sensor;#clusters; cluster position", 1016, -0.5, 1015.5);
   //Consult with other analysers about which ones to keep --- REMOVE Duplicates
 
 /*
