@@ -192,74 +192,73 @@ namespace Utility {
 
   double extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset, double zDUT, double theta){
 
-    //float xInit = track.xPosPrevHit();
-    //float zTkIP = FEI4_z;
-    //float zTkIP = FEI4_z - track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
-
-    float xInit = track.xPos();
+    float xInit = track.xPosPrevHit();
+    //float xInit = track.yPosPrevHit();
+    //float slope = track.dydz();
+    float slope = track.dxdz();
     float zTkIP = FEI4_z;
+    //float zTkIP = FEI4_z - track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+    //float zTkIP = FEI4_z + track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+
+    //float xInit = track.xPos();
+    //float zTkIP = FEI4_z;
 
     //Compute distance between DUT center and track impact at DUT along X 
-    float xTkAtDUT = xInit + (zDUT - zTkIP)*track.dxdz();
-    xTkAtDUT /= 1000.;
-//    double xTkAtDUT = track.xPos() + (zDUT - FEI4_z) * track.dxdz();
-//#ifdef OCT_16
-//    xTkAtDUT = track.yPos() + (zDUT - FEI4_z) * track.dydz();
-//    xTkAtDUT *= -1.;
-//#endif
-    xTkAtDUT = (xTkAtDUT + offset)/ (cos(theta)*(1.-track.dxdz()*tan(theta)));
+    float xTkAtDUT = xInit + (zDUT - zTkIP)*slope;
+    xTkAtDUT = (xTkAtDUT + offset)/ (cos(theta)*(1.-slope*tan(theta)));
     return xTkAtDUT; 
   }
 
   std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta){
 
-    //float xInit = track.xPosPrevHit();
-    //float zTkIP = FEI4_z;
-    //float zTkIP = FEI4_z - track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
-
-    float xInit = track.xPos();
+    float xInit = track.xPosPrevHit();
+    //float xInit = track.yPosPrevHit();
+    float slope = track.dxdz();
+    //float slope = track.dydz();
     float zTkIP = FEI4_z;
+    //float zTkIP = FEI4_z - track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+    //float zTkIP = FEI4_z + track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+
+    //float xInit = track.xPos();
+    //float zTkIP = FEI4_z;
 
     //Compute distance between DUT center and track impact at DUT along X 
-    float xTkAtDUT_d0 = xInit + (zDUT_d0 - zTkIP)*track.dxdz();
-    xTkAtDUT_d0 /= 1000.;  
-    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-track.dxdz()*tan(theta)));
+    //float xTkAtDUT_d0 = xInit + (zDUT_d0 - zTkIP)*track.dxdz();
+    float xTkAtDUT_d0 = xInit + (zDUT_d0 - zTkIP)*slope;
+    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-slope*tan(theta)));
 
     double zDUT_d1 = zDUT_d0 + deltaZ*cos(theta);
-    float xTkAtDUT_d1 = xInit + (zDUT_d1 - zTkIP)*track.dxdz();
-    xTkAtDUT_d1 /= 1000.;
-    double offset_d1 = offset_d0 + sin(theta)*deltaZ/1000.;
-    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-track.dxdz()*tan(theta)));
+    float xTkAtDUT_d1 = xInit + (zDUT_d1 - zTkIP)*slope;
+    double offset_d1 = offset_d0 + sin(theta)*deltaZ;
+    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-slope*tan(theta)));
 
     std::pair<double, double> xTkAtDUT;
     xTkAtDUT.first = xTkAtDUT_d0;
     xTkAtDUT.second = xTkAtDUT_d1;
     return xTkAtDUT;
   }
-
-    //std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, resultBothPlanesConstraintShift[0], resultBothPlanesConstraintShift[1], resultBothPlanesConstraintShift[2], resultBothPlanesConstraintShift[3], resultBothPlanesConstraintShift[4]);
-
-
 
   std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta, double offsetPlanes){
 
-    //float xInit = track.xPosPrevHit();
-    //float zTkIP = FEI4_z;
-    //float zTkIP = FEI4_z - track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
-
-    float xInit = track.xPos();
+    //float xInit = track.yPosPrevHit();
+    float xInit = track.xPosPrevHit();
+    float slope = track.dxdz();
+    //float slope = track.dydz();
     float zTkIP = FEI4_z;
+    //float zTkIP = FEI4_z - track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+    //float zTkIP = FEI4_z + track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+
+    //float xInit = track.xPos();
+    //float zTkIP = FEI4_z;
 
     //Compute distance between DUT center and track impact at DUT along X 
-    float xTkAtDUT_d0 = xInit + (zDUT_d0 - zTkIP)*track.dxdz();
-    xTkAtDUT_d0 /= 1000.;
-    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-track.dxdz()*tan(theta)));
+    float xTkAtDUT_d0 = xInit + (zDUT_d0 - zTkIP)*slope;
+    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-slope*tan(theta)));
 
-    double zDUT_d1 = zDUT_d0 + deltaZ*cos(theta) - offsetPlanes*sin(theta);
-    float xTkAtDUT_d1 = xInit + (zDUT_d1 - zTkIP)*track.dxdz();
-    xTkAtDUT_d1 /= 1000.;
-    double offset_d1 = offset_d0 + sin(theta)*deltaZ/1000. + offsetPlanes/1000.*cos(theta);
-    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-track.dxdz()*tan(theta)));
+    double zDUT_d1 = zDUT_d0 + deltaZ*cos(theta) + offsetPlanes*sin(theta);
+    float xTkAtDUT_d1 = xInit + (zDUT_d1 - zTkIP)*slope;
+    double offset_d1 = offset_d0 + sin(theta)*deltaZ - offsetPlanes*cos(theta);
+    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-slope*tan(theta)));
 
     std::pair<double, double> xTkAtDUT;
     xTkAtDUT.first = xTkAtDUT_d0;
@@ -267,5 +266,37 @@ namespace Utility {
     return xTkAtDUT;
   }
 
+  std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta, double offsetPlanes, double phi_d0, double phi_d1){
+
+    float xInit = track.xPosPrevHit();
+    float yInit = track.yPosPrevHit();
+    float slopeX = track.dxdz();
+    float slopeY = track.dydz();
+    float zTkIP = FEI4_z;
+
+    float xTkAtDUT_d0_init = xInit + (zDUT_d0 - zTkIP)*slopeX;
+    float yTkAtDUT_d0_init = yInit + (zDUT_d0 - zTkIP)*slopeY;
+
+    float xTkAtDUT_d0 = cos(phi_d0)*xTkAtDUT_d0_init + sin(phi_d0)*yTkAtDUT_d0_init;
+    //float yTkAtDUT_d0 = -sin(phi_d0)*xTkAtDUT_d0_init + cos(phi_d0)*yTkAtDUT_d0_init;
+
+    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-slopeX*tan(theta)));
+    
+    double zDUT_d1 = zDUT_d0 + deltaZ*cos(theta) + offsetPlanes*sin(theta);
+    float xTkAtDUT_d1_init = xInit + (zDUT_d1 - zTkIP)*slopeX;
+    float yTkAtDUT_d1_init = yInit + (zDUT_d1 - zTkIP)*slopeY;
+
+     float xTkAtDUT_d1 = cos(phi_d1)*xTkAtDUT_d1_init + sin(phi_d1)*yTkAtDUT_d1_init;
+     //yTkAtDUT_d1 = -sin(phi_d1)*xTkAtDUT_d1_init + cos(phi_d1)*yTkAtDUT_d1_init;
+
+    double offset_d1 = offset_d0 + sin(theta)*deltaZ - offsetPlanes*cos(theta);
+    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-slopeX*tan(theta)));
+
+    std::pair<double, double> xTkAtDUT;
+    xTkAtDUT.first = xTkAtDUT_d0;
+    xTkAtDUT.second = xTkAtDUT_d1;
+    return xTkAtDUT;
+
+  }
 
 }

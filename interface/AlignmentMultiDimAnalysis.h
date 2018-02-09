@@ -26,7 +26,7 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
   double ComputeChi2(const double* x) const;
   double ComputeChi2BothPlanes(const double* x) const;
   void dumpAlignment(const double* a);
-  static double FuncStepGaus(Double_t * x, Double_t * par){
+/*  static double FuncStepGaus(Double_t * x, Double_t * par){
     double xx = x[0];
     double pitch = par[0];
     double sigma = par[1];
@@ -37,7 +37,7 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
     if (xx>0) f = norm*(1-TMath::Erf((xx-pitch/2.)/(sqrt(2)*sigma)));
     f += cte;
     return f;
-  }
+  }*/
   //Histograms to be used by alignment analysis
   void bookTrackFitHistograms(TString& detId, float zMin = 0., float zStep = 0., int zNsteps = 0);
   void FillAlignmentOffsetVsZ(const char*, const char*, int, float, float, float);
@@ -67,14 +67,17 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
   ROOT::Math::Functor* toMinimizeBothPlanes;
   ROOT::Math::Functor* toMinimizeBothPlanesConstraint;
   ROOT::Math::Functor* toMinimizeBothPlanesConstraintShift;
+  ROOT::Math::Functor* toMinimizeBothPlanesConstraintShiftPhi;
 
   ROOT::Minuit2::Minuit2Minimizer* minimizer;
   ROOT::Minuit2::Minuit2Minimizer* minimizerBothPlanes;
   ROOT::Minuit2::Minuit2Minimizer* minimizerBothPlanesConstraint;
   ROOT::Minuit2::Minuit2Minimizer* minimizerBothPlanesConstraintShift;
+  ROOT::Minuit2::Minuit2Minimizer* minimizerBothPlanesConstraintShiftPhi;
 
   bool doConstrainDeltaOffset;
   bool doAllowOffsetPlanes;
+  bool doAllowPhiBothPlanes;
   //tbeam::alignmentPars al;
   json alignmentDump_;
 

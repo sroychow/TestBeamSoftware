@@ -228,6 +228,7 @@ namespace Utility {
   double extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset, double zPlane, double theta);
   std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta);
   std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta, double offsetPlanes);
+  std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta, double offsetPlanes, double phi_d0, double phi_d1);
 
 }
 #endif
