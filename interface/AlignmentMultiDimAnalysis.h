@@ -48,7 +48,7 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
   int run_;
   unsigned long int nEntries_;
   unsigned long int maxEvent_;
-  bool isProduction_;
+  //bool isProduction_;
   std::string alignparFile_;
   float zMin;
   float zStep;

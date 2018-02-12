@@ -33,8 +33,7 @@ using std::map;
 using namespace std;
 
 AlignmentMultiDimAnalysis::AlignmentMultiDimAnalysis() :
-  BeamAnaBase::BeamAnaBase(),
-  isProduction_(false)
+  BeamAnaBase::BeamAnaBase()
 {
   alignparFile_ = workDir() + "/data/alignmentParameters.txt";
 
@@ -55,25 +54,25 @@ void AlignmentMultiDimAnalysis::beginJob() {
   //analysisTree()->GetEntry(0);
   //getCbcConfig(condEv()->cwd, condEv()->window);
 
-  if(jobCardmap().find("isProductionmode") != jobCardmap().end())
-    isProduction_ = (atoi(jobCardmap().at("isProductionmode").c_str()) > 0) ? true : false;
+  //if(jobCardmap().find("isProductionmode") != jobCardmap().end())
+  //  isProduction_ = (atoi(jobCardmap().at("isProductionmode").c_str()) > 0) ? true : false;
   if(jobCardmap().find("alignmentOutputFile") != jobCardmap().end())
     alignparFile_ = workDir() + "/data/" + jobCardmap().at("alignmentOutputFile");
   if(jobCardmap().find("Run") != jobCardmap().end())
     runNumber_ = jobCardmap().at("Run");
 
   std::cout << "Additional Parameter specific to AlignmentReco>>"
-            << "\nisProductionMode:" << isProduction_
+            //<< "\nisProductionMode:" << isProduction_
             << "\nalignparameterOutputFile:" << alignparFile_
             << std::endl;
   //If Production mode, read the existing alignment json into a json array.
   //Later, the alignment from this code will be added to this json array
   alignmentDump_ = json::array();
-  if(isProduction_) {
-    std::ifstream fileAlignment(alignparFile_.c_str());
-    fileAlignment >> alignmentDump_;
-    fileAlignment.close();
-  }
+  //if(isProduction_) {
+  //  std::ifstream fileAlignment(alignparFile_.c_str());
+   // fileAlignment >> alignmentDump_;
+  //  fileAlignment.close();
+ //}
 
   dnamebottom = (*modVec())[0].hdirbottom_ + "/TrackFit";
   dnametop = (*modVec())[0].hdirtop_ + "/TrackFit";
@@ -98,15 +97,18 @@ void AlignmentMultiDimAnalysis::bookHistograms() {
 void AlignmentMultiDimAnalysis::dumpAlignment(const double* a) {
   json o;
   o.emplace("offset_d0", a[0]);
-  o.emplace("zDUT_d0", a[1]);
-  o.emplace("deltaZ", a[2]);
-  o.emplace("theta", a[3]);
+  o.emplace("zDUT_d0"  , a[1]);
+  o.emplace("deltaZ"   , a[2]);
+  o.emplace("theta"    , a[3]*180./TMath::Pi());
   o.emplace("shiftPlanes", a[4]);
-  o.emplace("chi2" , a[5]);
-  std::ofstream fileAlignment(alignparFile_.c_str(), ios::out);
+  o.emplace("phi_d0"   , a[5]*180./TMath::Pi());
+  o.emplace("phi_d1"   , a[6]*180./TMath::Pi());
+
+  std::cout << "Alignment File=" << alignparFile_ << std::endl;
+  std::cout << std::setw(4) << o << std::endl;
+  std::ofstream fileAlignment(alignparFile_.c_str());
   fileAlignment << std::setw(4) << o << std::endl;
   fileAlignment.close();
-
 }
 
 void AlignmentMultiDimAnalysis::eventLoop()
@@ -228,18 +230,6 @@ void AlignmentMultiDimAnalysis::eventLoop()
   }
   */
 
-/*
-  //Simple extraction of mean and sigma of rsidual histograms and dumping...no fitting involved
-  //To be removed once the code is updated
-  //Check mean sigma from histograms
-  //json alignmentDump = json::array();
-  for(auto& m : *modVec()){
-    std::string dnamebottom = m.hdirbottom_ + "/TrackFit";
-    TH1* hclusres = hist_->GetHistoByName(dnamebottom, "clusresidualX_prev");
-    tbeam::alignmentPars tal(m.name, hclusres->GetMean(),m.z, 2., 0.);//this is temporary
-    dumpAlignment(tal);
-  }
-*/
   //First Loop : find initial values for the alignment
 
     //std::string dnamebottom = (*modVec())[0].hdirbottom_ + "/TrackFit";
@@ -1481,11 +1471,6 @@ void AlignmentMultiDimAnalysis::clearEvent() {
 }
 void AlignmentMultiDimAnalysis::endJob() {
   BeamAnaBase::endJob();
-  std::cout << std::setw(4) << alignmentDump_ << std::endl;
-  //Dump Alignment output to alignment text file
-  std::ofstream fileAlignment(alignparFile_.c_str(), ios::out);
-  fileAlignment << std::setw(4) << alignmentDump_ << std::endl;
-  fileAlignment.close();
   hist_->closeFile();
 }
 
