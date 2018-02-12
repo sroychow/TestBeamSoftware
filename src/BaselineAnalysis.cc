@@ -28,15 +28,11 @@ BaselineAnalysis::BaselineAnalysis() :
 }
 void BaselineAnalysis::bookHistograms() {
   BeamAnaBase::bookHistograms();
-  //hist_->bookTrackMatchHistograms();
-  //implement histograms specific to this application
-  //if(vmod_) std::cout << "modVec pointer exists!! Size=" << vmod_->size() << std::endl ;
-  //if(hist_) std::cout << "Histogtammer pointer exists\n" ;
   for(auto& m : *modVec()){
-    std::cout << "DetidLower=" << m.hdirLower_ << std::endl;
-    TString s = TString(m.hdirLower_);
+    //std::cout << "Detidbottom=" << m.hdirbottom_ << std::endl;
+    TString s = TString(m.hdirbottom_);
     hist_->bookTrackMatchHistograms(s);
-    s = TString(m.hdirUpper_);
+    s = TString(m.hdirtop_);
     hist_->bookTrackMatchHistograms(s);
   }
 }
@@ -59,6 +55,8 @@ void BaselineAnalysis::eventLoop()
   cout << "#Events=" << nEntries_ <<" -->  MAX EVENTS TO BE PROCESSED : "<< maxEvent_ <<endl;
   hist_->fillHist1D("EventInfo","nevents", nEntries_);
 
+  long int den = 0;
+  long int nClsb = 0, nClst = 0, numstub = 0;
   for (Long64_t jentry=0; jentry < maxEvent_; jentry++) {
     clearEvent();
     Long64_t ientry = analysisTree()->GetEntry(jentry);
@@ -70,12 +68,11 @@ void BaselineAnalysis::eventLoop()
     if(jentry==0) {
       hist_->fillHist1D("EventInfo","hvSettings", event()->HVsettings);
       hist_->fillHist1D("EventInfo","dutAngle", event()->DUTangle);
-      hist_->fillHist1D("EventInfo","vcth", event()->vcth);
+      //hist_->fillHist1D("EventInfo","vcth", event()->vcth);
       //hist_->fillHist1D("EventInfo","offset", cbcOffset1());
       //hist_->fillHist1D("EventInfo","offset", cbcOffset2());
-      hist_->fillHist1D("EventInfo","window", event()->cwd);
+      //hist_->fillHist1D("EventInfo","window", event()->cwd);
       //hist_->fillHist1D("EventInfo","tilt", static_cast<unsigned long int>(condEv()->tilt));
-      cout << "Alignment Parameters" << aLparameteres();
       for(auto& cm: event()->conddatamap){
         uint8_t uid = (cm.first >> 24) & MASK_BITS_8;
         uint8_t i2cReg  = (cm.first >> 16)  & MASK_BITS_8;
@@ -101,35 +98,70 @@ void BaselineAnalysis::eventLoop()
     //fill common histograms for dut hits, clusters
     fillCommonHistograms();
     //Fill track match histograms
-    for(auto& m : *modVec()){
-      std::string dnameLower = m.hdirLower_ + "/TrackMatch";
-      //loop over tracks
-      for(auto& tk: event()->tracks) {
-        //previous hit
-        float xtk_prev = tk.xPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
-        float ytk_prev = tk.yPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
-        hist_->fillHist1D(dnameLower, "tkposx_prev", xtk_prev/1000.);
-        hist_->fillHist1D(dnameLower, "tkposy_prev", ytk_prev/1000.);
-        //next hit
-        float xtk_next = tk.xPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
-        float ytk_next = tk.yPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
-        hist_->fillHist1D(dnameLower, "tkposx_next", xtk_next/1000.);
-        hist_->fillHist1D(dnameLower, "tkposy_next", ytk_next/1000.);
-        //Fill hit residuals
-        for(auto& h: m.lowerHits) {
-          float hx = (h.strip() - m.nstrips_/2.)*m.pitch_;
-          hist_->fillHist1D(dnameLower, "hitresidualX_prev", hx - xtk_prev/1000.);
-          hist_->fillHist1D(dnameLower, "hitresidualX_next", hx - xtk_next/1000.);
-        }
-        //Fill cluster residuals
-        for(auto& c: m.lowerOfflineCls) {
-          float cx = (c.center() - m.nstrips_/2.)*m.pitch_;
-          hist_->fillHist1D(dnameLower, "clusresidualX_prev", cx - xtk_prev/1000.);
-          hist_->fillHist1D(dnameLower, "clusresidualX_next", cx - xtk_next/1000.);
-        }
+    float resultBothPlanesConstraintShift[] = {-18.8072, -114101., 2400.02, -0.980538, 18.5594};
+    //Select events with one track
+    if ( event()->tracks.size() !=1 ) continue;
+    auto& tk = event()->tracks[0];
+    //Select tracks with chi2 > 5
+    if (tk.chi2()>5.) continue;
+    den++;
+    auto& m = modVec()->at(0);
+
+    std::string dnamebottom = m.hdirbottom_ + "/TrackMatch";
+    std::string dnametop    = m.hdirtop_ + "/TrackMatch";
+    //extrapolate the track. x direction is accross the strips
+    //xTkAtDUT is a pair of the extrapolated position of the tk in the two planes of the module
+    //xTkAtDUT.first will give the position of the track on  bottom sensor
+    //xTkAtDUT.second will give the position of the track on top sensor
+    std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(tk, m.z, offsetbottom(), zDUTbottom(), sensordeltaZ(), dutangle(), shiftPlanes());
+    //extrapolate along y direction
+    float yTkAtDUT_bottom = tk.yPos(); + (zDUTbottom() - m.z)*tk.dydz();
+    float yTkAtDUT_top    = tk.yPos(); + (zDUTbottom() + sensordeltaZ() - m.z)*tk.dydz();
+    hist_->fillHist1D(dnamebottom, "tkposx", xTkAtDUT.first);
+    hist_->fillHist1D(dnametop,    "tkposx", xTkAtDUT.second); 
+    //convert tk xpos to strip number
+    int xTkAtDUT_strip_bottom = xTkAtDUT.first/m.pitch_  + m.nstrips_/2.;
+    int xTkAtDUT_strip_top    = xTkAtDUT.second/m.pitch_ + m.nstrips_/2.;
+
+    hist_->fillHist1D(dnamebottom, "trackpos_strip", xTkAtDUT_strip_bottom);
+    hist_->fillHist1D(dnametop,    "trackpos_strip", xTkAtDUT_strip_top); 
+
+    bool mCls_bottom = false;
+    bool mCls_top = false;
+    bool mOfflinestub = false;   
+    //Fill cluster residuals
+    for(auto& c: m.bottomOfflineCls) {
+      float cx = -1.*(c.center() - m.nstrips_/2.)*m.pitch_;
+      hist_->fillHist1D(dnamebottom, "clusresidualX", cx - xTkAtDUT.first);//xTkAtDUT.first since bottom sensor
+      if(std::abs(cx - xTkAtDUT.first) < 100.)    {
+        mCls_bottom = true;
+        hist_->fillHist2D(dnamebottom, "moduleSize_Cluster", c.center(), yTkAtDUT_bottom/1000.);
+        hist_->fillHist1D(dnamebottom, "matchedclusterpos_strip", c.center()); 
       }
     }
-  }
+
+    for(auto& c: m.topOfflineCls) {
+      float cx = -1.*(c.center() - m.nstrips_/2.)*m.pitch_;
+      hist_->fillHist1D(dnamebottom, "clusresidualX", cx - xTkAtDUT.second);//xTkAtDUT.second since top sensor
+      if(std::abs(cx - xTkAtDUT.first) < 100.)  {
+        mCls_top = true;
+        hist_->fillHist2D(dnametop, "moduleSize_Cluster", c.center(), yTkAtDUT_top/1000.);
+        hist_->fillHist1D(dnametop, "matchedclusterpos_strip", c.center());
+      }
+    }
+    //stub residual
+    for(auto& s: m.offlineStubs) {
+      float sx = -1.*(s.positionX() - m.nstrips_/2.)*m.pitch_;
+      hist_->fillHist1D(dnamebottom, "stubresidualX", sx - xTkAtDUT.first);//xTkAtDUT.first since bottom sensor
+      if(std::abs(sx - xTkAtDUT.first) < 100.)    mOfflinestub = true;
+    }
+    
+    //Increment counters if matching is found
+    if(mCls_bottom)   nClsb++;
+    if(mCls_top)      nClst++;
+    if(mOfflinestub)  numstub++;
+  }//event Loop end
+  std::cout << "Den=" << den << "\t#ClustersBottom=" << nClsb << "\t#ClustersTop=" << nClst << "\tStub=" << numstub << std::endl;
 
 }
 

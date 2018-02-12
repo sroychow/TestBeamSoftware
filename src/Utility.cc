@@ -189,107 +189,114 @@ namespace Utility {
   // ---------------------------------------------
   // Convenience routine for track cleaning
   // ---------------------------------------------
-/*
-  void removeTrackDuplicates(const tbeam::TelescopeEvent *telEv, std::vector<tbeam::Track>& tkNoOverlap) {
-    //Loop over original track collection and compare all track pairs to check for duplicates
-    for(unsigned int i = 0; i<telEv->xPos->size(); i++) {
-      double tkX = telEv->xPos->at(i);
-      double tkY = telEv->yPos->at(i);
-      bool isduplicate = false;
-      for (unsigned int j = i+1; j<telEv->xPos->size(); j++) {
-        double tkX_j = telEv->xPos->at(j);
-        double tkY_j = telEv->yPos->at(j);
-        //if (fabs(tkY-tkY_j)<0.015*4 && fabs(tkX-tkX_j)<0.072*4) isduplicate = true;
-        //if (fabs(tkY-tkY_j)<0.015 && fabs(tkX-tkX_j)<0.072) isduplicate = true;
-        if (fabs(tkY-tkY_j)<0.001 && fabs(tkX-tkX_j)<0.001) isduplicate = true;
-      }
-      if (!isduplicate) {
-        tbeam::Track t(i,tkX,tkY,telEv->dxdz->at(i),telEv->dydz->at(i),telEv->chi2->at(i),telEv->ndof->at(i));  
-        tkNoOverlap.push_back(t);
-      }      
-    }
-  }
-*/
-/*
-  void cutTrackFei4Residuals(const tbeam::FeIFourEvent* fei4ev ,const std::vector<tbeam::Track>& tkNoOverlap, std::vector<tbeam::Track>& selectedTk, 
-                             const double xResMean, const double yResMean, const double xResPitch, const double yResPitch, bool doClosestTrack) {
-   
-    double mindelta = 999.;
-    double minresx = 999.;
-    double minresy = 999.;
-    int itkClosest = -1;
 
-    for(unsigned int itk = 0; itk < tkNoOverlap.size(); itk++) {
-      const tbeam::Track tTemp(tkNoOverlap.at(itk));
-      double tkX = tTemp.xPos;
-      double tkY = tTemp.yPos;
-#ifdef OCT_16
-      tkX = -1.*tTemp.yPos;
-      tkY = tTemp.xPos;
-#endif
-      if (!doClosestTrack){
-        minresx = 999.;
-        minresy = 999.;
-	mindelta = 999.;
-      }
-      for (unsigned int i = 0; i < fei4ev->col->size(); i++) {
-        double xval = 8.375 - (fei4ev->row->at(i)-1)*0.05;
-        double yval = 9.875 - (fei4ev->col->at(i)-1)*0.250;
-#ifdef OCT_16
-        yval = 9.875 - (fei4ev->col->at(i)-1)*0.250;
-        xval = 8.375 - (fei4ev->row->at(i)-1)*0.05;
-#endif
-        double xres = xval - tkX - xResMean;
-        double yres = yval - tkY - yResMean;
-        if (sqrt(xres*xres+yres*yres)<mindelta){
-	  mindelta = sqrt(xres*xres+yres*yres);
-	  minresx = xres;
-	  minresy = yres;
-	  itkClosest = itk;
-	}
-      }
-      if (!doClosestTrack && (std::fabs(minresx) < xResPitch) && (std::fabs(minresy) < yResPitch)) selectedTk.push_back(tTemp);
-    }
-    if (doClosestTrack && (std::fabs(minresx) < xResPitch) && (std::fabs(minresy) < yResPitch) && itkClosest!=-1){
-      const tbeam::Track tClosest(tkNoOverlap.at(itkClosest));
-      selectedTk.push_back(tClosest);
-    }
-  }
-*/
-  double extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset, double zDUT, double theta){
+  double extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset, double zDUT, double theta){
+
+    float xInit = track.xPosPrevHit();
+    //float xInit = track.yPosPrevHit();
+    //float slope = track.dydz();
+    float slope = track.dxdz();
+    float zTkIP = FEI4_z;
+    //float zTkIP = FEI4_z - track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+    //float zTkIP = FEI4_z + track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+
+    //float xInit = track.xPos();
+    //float zTkIP = FEI4_z;
 
     //Compute distance between DUT center and track impact at DUT along X 
-    double xTkAtDUT = track.xPos() + (zDUT - FEI4_z) * track.dxdz();
-#ifdef OCT_16
-    xTkAtDUT = track.yPos() + (zDUT - FEI4_z) * track.dydz();
-    xTkAtDUT *= -1.;
-#endif
-    xTkAtDUT = (xTkAtDUT + offset)/ (cos(theta)*(1.-track.dxdz()*tan(theta)));
+    float xTkAtDUT = xInit + (zDUT - zTkIP)*slope;
+    xTkAtDUT = (xTkAtDUT + offset)/ (cos(theta)*(1.-slope*tan(theta)));
     return xTkAtDUT; 
   }
 
-  std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::Track& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta){
+  std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta){
+
+    float xInit = track.xPosPrevHit();
+    //float xInit = track.yPosPrevHit();
+    float slope = track.dxdz();
+    //float slope = track.dydz();
+    float zTkIP = FEI4_z;
+    //float zTkIP = FEI4_z - track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+    //float zTkIP = FEI4_z + track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+
+    //float xInit = track.xPos();
+    //float zTkIP = FEI4_z;
 
     //Compute distance between DUT center and track impact at DUT along X 
-    double xTkAtDUT_d0 = track.xPos() + (zDUT_d0 - FEI4_z) * track.dxdz();
-#ifdef OCT_16
-    xTkAtDUT_d0 = track.yPos() + (zDUT_d0 - FEI4_z) * track.dydz();
-    xTkAtDUT_d0 *= -1.;
-#endif
-    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-track.dxdz()*tan(theta)));
+    //float xTkAtDUT_d0 = xInit + (zDUT_d0 - zTkIP)*track.dxdz();
+    float xTkAtDUT_d0 = xInit + (zDUT_d0 - zTkIP)*slope;
+    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-slope*tan(theta)));
 
     double zDUT_d1 = zDUT_d0 + deltaZ*cos(theta);
-    double xTkAtDUT_d1 = track.xPos() + (zDUT_d1 - FEI4_z) * track.dxdz();
-#ifdef OCT_16
-    xTkAtDUT_d1 = track.yPos() + (zDUT_d1 - FEI4_z) * track.dydz();
-    xTkAtDUT_d1 *= -1;
-#endif
+    float xTkAtDUT_d1 = xInit + (zDUT_d1 - zTkIP)*slope;
     double offset_d1 = offset_d0 + sin(theta)*deltaZ;
-    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-track.dxdz()*tan(theta)));
+    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-slope*tan(theta)));
 
     std::pair<double, double> xTkAtDUT;
     xTkAtDUT.first = xTkAtDUT_d0;
     xTkAtDUT.second = xTkAtDUT_d1;
     return xTkAtDUT;
   }
+
+  std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta, double offsetPlanes){
+
+    //float xInit = track.yPosPrevHit();
+    float xInit = track.xPosPrevHit();
+    float slope = track.dxdz();
+    //float slope = track.dydz();
+    float zTkIP = FEI4_z;
+    //float zTkIP = FEI4_z - track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+    //float zTkIP = FEI4_z + track.xPosPrevHit()*sin(24*TMath::Pi()/180.);
+
+    //float xInit = track.xPos();
+    //float zTkIP = FEI4_z;
+
+    //Compute distance between DUT center and track impact at DUT along X 
+    float xTkAtDUT_d0 = xInit + (zDUT_d0 - zTkIP)*slope;
+    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-slope*tan(theta)));
+
+    double zDUT_d1 = zDUT_d0 + deltaZ*cos(theta) + offsetPlanes*sin(theta);
+    float xTkAtDUT_d1 = xInit + (zDUT_d1 - zTkIP)*slope;
+    double offset_d1 = offset_d0 + sin(theta)*deltaZ - offsetPlanes*cos(theta);
+    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-slope*tan(theta)));
+
+    std::pair<double, double> xTkAtDUT;
+    xTkAtDUT.first = xTkAtDUT_d0;
+    xTkAtDUT.second = xTkAtDUT_d1;
+    return xTkAtDUT;
+  }
+
+  std::pair<double, double> extrapolateTrackAtDUTwithAngles(const tbeam::OfflineTrack& track, double FEI4_z, double offset_d0, double zDUT_d0, double deltaZ, double theta, double offsetPlanes, double phi_d0, double phi_d1){
+
+    float xInit = track.xPosPrevHit();
+    float yInit = track.yPosPrevHit();
+    float slopeX = track.dxdz();
+    float slopeY = track.dydz();
+    float zTkIP = FEI4_z;
+
+    float xTkAtDUT_d0_init = xInit + (zDUT_d0 - zTkIP)*slopeX;
+    float yTkAtDUT_d0_init = yInit + (zDUT_d0 - zTkIP)*slopeY;
+
+    float xTkAtDUT_d0 = cos(phi_d0)*xTkAtDUT_d0_init + sin(phi_d0)*yTkAtDUT_d0_init;
+    //float yTkAtDUT_d0 = -sin(phi_d0)*xTkAtDUT_d0_init + cos(phi_d0)*yTkAtDUT_d0_init;
+
+    xTkAtDUT_d0 = (xTkAtDUT_d0 + offset_d0)/ (cos(theta)*(1.-slopeX*tan(theta)));
+    
+    double zDUT_d1 = zDUT_d0 + deltaZ*cos(theta) + offsetPlanes*sin(theta);
+    float xTkAtDUT_d1_init = xInit + (zDUT_d1 - zTkIP)*slopeX;
+    float yTkAtDUT_d1_init = yInit + (zDUT_d1 - zTkIP)*slopeY;
+
+     float xTkAtDUT_d1 = cos(phi_d1)*xTkAtDUT_d1_init + sin(phi_d1)*yTkAtDUT_d1_init;
+     //yTkAtDUT_d1 = -sin(phi_d1)*xTkAtDUT_d1_init + cos(phi_d1)*yTkAtDUT_d1_init;
+
+    double offset_d1 = offset_d0 + sin(theta)*deltaZ - offsetPlanes*cos(theta);
+    xTkAtDUT_d1 = (xTkAtDUT_d1 + offset_d1)/ (cos(theta)*(1.-slopeX*tan(theta)));
+
+    std::pair<double, double> xTkAtDUT;
+    xTkAtDUT.first = xTkAtDUT_d0;
+    xTkAtDUT.second = xTkAtDUT_d1;
+    return xTkAtDUT;
+
+  }
+
 }

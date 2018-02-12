@@ -18,7 +18,7 @@ int aa=5;
 BeamAnaBase::BeamAnaBase() :
   fin_( nullptr ),
   analysisTree_(nullptr),
-  event_( new tbeam::Event() ),
+  event_( new tbeam::OfflineEvent() ),
   hasTelescope_(false),
   doTelMatching_(false),
   doChannelMasking_(false) {
@@ -51,7 +51,6 @@ bool BeamAnaBase::readJob(const std::string jfile) {
       if(key=="inputFile")  iFilename_ = value;
       else if(key=="outputFile")  outFilename_ = value;
       else if(key=="Run")  run = atoi(value.c_str());
-      //else if(key=="fei4Z")  alPars_.FEI4z(std::atof(value.c_str()));
       else if(key=="readAlignmentFromfile")  ralignmentFromfile = (atoi(value.c_str()) > 0) ? true : false;
       else if(key=="alignmentOutputFile")  alignParfile = value;
       else if(key=="residualSigmaDUT")     residualSigmaDUT_ = std::atof(value.c_str());
@@ -68,46 +67,9 @@ bool BeamAnaBase::readJob(const std::string jfile) {
   }
   jobcardFile.close();
   std::cout << run << "::" << ralignmentFromfile << "::" << alignParfile << std::endl;
-  if(ralignmentFromfile) {
-    std::ifstream alf(alignParfile.c_str());
-    if (!alf) {
-      std::cerr << "Alignment File: " << alignParfile << " could not be opened!" << std::endl;
-    }
-    if(alf.is_open()) {
-      while(std::getline(alf,line)) {
-        // enable '#' and '//' style comments
-        //if (line.substr(0,1) == "#" || line.substr(0,2) == "//") continue;
-        std::cout << line << std::endl;
-        std::vector<std::string> tokens;
-        Utility::tokenize(line,tokens,":");
-        std::cout << "Tokens size>>" << tokens.size() << std::endl;
-        std::vector<std::string> rtemp;
-        Utility::tokenize(tokens[0],rtemp,"=");
-        std::cout << "Run number>>" << atoi(rtemp[1].c_str()) << std::endl;
-        if(atoi(rtemp[1].c_str()) != run)  continue;
-        for(unsigned int i = 1; i < tokens.size(); i++) {
-          std::vector<std::string> vtemp;
-          Utility::tokenize(tokens[i],vtemp,"=");
-          std::string key = vtemp[0];
-          std::string value = vtemp[1];
-          std::cout << key << ":::" << value << std::endl;
-          //if(key=="offsetFEI4X") alPars_.offsetFEI4x(std::atof(value.c_str()));
-          //else if(key=="offsetFEI4Y") alPars_.offsetFEI4y(std::atof(value.c_str()));
-          //else if(key=="residualSigmaFEI4X") alPars_.residualSigmaFEI4x(std::atof(value.c_str()));
-          //else if(key=="residualSigmaFEI4Y") alPars_.residualSigmaFEI4y(std::atof(value.c_str()));
-          if(key=="zD0")  alPars_.d0Z(std::atof(value.c_str()));
-          else if(key=="offsetD0")  alPars_.d0Offset(std::atof(value.c_str()));
-          else if(key=="deltaZ")  alPars_.deltaZ(std::atof(value.c_str()));
-          else if(key=="angle")  alPars_.theta(std::atof(value.c_str()));
-        }
-      }
-      alf.close();
-    } else {
-      std::cout << "Alignment File not found!!" << std::endl;
-    }
+  if(ralignmentFromfile) 
+    readAlignmentConstant(jobCardmap_.at("alignmentOutputFile"));
 
-  }
-  alPars_.setD1parametersfromD0();
   std::cout << "Initialized with the following options::"
             << "Infile: " << iFilename_
             << "\nOutFile: " << outFilename_
@@ -117,7 +79,6 @@ bool BeamAnaBase::readJob(const std::string jfile) {
             << "\nnStrips:" << nStrips_
             << "\npitchDUT:" << pitchDUT_
             << std::endl;
-  std::cout << alPars_ << std::endl;
   if(doChannelMasking_)  setChannelMasking(chmaskFilename_);
 }
 bool BeamAnaBase::readGeometry(const std::string gfile) {
@@ -130,7 +91,7 @@ bool BeamAnaBase::readGeometry(const std::string gfile) {
   // look for modules
   for (auto& element : geom["Module"]) {
     //std::cout << element << '\n';
-    tbeam::Module tmod(element["name"], element["detidLower"], element["detidUpper"],
+    tbeam::Module tmod(element["name"], element["detidbottom"], element["detidtop"],
                        element["Z"], element["Xrot"], element["Yrot"],
                        element["ncbc"], element["nstrips"], element["pitch"]);
     std::cout << "READ Module with #strips=" << tmod.nstrips_ << std::endl;
@@ -158,8 +119,8 @@ void BeamAnaBase::beginJob(){
     std::cout << "Empty Chain!!" << std::endl;
     exit(1);
   }
-  hout_ = new Histogrammer(outFilename_);
-  //  cout<<hout_->hfile()<<endl;
+  hist_ = new Histogrammer(outFilename_);
+  //  cout<<hist_->hfile()<<endl;
 }
 
 bool BeamAnaBase::setInputFile(const std::string& fname) {
@@ -178,93 +139,15 @@ void BeamAnaBase::setTelMatching(const bool mtel) {
 }
 
 void BeamAnaBase::bookHistograms() {
-  hout_->bookEventHistograms();
-  /*********
-	    Think of ways to do it automatically by reading a json/xml etc.
-  *********/
-
-  for(auto& m : *vmod_) {
-    hout_->bookDUTHistograms(m.hdirLower_);
-    hout_->bookDUTHistograms(m.hdirUpper_);
-    hout_->bookStubHistograms(m.name);
-    hout_->bookCorrelationHistograms(m.name);
+  hist_->bookEventHistograms();
+  for(auto& m : *modVec()){
+    hist_->bookDUTHistograms(m.hdirbottom_);
+    hist_->bookDUTHistograms(m.hdirtop_);
+    hist_->bookStubHistograms(m.name);
+    hist_->bookCorrelationHistograms(m.name);
   }
   //book common histograms of track propoerties
-  hout_->bookTrackCommonHistograms();
-}
-
-
-void BeamAnaBase::fillCommonHistograms() {
-  //fill sensor hits, cluster
-  for(auto& m : *vmod_) {
-    //Fill hit size
-    hout_->fillHist1D(m.hdirLower_,"chsizeC0", m.lowerHits.size());
-    hout_->fillHist1D(m.hdirUpper_,"chsizeC0", m.upperHits.size());
-    //Fill lower sensor hit info
-    for(auto& h: m.lowerHits) {
-      hout_->fillHist1D(m.hdirLower_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
-      hout_->fillHist1D(m.hdirLower_ ,"hitmapXposC0", (h.strip() - m.nstrips_/2.)*m.pitch_);
-      std::cout << "Hit (lower) =" << h.strip() << " in mm=" << (float(h.strip()) - 127.)*0.09 << "\n";
-      for(auto& hup: m.upperHits)  hout_->fillHist2D(m.name+"/Correlation", "hitposcorrelationC0", h.strip(), hup.strip());
-    }
-    //Fill upper sensor hit info
-    for(auto& h: m.upperHits) {
-      hout_->fillHist1D(m.hdirUpper_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
-      std::cout << "Hit (upper) =" << h.strip() << " in mm=" << (float(h.strip()) - 127)*0.09<< "\n";
-    }
-    //Offline clusters only
-    hout_->fillClusterHistograms(m.hdirLower_, m.lowerOfflineCls, "C0");
-    hout_->fillHist2D(m.hdirLower_,"nhitvsnclusC0", m.lowerHits.size(), m.lowerOfflineCls.size());
-    hout_->fillClusterHistograms(m.hdirUpper_, m.upperOfflineCls, "C0");
-    hout_->fillHist2D(m.hdirUpper_,"nhitvsnclusC0", m.upperHits.size(), m.upperOfflineCls.size());
-    //correlation histo for clusters
-    for(auto& lcls : m.lowerOfflineCls) {
-        std::cout << "Offline clus pos(lower) =" << lcls.center() << " in mm=" << (lcls.center() - 127)*0.09<< "\n";
-      for(auto& ucls : m.upperOfflineCls) {
-         std::cout << "Offline clus pos(upper) =" << ucls.center() << " in mm=" << (ucls.center() - 127)*0.09 << "\n";
-         hout_->fillHist2D(m.name+"/Correlation", "clusterposcorrelationC0", lcls.center(), ucls.center());
-      }
-    }
-    //Fill stub histos
-    std::string sdname = m.name + "/StubInfo";
-    hout_->fillHist1D(sdname,"nstubsFromCBC",  m.cbcStubs.size());
-    hout_->fillHist1D(sdname,"nstubsFromReco", m.offlineStubs.size());
-    hout_->fillHist2D(sdname,"nstubMatch", m.offlineStubs.size(), m.cbcStubs.size());
-    for(auto& os : m.offlineStubs) {
-      hout_->fillHist1D(sdname,"offlinestubPosmap", os.positionX());
-      std::cout << "Offline stub pos =" << os.positionX() << " in mm=" << (os.positionX() - 127.)*0.09<< "\n";
-      for(auto& cs : m.cbcStubs) {
-        hout_->fillHist2D(sdname,"stubCorrelation", os.positionX(), cs.positionX());
-      }
-    }
-    for(auto& cs : m.cbcStubs) {
-      hout_->fillHist1D(sdname,"cbcstubPosmap", cs.positionX());
-    }
-  }
-  //Fill common track histograms
-  hout_->fillHist1D("TrackCommon","nTracks", event_->tracks.size());
-  for(auto& tk: event_->tracks) {
-    std::cout << "XPos tk=" << tk.xPos() << std::endl;
-    hout_->fillHist1D("TrackCommon","tkXPosref", tk.xPos());
-    hout_->fillHist1D("TrackCommon","tkYPosref", tk.yPos());
-    hout_->fillHist1D("TrackCommon","errtkXPosref", tk.xPosErr());
-    hout_->fillHist1D("TrackCommon","errtkYPosref", tk.yPosErr());
-
-
-    hout_->fillHist1D("TrackCommon","tkXPosprev", tk.xPosPrevHit());
-    hout_->fillHist1D("TrackCommon","tkYPosprev", tk.yPosPrevHit());
-    hout_->fillHist1D("TrackCommon","errtkXPosprev", tk.xPosErrsPrevHit());
-    hout_->fillHist1D("TrackCommon","errtkYPosprev", tk.yPosErrsPrevHit());
-
-    hout_->fillHist1D("TrackCommon","tkXPosnext", tk.xPosNextHit());
-    hout_->fillHist1D("TrackCommon","tkYPosnext", tk.yPosNextHit());
-    hout_->fillHist1D("TrackCommon","errtkXPosnext", tk.xPosErrNextHit());
-    hout_->fillHist1D("TrackCommon","errtkYPosnext", tk.yPosErrNextHit());
-
-    hout_->fillHist1D("TrackCommon","tkChi2", tk.chi2());
-    hout_->fillHist1D("TrackCommon","tkdXdZ", tk.dxdz());
-    hout_->fillHist1D("TrackCommon","tkdYdZ", tk.dydz());
-  }
+  hist_->bookTrackCommonHistograms();
 }
 
 void BeamAnaBase::setChannelMasking(const std::string cFile) {
@@ -291,23 +174,112 @@ void BeamAnaBase::setAddresses() {
 
 void BeamAnaBase::setDetChannelVectors() {
   for(auto& m : *vmod_) {
-    if(event_->dutHits.find(m.detidLower_) != event_->dutHits.end() && event_->dutHits.find(m.detidUpper_) != event_->dutHits.end())  {
-      m.lowerHits = event_->dutHits.at(m.detidLower_);
-      m.upperHits = event_->dutHits.at(m.detidUpper_);
+    if(event_->dutHits.find(m.detidbottom_) != event_->dutHits.end() && event_->dutHits.find(m.detidtop_) != event_->dutHits.end())  {
+      m.bottomHits = event_->dutHits.at(m.detidbottom_);
+      m.topHits = event_->dutHits.at(m.detidtop_);
     }
-    if(event_->cbcClusters.find(m.detidLower_) != event_->cbcClusters.end() && event_->cbcClusters.find(m.detidUpper_) != event_->cbcClusters.end())  {
-      m.lowerCbcCls = event_->cbcClusters.at(m.detidLower_);//only in sparsified mode
-      m.upperCbcCls = event_->cbcClusters.at(m.detidUpper_);//only in sparsified mode
+    if(event_->cbcClusters.find(m.detidbottom_) != event_->cbcClusters.end() && event_->cbcClusters.find(m.detidtop_) != event_->cbcClusters.end())  {
+      m.bottomCbcCls = event_->cbcClusters.at(m.detidbottom_);//only in sparsified mode
+      m.topCbcCls = event_->cbcClusters.at(m.detidtop_);//only in sparsified mode
     }
-    if(event_->offlineClusters.find(m.detidLower_) != event_->offlineClusters.end() && event_->offlineClusters.find(m.detidUpper_) != event_->offlineClusters.end())  {
-      m.lowerOfflineCls = event_->offlineClusters.at(m.detidLower_);//only in unsparsified mode
-      m.upperOfflineCls = event_->offlineClusters.at(m.detidUpper_);//only in unsparsified mode
+    if(event_->offlineClusters.find(m.detidbottom_) != event_->offlineClusters.end() && event_->offlineClusters.find(m.detidtop_) != event_->offlineClusters.end())  {
+      m.bottomOfflineCls = event_->offlineClusters.at(m.detidbottom_);//only in unsparsified mode
+      m.topOfflineCls = event_->offlineClusters.at(m.detidtop_);//only in unsparsified mode
     }
-    if(event_->cbcStubs.find(m.detidLower_) != event_->cbcStubs.end()) m.cbcStubs = event_->cbcStubs.at(m.detidLower_);//
-    if(event_->offlineStubs.find(m.detidLower_) != event_->offlineStubs.end()) m.offlineStubs = event_->offlineStubs.at(m.detidLower_);
-    std::cout << "Set Module with #strips=" << m.nstrips_ << std::endl;
+    if(event_->cbcStubs.find(m.detidbottom_) != event_->cbcStubs.end()) m.cbcStubs = event_->cbcStubs.at(m.detidbottom_);//
+    if(event_->offlineStubs.find(m.detidbottom_) != event_->offlineStubs.end()) m.offlineStubs = event_->offlineStubs.at(m.detidbottom_);
+    //std::cout << "Set Module with #strips=" << m.nstrips_ << std::endl;
   }
 
+}
+
+void BeamAnaBase::fillCommonHistograms() {
+  //fill sensor hits, cluster
+  for(auto& m : *modVec()) {
+    //Fill hit size
+    hist_->fillHist1D(m.hdirbottom_,"chsizeC0", m.bottomHits.size());
+    hist_->fillHist1D(m.hdirtop_,"chsizeC0", m.topHits.size());
+    //Fill bottom sensor hit info
+    for(auto& h: m.bottomHits) {
+      hist_->fillHist1D(m.hdirbottom_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
+      hist_->fillHist1D(m.hdirbottom_ ,"hitmapXposC0", (h.strip() - m.nstrips_/2.)*m.pitch_);
+      //std::cout << "Hit (bottom) =" << h.strip() << " in mm=" << (float(h.strip()) - 127.)*0.09 << "\n";
+      for(auto& hup: m.topHits)  hist_->fillHist2D(m.name+"/Correlation", "hitposcorrelationC0", h.strip(), hup.strip());
+    }
+    //Fill top sensor hit info
+    for(auto& h: m.topHits) {
+      hist_->fillHist1D(m.hdirtop_ ,"hitmapC0", h.strip());//put check to fill c1 histograms for full module
+      //std::cout << "Hit (top) =" << h.strip() << " in mm=" << (float(h.strip()) - 127)*0.09<< "\n";
+    }
+    //Offline clusters only
+    //bottom hits
+    hist_->fillHist1D( m.hdirbottom_, "nclusterC0", m.bottomOfflineCls.size() );
+    for( auto& cl : m.bottomOfflineCls) {
+      hist_->fillHist1D( m.hdirbottom_, "clusterWidthC0", cl.size() );
+      hist_->fillHist1D( m.hdirbottom_, "clusterPosC0", cl.center() );
+      hist_->fillHist1D( m.hdirbottom_, "clusterXPosC0", (cl.center() - m.nstrips_/2.)*m.pitch_ );
+      hist_->fillHist1D( m.hdirbottom_, "clusterWidthVsPosProfC0", cl.center(), cl.size() );
+      hist_->fillHist2D( m.hdirbottom_, "clusterWidthVsPos2DC0", cl.center(), cl.size() );
+    }
+    //top hits
+    hist_->fillHist1D( m.hdirtop_, "nclusterC0", m.topOfflineCls.size() );
+    for( auto& cl : m.topOfflineCls) {
+      hist_->fillHist1D( m.hdirtop_, "clusterWidthC0", cl.size() );
+      hist_->fillHist1D( m.hdirtop_, "clusterPosC0", cl.center() );
+      hist_->fillHist1D( m.hdirtop_, "clusterXPosC0", (cl.center() - m.nstrips_/2.)*m.pitch_ );
+      hist_->fillHist1D( m.hdirtop_, "clusterWidthVsPosProfC0", cl.center(), cl.size() );
+      hist_->fillHist2D( m.hdirtop_, "clusterWidthVsPos2DC0", cl.center(), cl.size() );
+    }
+    hist_->fillHist2D(m.hdirbottom_,"nhitvsnclusC0", m.bottomHits.size(), m.bottomOfflineCls.size());
+    hist_->fillHist2D(m.hdirtop_,"nhitvsnclusC0", m.topHits.size(), m.topOfflineCls.size());
+    //correlation histo for clusters
+    for(auto& lcls : m.bottomOfflineCls) {
+        //std::cout << "Offline clus pos(bottom) =" << lcls.center() << " in mm=" << (lcls.center() - 127)*0.09<< "\n";
+      for(auto& ucls : m.topOfflineCls) {
+         //std::cout << "Offline clus pos(top) =" << ucls.center() << " in mm=" << (ucls.center() - 127)*0.09 << "\n";
+         hist_->fillHist2D(m.name+"/Correlation", "clusterposcorrelationC0", lcls.center(), ucls.center());
+      }
+    }
+    //Fill stub histos
+    std::string sdname = m.name + "/StubInfo";
+    hist_->fillHist1D(sdname,"nstubsFromCBC",  m.cbcStubs.size());
+    hist_->fillHist1D(sdname,"nstubsFromReco", m.offlineStubs.size());
+    hist_->fillHist2D(sdname,"nstubMatch", m.offlineStubs.size(), m.cbcStubs.size());
+    for(auto& os : m.offlineStubs) {
+      hist_->fillHist1D(sdname,"offlinestubPosmap", os.positionX());
+      //std::cout << "Offline stub pos =" << os.positionX() << " in mm=" << (os.positionX() - 127.)*0.09<< "\n";
+      for(auto& cs : m.cbcStubs) {
+        hist_->fillHist2D(sdname,"stubCorrelation", os.positionX(), cs.positionX());
+      }
+    }
+    for(auto& cs : m.cbcStubs) {
+      hist_->fillHist1D(sdname,"cbcstubPosmap", cs.positionX());
+    }
+  }
+  //Fill common track histograms
+  hist_->fillHist1D("TrackCommon","nTracks", event()->tracks.size());
+  for(auto& tk: event()->tracks) {
+    //std::cout << "XPos tk=" << tk.xPos() << std::endl;
+    hist_->fillHist1D("TrackCommon","tkXPosref", tk.xPos());
+    hist_->fillHist1D("TrackCommon","tkYPosref", tk.yPos());
+    hist_->fillHist1D("TrackCommon","errtkXPosref", tk.xPosErr());
+    hist_->fillHist1D("TrackCommon","errtkYPosref", tk.yPosErr());
+
+
+    hist_->fillHist1D("TrackCommon","tkXPosprev", tk.xPosPrevHit());
+    hist_->fillHist1D("TrackCommon","tkYPosprev", tk.yPosPrevHit());
+    hist_->fillHist1D("TrackCommon","errtkXPosprev", tk.xPosErrsPrevHit());
+    hist_->fillHist1D("TrackCommon","errtkYPosprev", tk.yPosErrsPrevHit());
+
+    hist_->fillHist1D("TrackCommon","tkXPosnext", tk.xPosNextHit());
+    hist_->fillHist1D("TrackCommon","tkYPosnext", tk.yPosNextHit());
+    hist_->fillHist1D("TrackCommon","errtkXPosnext", tk.xPosErrNextHit());
+    hist_->fillHist1D("TrackCommon","errtkYPosnext", tk.yPosErrNextHit());
+
+    hist_->fillHist1D("TrackCommon","tkChi2", tk.chi2());
+    hist_->fillHist1D("TrackCommon","tkdXdZ", tk.dxdz());
+    hist_->fillHist1D("TrackCommon","tkdYdZ", tk.dydz());
+  }
 }
 
 //these should be available from Tracker header or Event
@@ -340,15 +312,15 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
 }
 */
 
-//void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::Track>&  fidTkColl) {}
+//void BeamAnaBase::getExtrapolatedTracks(std::vector<tbeam::OfflineTrack>&  fidTkColl) {}
 
   //Think how to implement track extrapolation
   /*
   //Tk overlap removal
   //Match with FEI4
-  //std::vector<tbeam::Track>  tracks;
+  //std::vector<tbeam::OfflineTrack>  tracks;
   for(unsigned int itrk = 0; itrk<event_->tracks.size();itrk++) {
-  tbeam::Track tk = event_->tracks[itrk];
+  tbeam::OfflineTrack tk = event_->tracks[itrk];
   double YTkatDUT0_itrk = tk.yPos() + (alPars_.d0Z() - alPars_.FEI4z())*tk.dydz();
   double YTkatDUT1_itrk = tk.yPos() + (alPars_.d1Z() - alPars_.FEI4z())*tk.dydz();
 
@@ -361,7 +333,7 @@ bool BeamAnaBase::isTrkfiducial(const double xtrk0Pos, const double xtrk1Pos, co
   selectedTk[itrk].xtkDut1 = xtkdut.second;
   selectedTk[itrk].ytkDut0 = YTkatDUT0_itrk;
   selectedTk[itrk].ytkDut1 = YTkatDUT1_itrk;
-  //tbeam::Track temp(selectedTk[itrk]);
+  //tbeam::OfflineTrack temp(selectedTk[itrk]);
   fidTkColl.push_back(temp);
   }
   }
@@ -434,13 +406,33 @@ void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
 
   // nStubsrecoSword_ = 0;
   // nStubscbcSword_ = 0;
-void readAlignmentConstant(const std::string& aFname) {
-  std::ifstream fin(aFname.c_str(),std::ios::in);
+void BeamAnaBase::readAlignmentConstant(const std::string& aFname) {
+  std::string alignparFile_ = workDir_ + "/data/" + aFname;
+  std::cout << "Alignment parameters will be read from file:" << alignparFile_ << std::endl;
+  std::ifstream fin(alignparFile_.c_str());
   if(!fin) {
-    std::cout << "Channel Mask File could not be opened!!" << std::endl;
+    std::cout << "Alignment File could not be opened!! All alignment parameters will be set to ZERO!!" << std::endl;
+    alPars_["offset_d0"]   =    0.;
+    alPars_["zDUT_d0"]     =    0.;
+    alPars_["deltaZ"]      =    0.;
+    alPars_["theta"]       =    0.;
+    alPars_["shiftPlanes"] =    0.;
+    alPars_["chi2"]        =    0.;
     return;
   }
+  json alignment;
+  fin >> alignment;
+  alPars_["offset_d0"]   =    alignment["offset_d0"];
+  alPars_["zDUT_d0"]     =    alignment["zDUT_d0"];
+  alPars_["deltaZ"]      =    alignment["deltaZ"];
+  alPars_["theta"]       =    alignment["theta"];
+  alPars_["shiftPlanes"] =    alignment["shiftPlanes"];
+  alPars_["chi2"]        =    alignment["chi2"];
   fin.close();
+  std::cout << "Alignment parameters read from file:" << alignparFile_ << std::endl;
+  for(auto& ap : alPars_)
+    std::cout << ap.first << ":" <<  ap.second << std::endl;
+
 }
 
 void BeamAnaBase::endJob() {}

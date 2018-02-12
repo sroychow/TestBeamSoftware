@@ -44,9 +44,6 @@ class Histogrammer {
       bookTrackMatchHistograms(d);
     }
 
-    //void bookTelescopeAnalysisHistograms();
-
-    //void bookFeI4Histograms();
     void bookCBCHistograms(std::string cbc);
     //common histogram utility functions
     TH1* GetHistoByName(const char*, const char* );
@@ -101,8 +98,6 @@ class Histogrammer {
     void fillClusterHistograms( const string& det, const std::vector<tbeam::cluster>& cvec, const char* col) {
       fillClusterHistograms(det.c_str(), cvec, col);
     }
-
-    void fillClusterHistograms( const char* det, const std::vector<tbeam::cluster>& cvec, const char* col);
     void closeFile();
 
     TFile* hfile() const { return fout_;}

@@ -1,34 +1,38 @@
 #include "Event.h" 
 #include<iostream>
 
-ClassImp(tbeam::Event)
-namespace tbeam {
 static constexpr unsigned int MASK_BITS_8  = 0xFF;
 static constexpr unsigned int MASK_BITS_4 = 0xF;
 
-tbeam::Event::Event():
+tbeam::OfflineEvent::OfflineEvent():
   run(999999), 
   lumiSection(999999), 
   event(999999),  
   time(999999), 
   unixtime(999999), 
-  dt(999999),
   isSparisified(false),
   tdcPhase(999999),
   HVsettings(999999),
   DUTangle(999999),
   stubLatency(999999),
-  triggerLatency(999999)
+  triggerLatency(999999),
+  offset1Reg(255),
+  offset2Reg(255),
+  hipRegReg(255),
+  vcth1Reg(255),
+  vcth2Reg(255),
+  compReg(255),
+  logicReg(255),
+  triggerLatencyReg(255)
 {
 }
 
-void tbeam::Event::reset(){
+void tbeam::OfflineEvent::reset(){
   run = 0;//
   lumiSection = 0;//
   event = 0;//
   time = 0;//
   unixtime = 0;//
-  dt = 0;//is it used?
   isSparisified = 0;//
   
   dataFormatVersion = 0;//
@@ -42,12 +46,7 @@ void tbeam::Event::reset(){
   tdcPhase = 0;//
   HVsettings = 0;//
   DUTangle = 0;//
-  vcth = 0;//
   
-  window = 0;
-  offset = 0;
-  cwd = 0;
-  tilt = 0;
   stubLatency = 0;
   triggerLatency = 0;
   
@@ -61,10 +60,10 @@ void tbeam::Event::reset(){
   offlineStubs.clear();
 }
 
-void tbeam::Event::dumpEvent(std::ostream& os) {
+void tbeam::OfflineEvent::dumpOfflineEvent(std::ostream& os) {
   os << "Run:"   <<  run
      << " Lumi:" <<  lumiSection
-     << " Event:" << event
+     << " OfflineEvent:" << event
      << std::endl;
   os << "******Tracker Header information Start*****" << std::endl;
   os << " Version  : " << std::hex << std::setw(2) << (int)dataFormatVersion << std::endl;
@@ -92,11 +91,11 @@ void tbeam::Event::dumpEvent(std::ostream& os) {
        << std::hex << " value: "   << it.second << " (hex) "
        << std::dec                 << it.second << " (dec) " << std::endl;
   } 
-  os << "Vcth:" << (int)vcth << "\tHV:" << HVsettings << "\tTDC:" << tdcPhase << "\tAngle:" << DUTangle;
+  os << "Vcth:" << (int)(vcth1Reg+vcth2Reg*256) << "\tHV:" << HVsettings << "\tTDC:" << tdcPhase << "\tAngle:" << DUTangle;
   os << "******Tracker Condition Data information End*******" << std::endl;
   os << "******Tracker CBC staus Start*******" << std::endl;
   for(auto& c : cbcs) {
-    os << "FeId:" << c.first   << std::endl;
+    os << "FeId:" << c.first	 << std::endl;
     for(auto& s : c.second) os << s;
   }
   os << "******Tracker CBC staus End*******" << std::endl;
@@ -139,5 +138,4 @@ void tbeam::Event::dumpEvent(std::ostream& os) {
     os << tk;
   }
   os << "******Track Data(Should be Empty if DUT only Ntuple!!!)*******" << std::endl;
-}
 }

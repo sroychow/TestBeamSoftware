@@ -33,8 +33,7 @@ using std::map;
 using namespace std;
 
 AlignmentMultiDimAnalysis::AlignmentMultiDimAnalysis() :
-  BeamAnaBase::BeamAnaBase(),
-  isProduction_(false)
+  BeamAnaBase::BeamAnaBase()
 {
   alignparFile_ = workDir() + "/data/alignmentParameters.txt";
 
@@ -55,48 +54,61 @@ void AlignmentMultiDimAnalysis::beginJob() {
   //analysisTree()->GetEntry(0);
   //getCbcConfig(condEv()->cwd, condEv()->window);
 
-  if(jobCardmap().find("isProductionmode") != jobCardmap().end())
-    isProduction_ = (atoi(jobCardmap().at("isProductionmode").c_str()) > 0) ? true : false;
+  //if(jobCardmap().find("isProductionmode") != jobCardmap().end())
+  //  isProduction_ = (atoi(jobCardmap().at("isProductionmode").c_str()) > 0) ? true : false;
   if(jobCardmap().find("alignmentOutputFile") != jobCardmap().end())
     alignparFile_ = workDir() + "/data/" + jobCardmap().at("alignmentOutputFile");
   if(jobCardmap().find("Run") != jobCardmap().end())
     runNumber_ = jobCardmap().at("Run");
 
   std::cout << "Additional Parameter specific to AlignmentReco>>"
-            << "\nisProductionMode:" << isProduction_
+            //<< "\nisProductionMode:" << isProduction_
             << "\nalignparameterOutputFile:" << alignparFile_
             << std::endl;
   //If Production mode, read the existing alignment json into a json array.
   //Later, the alignment from this code will be added to this json array
   alignmentDump_ = json::array();
-  if(isProduction_) {
-    std::ifstream fileAlignment(alignparFile_.c_str());
-    fileAlignment >> alignmentDump_;
-    fileAlignment.close();
-  }
+  //if(isProduction_) {
+  //  std::ifstream fileAlignment(alignparFile_.c_str());
+   // fileAlignment >> alignmentDump_;
+  //  fileAlignment.close();
+ //}
+
+  dnamebottom = (*modVec())[0].hdirbottom_ + "/TrackFit";
+  dnametop = (*modVec())[0].hdirtop_ + "/TrackFit";
+
+  refPlaneZ = telPlaneprev_.z;
+  //refPlaneZ = (*modVec())[0].z;
+  cout << "refPlaneZ="<<refPlaneZ<<endl;
+
 }
 
 void AlignmentMultiDimAnalysis::bookHistograms() {
   BeamAnaBase::bookHistograms();
 
   for(auto& m : *modVec()){
-    TString s = TString(m.hdirLower_);
-    hist_->bookTrackFitHistograms(s,zMin, zStep, zNsteps);
-    s = TString(m.hdirUpper_);
-    hist_->bookTrackFitHistograms(s,zMin, zStep, zNsteps);
+    TString s = TString(m.hdirbottom_);
+    bookTrackFitHistograms(s,zMin, zStep, zNsteps);
+    s = TString(m.hdirtop_);
+    bookTrackFitHistograms(s,zMin, zStep, zNsteps);
   }
 }
 
-void AlignmentMultiDimAnalysis::dumpAlignment(const tbeam::alignmentPars& a) {
+void AlignmentMultiDimAnalysis::dumpAlignment(const double* a) {
   json o;
-  o.emplace("d0_chi2_min_z", a.d0Z());
-  o.emplace("d0_chi2_min_z", a.d0Z());
-  o.emplace("d0_Offset_aligned", a.d0Offset());
-  o.emplace("deltaz", a.deltaZ());
-  o.emplace("theta", a.deltaZ());
-  o.emplace("sensorId" , a.sensorId());
-  alignmentDump_.push_back({runNumber_, o});
+  o.emplace("offset_d0", a[0]);
+  o.emplace("zDUT_d0"  , a[1]);
+  o.emplace("deltaZ"   , a[2]);
+  o.emplace("theta"    , a[3]*180./TMath::Pi());
+  o.emplace("shiftPlanes", a[4]);
+  o.emplace("phi_d0"   , a[5]*180./TMath::Pi());
+  o.emplace("phi_d1"   , a[6]*180./TMath::Pi());
 
+  std::cout << "Alignment File=" << alignparFile_ << std::endl;
+  std::cout << std::setw(4) << o << std::endl;
+  std::ofstream fileAlignment(alignparFile_.c_str());
+  fileAlignment << std::setw(4) << o << std::endl;
+  fileAlignment.close();
 }
 
 void AlignmentMultiDimAnalysis::eventLoop()
@@ -126,11 +138,21 @@ void AlignmentMultiDimAnalysis::eventLoop()
   minimizerBothPlanesConstraint->SetPrintLevel(0);
   minimizerBothPlanesConstraint->SetFunction(*toMinimizeBothPlanesConstraint);
 
+  toMinimizeBothPlanesConstraintShift = new ROOT::Math::Functor(this, &AlignmentMultiDimAnalysis::ComputeChi2BothPlanes, 5);
+  minimizerBothPlanesConstraintShift = new ROOT::Minuit2::Minuit2Minimizer( ROOT::Minuit2::kMigrad ); //kMigrad
+  minimizerBothPlanesConstraintShift->SetPrintLevel(0);
+  minimizerBothPlanesConstraintShift->SetFunction(*toMinimizeBothPlanesConstraintShift);
+
+  toMinimizeBothPlanesConstraintShiftPhi = new ROOT::Math::Functor(this, &AlignmentMultiDimAnalysis::ComputeChi2BothPlanes, 7);
+  minimizerBothPlanesConstraintShiftPhi = new ROOT::Minuit2::Minuit2Minimizer( ROOT::Minuit2::kMigrad ); //kMigrad
+  minimizerBothPlanesConstraintShiftPhi->SetPrintLevel(0);
+  minimizerBothPlanesConstraintShiftPhi->SetFunction(*toMinimizeBothPlanesConstraintShiftPhi);
+
 
   if (!doTelMatching()) return;
 
-  float DUT_z = 460.0;//oct16=460;//may16=435
-  float DUT_z_try = 400;
+  //float DUT_z = 460.0;//oct16=460;//may16=435
+  //float DUT_z_try = 400;
 
   //std::string filename=inFile();
   //run_ = std::stoi(filename.substr(filename.find(".root")-3,3));
@@ -141,18 +163,19 @@ void AlignmentMultiDimAnalysis::eventLoop()
   cout << "#Events=" << nEntries_ <<" -->  MAX EVENTS TO BE PROCESSED : "<<maxEvent_<<endl;
   hist_->fillHist1D("EventInfo","nevents", nEntries_);
 
+  /*
   for (Long64_t jentry=0; jentry < maxEvent_; jentry++) {
     clearEvent();
     Long64_t ientry = analysisTree()->GetEntry(jentry);
     if (ientry < 0) break;
-    //if (jentry%1000 == 0) {
+    if (jentry%1000 == 0) {
       cout << " Events processed. " << std::setw(8) << jentry
 	   << endl;
-    //}
+    }
     if(jentry==0) {
       hist_->fillHist1D("EventInfo","hvSettings", event()->HVsettings);
       hist_->fillHist1D("EventInfo","dutAngle", event()->DUTangle);
-      hist_->fillHist1D("EventInfo","vcth", event()->vcth);
+      //hist_->fillHist1D("EventInfo","vcth", event()->vcth);
       //hist_->fillHist1D("EventInfo","offset", cbcOffset1());
       //hist_->fillHist1D("EventInfo","offset", cbcOffset2());
       //hist_->fillHist1D("EventInfo","window", stubWindow());
@@ -160,67 +183,63 @@ void AlignmentMultiDimAnalysis::eventLoop()
     }
     hist_->fillHist1D("EventInfo","condData", static_cast<unsigned int>(event()->condData));
     hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(event()->tdcPhase));
-    //****set the hits/cluster/stubs from the sensors in user accessable module*******
+    //et the hits/cluster/stubs from the sensors in user accessable module*******
     //CANNOT REMOVE THIS LINE
     setDetChannelVectors();
+
     //fill common histograms for dut hits, clusters//Optional
     fillCommonHistograms();
     //Fill track match histograms
     if(event()->tracks.size() != 1)  continue;
     for(auto& m : *modVec()){
-      std::string dnameLower = m.hdirLower_ + "/TrackFit";
+      //std::string dnamebottom = m.hdirbottom_ + "/TrackFit";
       //loop over tracks
       for(auto& tk: event()->tracks) {
-        if(m.lowerHits.size() != 1) continue;
+        if(m.bottomHits.size() != 1) continue;
         //previous hit
         float xtk_prev = tk.xPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
         float ytk_prev = tk.yPosPrevHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
-        std::cout << "Previous hit tk extrapolated Xpos=" << xtk_prev/1000. << "\n";
-        std::cout << "Previous hit tk extrapolated Ypos=" << ytk_prev/1000. << "\n";
-        hist_->fillHist1D(dnameLower, "tkposx_prev", xtk_prev/1000.);
-        hist_->fillHist1D(dnameLower, "tkposy_prev", ytk_prev/1000.);
+        //std::cout << "Previous hit tk extrapolated Xpos=" << xtk_prev/1000. << "\n";
+        //std::cout << "Previous hit tk extrapolated Ypos=" << ytk_prev/1000. << "\n";
+        hist_->fillHist1D(dnamebottom, "tkposx_prev", xtk_prev/1000.);
+        hist_->fillHist1D(dnamebottom, "tkposy_prev", ytk_prev/1000.);
         //next hit
         float xtk_next = tk.xPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dxdz();
         float ytk_next = tk.yPosNextHit() + std::abs(m.z - telPlaneprev_.z)*tk.dydz();
-        hist_->fillHist1D(dnameLower, "tkposx_next", xtk_next/1000.);
-        hist_->fillHist1D(dnameLower, "tkposy_next", ytk_next/1000.);
+        hist_->fillHist1D(dnamebottom, "tkposx_next", xtk_next/1000.);
+        hist_->fillHist1D(dnamebottom, "tkposy_next", ytk_next/1000.);
         //Fill hit residuals
-        for(auto& h: m.lowerHits) {
+        for(auto& h: m.bottomHits) {
           float hx = (float(h.strip()) - float(m.nstrips_)/2.)*m.pitch_;
-          hist_->fillHist1D(dnameLower, "hitresidualX_prev", hx - xtk_prev/1000.);
-          hist_->fillHist1D(dnameLower, "hitresidualX_next", hx - xtk_next/1000.);
+          hist_->fillHist1D(dnamebottom, "hitresidualX_prev", hx - xtk_prev/1000.);
+          hist_->fillHist1D(dnamebottom, "hitresidualX_next", hx - xtk_next/1000.);
         }
-        std::cout << "NStrips = " << float(m.nstrips_)/2. << "\tPitch=" << m.pitch_ << "\n";
+        //std::cout << "NStrips = " << float(m.nstrips_)/2. << "\tPitch=" << m.pitch_ << "\n";
         //Fill cluster residuals
-        for(auto& c: m.lowerOfflineCls) {
+        for(auto& c: m.bottomOfflineCls) {
 
           float cx = (c.center() - m.nstrips_/2.)*m.pitch_;
-          std::cout << "Offline clus pos(lower) =" << c.center() << " in mm=" << (c.center() - 127)*0.09<< "\n";
-          std::cout << "Cluster Xpos(in align)=" << cx << "\tresidual=" << cx - xtk_prev/1000. <<"\n";
-          hist_->fillHist1D(dnameLower, "clusresidualX_prev", cx - xtk_prev/1000.);
-          hist_->fillHist1D(dnameLower, "clusresidualX_next", cx - xtk_next/1000.);
+          //std::cout << "Offline clus pos(bottom) =" << c.center() << " in mm=" << (c.center() - 127)*0.09<< "\n";
+          //std::cout << "Cluster Xpos(in align)=" << cx << "\tresidual=" << cx - xtk_prev/1000. <<"\n";
+          hist_->fillHist1D(dnamebottom, "clusresidualX_prev", cx - xtk_prev/1000.);
+          hist_->fillHist1D(dnamebottom, "clusresidualX_next", cx - xtk_next/1000.);
         }
       }
     }
+    
   }
+  */
 
-  //Simple extraction of mean and sigma of rsidual histograms and dumping...no fitting involved
-  //To be removed once the code is updated
-  //Check mean sigma from histograms
-  //json alignmentDump = json::array();
-  for(auto& m : *modVec()){
-    std::string dnameLower = m.hdirLower_ + "/TrackFit";
-    TH1* hclusres = hist_->GetHistoByName(dnameLower, "clusresidualX_prev");
-    tbeam::alignmentPars tal(m.name, hclusres->GetMean(),m.z, 2., 0.);//this is temporary
-    dumpAlignment(tal);
-  }
+  //First Loop : find initial values for the alignment
 
+    //std::string dnamebottom = (*modVec())[0].hdirbottom_ + "/TrackFit";
+    //std::string dnametop = (*modVec())[0].hdirtop_ + "/TrackFit";
+    int nStrips = (*modVec())[0].nstrips_;
+    double DUT_z = (*modVec())[0].z;
+    //refPlaneZ = telPlaneprev_.z;
 
-  //First Loop over events-inject z and compute residual
-  //evaluate the best z alignment
-  /*
-  //BEGIN MAY16 code-------------Check with Nicolas
-  for (Long64_t jentry=0; jentry<nEntries_ && jentry<maxEvent;jentry++) {
+  //BEGIN NOV17 ALIGNMENT
+  for (Long64_t jentry=0; jentry<nEntries_ && jentry<maxEvent_;jentry++) {
     clearEvent();
     Long64_t ientry = analysisTree()->GetEntry(jentry);
     if (ientry < 0) break;
@@ -228,110 +247,70 @@ void AlignmentMultiDimAnalysis::eventLoop()
        cout << " Events processed. " << std::setw(8) << jentry
 	    << endl;
     }
-    if(jentry==0) {
-      hist_->fillHist1D("EventInfo","hvSettings", condEv()->HVsettings);
-      hist_->fillHist1D("EventInfo","dutAngle", condEv()->DUTangle);
-      hist_->fillHist1D("EventInfo","vcth", condEv()->vcth);
-      hist_->fillHist1D("EventInfo","offset", cbcOffset1());
-      hist_->fillHist1D("EventInfo","offset", cbcOffset2());
-      hist_->fillHist1D("EventInfo","window", stubWindow());
-      hist_->fillHist1D("EventInfo","tilt", static_cast<unsigned long int>(condEv()->tilt));
-    }
-    hist_->fillHist1D("EventInfo","isPeriodic",isPeriodic());
-    hist_->fillHist1D("EventInfo","isGoodFlag",isGoodEvent());
-
-    if(!isGoodEvent())   continue;
-
-    if(fei4Ev()->nPixHits != 1)    continue;
-
-    hist_->fillHist1D("EventInfo","condData", condEv()->condData);
-    hist_->fillHist1D("EventInfo","tdcPhase", static_cast<unsigned int>(condEv()->tdcPhase));
 
     setDetChannelVectors();
-    const auto& d0c0 = *det0C0();
-    const auto& d0c1 = *det0C1();
-    const auto& d1c0 = *det1C0();
-    const auto& d1c1 = *det1C1();
-    //fillCommonHistograms();
-    //Remove track duplicates
-    std::vector<tbeam::Track>  tkNoOv;
-    Utility::removeTrackDuplicates(telEv(), tkNoOv);
+    const auto& d0c0 = (*modVec())[0].bottomHits;
+    const auto& d1c0 = (*modVec())[0].topHits;
+    const auto& d0Cls = (*modVec())[0].bottomOfflineCls;
+    const auto& d1Cls = (*modVec())[0].topOfflineCls;
 
-    hist_->fillHist1D("TelescopeAnalysis","nTrack_noduplicate", tkNoOv.size());
     //Match with FEI4
-    std::vector<tbeam::Track>  selectedTk;
-    Utility::cutTrackFei4Residuals(fei4Ev(), tkNoOv, selectedTk, al.offsetFEI4x(), al.offsetFEI4y(), al.residualSigmaFEI4x(), al.residualSigmaFEI4y(), true);
-    hist_->fillHist1D("TelescopeAnalysis","nTrack_fiducial", selectedTk.size());
+    std::vector<tbeam::OfflineTrack>  selectedTk = event()->tracks;
+    //hist_->fillHist1D("TelescopeAnalysis","nTrack_fiducial", selectedTk.size());
+
     //Find mean of residuals, scanning zDUT
     if (selectedTk.size()!=1) continue;
+    //std::cout << "track chi2="<<selectedTk[0].chi2()<<endl;
+    if (selectedTk[0].chi2()>5.) continue;
+
+    //float xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk[0], refPlaneZ, 0, DUT_z, 0);
+    float xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk[0], refPlaneZ, 0, -556212., 0.);
+    //float xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk[0], refPlaneZ, 0, -556212., TMath::Pi());
     //cout << "NHits: d0, "<<d0c0.size()<<" ; d1, "<<d1c0.size()<<endl;
     if (d0c0.size()==1) {
-      for (unsigned int ih=0; ih<d0c0.size(); ih++){
-        float xDUT = (d0c0.at(ih) - nstrips()/2) * dutpitch();
-#ifdef NOV_15
-        xDUT = -1*xDUT;//for nov 15
-#endif
+      for(auto& h: d0c0) {
+        float xDUT = (h.strip() - nStrips/2) * dutpitch();
+	xDUT = -xDUT;
         selectedTk_d0_1Hit.push_back(selectedTk[0]);
         d0_DutXpos.push_back(xDUT);
-	float xTkAtDUT = selectedTk[0].xPos + (DUT_z- al.FEI4z())*selectedTk[0].dxdz;
-#ifdef OCT_16
-        xTkAtDUT = selectedTk[0].yPos + (DUT_z- al.FEI4z())*selectedTk[0].dydz;
-        xTkAtDUT *= -1;
-#endif
-        hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_bis", xDUT-xTkAtDUT);
-	DUT_z_try = zMin; //300
+        hist_->fillHist1D(dnamebottom, "d0_1tk1Hit_diffX_start", xDUT-xTkAtDUT/1000.);
       }
     }
     if (d1c0.size()==1){
-      for (unsigned int ih=0; ih<d1c0.size(); ih++){
-        float xDUT = (d1c0.at(ih) - nstrips()/2) * dutpitch();
-#ifdef NOV_15
-        xDUT = -1*xDUT;//for nov 15
-#endif
+      for(auto& h: d1c0) {
+        float xDUT = (h.strip() - nStrips/2) * dutpitch();
+	xDUT = -xDUT;
         selectedTk_d1_1Hit.push_back(selectedTk[0]);
         d1_DutXpos.push_back(xDUT);
-	float xTkAtDUT = selectedTk[0].xPos + (DUT_z- al.FEI4z())*selectedTk[0].dxdz;
-        //xTkAtDUT = -1.*xTkAtDUT;
-#ifdef OCT_16
-        xTkAtDUT = selectedTk[0].yPos + (DUT_z- al.FEI4z())*selectedTk[0].dydz;
-        xTkAtDUT = -1.*xTkAtDUT;
-#endif
-        hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_bis", xDUT-xTkAtDUT);
-	DUT_z_try = zMin;//300;
+        hist_->fillHist1D(dnametop,"d1_1tk1Hit_diffX_start", xDUT-xTkAtDUT/1000.);
       }
     }
-    if (dutRecoClmap()->at("det0C0").size()==1 && dutRecoClmap()->at("det1C0").size()==1){
+    if (d0Cls.size()==1 && d1Cls.size()==1){
+      bool skipEvent = false;
       double D0xDUT;
-      double D1xDUT;
-      for(auto& cl : dutRecoClmap()->at("det0C0") ) {
-        D0xDUT = (cl.x-nstrips()/2)*dutpitch();
-#ifdef NOV_15
-        D0xDUT = -1*D0xDUT;//for nov15
-#endif
+      double D1xDUT; 
+      for(auto& cl : d0Cls ) {
+	if (cl.size()!=1) skipEvent=true;
+        D0xDUT = (cl.center()-nStrips/2)*dutpitch();
+	D0xDUT = -D0xDUT;
       }
-      for(auto& cl : dutRecoClmap()->at("det1C0") ) {
-        D1xDUT = (cl.x-nstrips()/2)*dutpitch();
-#ifdef NOV_15
-        D1xDUT = -1*D1xDUT;//for nov15
-#endif
+      for(auto& cl : d1Cls ) {
+        if (cl.size()!=1) skipEvent=true;
+        D1xDUT = (cl.center()-nStrips/2)*dutpitch();
+	D1xDUT = -D1xDUT;
       }
-      float xTkAtDUT = selectedTk[0].xPos + (DUT_z-al.FEI4z())*selectedTk[0].dxdz;
-      float yTkAtDUT = selectedTk[0].yPos + (DUT_z-al.FEI4z())*selectedTk[0].dydz;
-#ifdef OCT_16
-      xTkAtDUT = selectedTk[0].yPos + (DUT_z-al.FEI4z())*selectedTk[0].dydz;
-      yTkAtDUT = selectedTk[0].xPos + (DUT_z-al.FEI4z())*selectedTk[0].dxdz;
-#endif
+      if (skipEvent) continue; 
       selectedTk_bothPlanes_1Cls.push_back(selectedTk[0]);
       bothPlanes_DutXposD0.push_back(D0xDUT);
       bothPlanes_DutXposD1.push_back(D1xDUT);
-      //      std::cout << "Selected Tk:xpos=" << xTkAtDUT << "//ypos=" << yTkAtDUT
-      //      << "//cls0=" <<  D0xDUT << "//cls1=" << D1xDUT << std::endl;
-      hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_ter", D0xDUT-xTkAtDUT);
-      hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_ter", D1xDUT-xTkAtDUT);
+      hist_->fillHist1D(dnamebottom,"d0_1tk1Cls_diffX_start", D0xDUT-xTkAtDUT/1000.);
+      hist_->fillHist1D(dnametop,"d1_1tk1Cls_diffX_start", D1xDUT-xTkAtDUT/1000.);
     }
+   
   }//End of First Loop
 
-  TH1* hTmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d0_1tk1Hit_diffX_bis"));
+
+  TH1* hTmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom, "d0_1tk1Hit_diffX_start"));
   TF1* fGausExtractedX = new TF1("fGausExtractedX", Utility::FuncPol1Gaus, -100., 100., 5);
   double offset_init_d0 = ((float)hTmp->GetMaximumBin())*(hTmp->GetXaxis()->GetXmax()-hTmp->GetXaxis()->GetXmin())/((float)hTmp->GetNbinsX()) + hTmp->GetXaxis()->GetXmin();//hTmp->GetMean();
   hTmp->SetAxisRange(offset_init_d0-1., offset_init_d0+1., "X");
@@ -348,7 +327,22 @@ void AlignmentMultiDimAnalysis::eventLoop()
   hTmp->Fit("fGausExtractedX", "WW");
   offset_init_d0 = fGausExtractedX->GetParameter(1);
 
-  hTmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d1_1tk1Hit_diffX_bis"));
+
+  hTmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom, "d0_1tk1Cls_diffX_start"));
+  double offset_init_ClsD0 = ((float)hTmp->GetMaximumBin())*(hTmp->GetXaxis()->GetXmax()-hTmp->GetXaxis()->GetXmin())/((float)hTmp->GetNbinsX()) + hTmp->GetXaxis()->GetXmin();//hTmp->GetMean();
+  hTmp->SetAxisRange(offset_init_ClsD0-1., offset_init_ClsD0+1., "X");
+  cte = (hTmp->GetBinContent(hTmp->FindBin(offset_init_ClsD0-1.))+hTmp->GetBinContent(hTmp->FindBin(offset_init_ClsD0+1.)))/2.;
+
+  fGausExtractedX->SetParameter(0, hTmp->GetMaximum());
+  fGausExtractedX->SetParameter(1, offset_init_ClsD0);
+  fGausExtractedX->SetParameter(2, 0.03);
+  fGausExtractedX->SetParameter(3, cte);
+  fGausExtractedX->SetParameter(4, 0);
+  hTmp->Fit("fGausExtractedX", "WW");
+  offset_init_ClsD0 = fGausExtractedX->GetParameter(1);
+
+
+  hTmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop, "d1_1tk1Hit_diffX_start"));
   double offset_init_d1 = ((float)hTmp->GetMaximumBin())*(hTmp->GetXaxis()->GetXmax()-hTmp->GetXaxis()->GetXmin())/((float)hTmp->GetNbinsX()) + hTmp->GetXaxis()->GetXmin();//hTmp->GetMean();
   hTmp->SetAxisRange(offset_init_d1-1., offset_init_d1+1., "X");
   cte = (hTmp->GetBinContent(hTmp->FindBin(offset_init_d1-1.))+hTmp->GetBinContent(hTmp->FindBin(offset_init_d1+1.)))/2.;
@@ -360,23 +354,54 @@ void AlignmentMultiDimAnalysis::eventLoop()
   fGausExtractedX->SetParameter(4, 0);
   hTmp->Fit("fGausExtractedX", "WW");
   offset_init_d1 = fGausExtractedX->GetParameter(1);
+/*
+  hTmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop, "d0_1tk1Cls_diffX_start"));
+  double offset_init_ClsD0 = ((float)hTmp->GetMaximumBin())*(hTmp->GetXaxis()->GetXmax()-hTmp->GetXaxis()->GetXmin())/((float)hTmp->GetNbinsX()) + hTmp->GetXaxis()->GetXmin();//hTmp->GetMean();
+  hTmp->SetAxisRange(offset_init_ClsD0-1., offset_init_ClsD0+1., "X");
+  cte = (hTmp->GetBinContent(hTmp->FindBin(offset_init_ClsD0-1.))+hTmp->GetBinContent(hTmp->FindBin(offset_init_ClsD0+1.)))/2.;
+
+  fGausExtractedX->SetParameter(0, hTmp->GetMaximum());
+  fGausExtractedX->SetParameter(1, offset_init_ClsD0);
+  fGausExtractedX->SetParameter(2, 0.03);
+  fGausExtractedX->SetParameter(3, cte);
+  fGausExtractedX->SetParameter(4, 0);
+  hTmp->Fit("fGausExtractedX", "WW");
+  offset_init_ClsD0 = fGausExtractedX->GetParameter(1);
+*/
+  hTmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop, "d1_1tk1Cls_diffX_start"));
+  double offset_init_ClsD1 = ((float)hTmp->GetMaximumBin())*(hTmp->GetXaxis()->GetXmax()-hTmp->GetXaxis()->GetXmin())/((float)hTmp->GetNbinsX()) + hTmp->GetXaxis()->GetXmin();//hTmp->GetMean();
+  hTmp->SetAxisRange(offset_init_ClsD1-1., offset_init_ClsD1+1., "X");
+  cte = (hTmp->GetBinContent(hTmp->FindBin(offset_init_ClsD1-1.))+hTmp->GetBinContent(hTmp->FindBin(offset_init_ClsD1+1.)))/2.;
+
+  fGausExtractedX->SetParameter(0, hTmp->GetMaximum());
+  fGausExtractedX->SetParameter(1, offset_init_ClsD1);
+  fGausExtractedX->SetParameter(2, 0.03);
+  fGausExtractedX->SetParameter(3, cte);
+  fGausExtractedX->SetParameter(4, 0);
+  hTmp->Fit("fGausExtractedX", "WW");
+  offset_init_ClsD1 = fGausExtractedX->GetParameter(1);
+
 
   cout << "offset_init_d0="<<offset_init_d0<<endl;
   cout << "offset_init_d1="<<offset_init_d1<<endl;
+  cout << "offset_init_ClsD0=" << offset_init_ClsD0 <<endl;
+  cout << "offset_init_ClsD1="<<offset_init_ClsD1<<endl;
 
-
+/*
   doD0 = true;
   doD1 = false;
   double chi2 = 0;
 
-#if defined(MAY_16) || defined(OCT_16)
-  minimizer->SetLimitedVariable(0, "offset", offset_init_d0, 0.0001, -6., 6.);
-  minimizer->SetLimitedVariable(1, "zDUT", 435., 0.01, 200., 800.);
-#elif NOV_15
-  minimizer->SetLimitedVariable(0, "offset", offset_init_d0, 0.0001, -100., 100.);
-  minimizer->SetLimitedVariable(1, "zDUT", 1350., 0.01, 1200., 1600.);
-#endif
-  minimizer->SetLimitedVariable(2, "theta", 0.*TMath::Pi()/180., 0.01, -90.*TMath::Pi()/180., 90.*TMath::Pi()/180.);
+//#if defined(MAY_16) || defined(OCT_16)
+//  minimizer->SetLimitedVariable(0, "offset", offset_init_d0, 0.0001, -6., 6.);
+//  minimizer->SetLimitedVariable(1, "zDUT", 435., 0.01, 200., 800.);
+//#elif NOV_15
+//  minimizer->SetLimitedVariable(0, "offset", offset_init_d0, 0.0001, -100., 100.);
+//  minimizer->SetLimitedVariable(1, "zDUT", 1350., 0.01, 1200., 1600.);
+//#endif
+  minimizer->SetLimitedVariable(0, "offset", offset_init_d0, 0.0001, -25., -10.);
+  minimizer->SetLimitedVariable(1, "zDUT", DUT_z, 1., telPlaneprev_.z, telPlanenext_.z);
+  minimizer->SetLimitedVariable(2, "theta", 0.*TMath::Pi()/180., 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
 
   cout << "DUT d0: Start chi2 minimization"<<endl;
   minimizer->Minimize();
@@ -388,23 +413,25 @@ void AlignmentMultiDimAnalysis::eventLoop()
   double chi2D0 = ComputeChi2(resultD0);
   for (unsigned int i=0; i<selectedTk_d0_1Hit.size(); i++){
     double xDUT_d0 =   d0_DutXpos.at(i);
-    double xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d0_1Hit.at(i), al.FEI4z(), resultD0[0], resultD0[1], resultD0[2]);
+    double xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d0_1Hit.at(i), refPlaneZ, resultD0[0], resultD0[1], resultD0[2]);
     double resDUT_d0 = xDUT_d0 - xTkAtDUT_d0;
-    hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX_aligned", resDUT_d0);
+    hist_->fillHist1D(dnamebottom,"d0_1tk1Hit_diffX_aligned", resDUT_d0);
   }
 
 
   doD0 = false;
   doD1 = true;
   minimizer->Clear();
-#if defined(MAY_16) || defined(OCT_16)
-  minimizer->SetLimitedVariable(0, "offset", offset_init_d1, 0.0001, -6., 6.);
-  minimizer->SetLimitedVariable(1, "zDUT", 435., 0.01, 200., 800.);
-#elif NOV_15
-  minimizer->SetLimitedVariable(0, "offset", offset_init_d1, 0.0001, -100., 100.);
-  minimizer->SetLimitedVariable(1, "zDUT", 1350., 0.01, 1200., 1600.);
-#endif
-  minimizer->SetLimitedVariable(2, "theta", 0.*TMath::Pi()/180., 0.01, -90.*TMath::Pi()/180., 90.*TMath::Pi()/180.);
+//#if defined(MAY_16) || defined(OCT_16)
+//  minimizer->SetLimitedVariable(0, "offset", offset_init_d1, 0.0001, -6., 6.);
+//  minimizer->SetLimitedVariable(1, "zDUT", 435., 0.01, 200., 800.);
+//#elif NOV_15
+//  minimizer->SetLimitedVariable(0, "offset", offset_init_d1, 0.0001, -100., 100.);
+//  minimizer->SetLimitedVariable(1, "zDUT", 1350., 0.01, 1200., 1600.);
+//#endif
+  minimizer->SetLimitedVariable(0, "offset", offset_init_d1, 0.0001, -30., 0.);
+  minimizer->SetLimitedVariable(1, "zDUT", DUT_z, 1., telPlaneprev_.z, telPlanenext_.z);
+  minimizer->SetLimitedVariable(2, "theta", 0.*TMath::Pi()/180., 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
 
   cout << "DUT d1: Start chi2 minimization"<<endl;
   minimizer->Minimize();
@@ -414,34 +441,37 @@ void AlignmentMultiDimAnalysis::eventLoop()
   resultD1[1] = resultMinimizerD1[1];
   resultD1[2] = resultMinimizerD1[2];
   double chi2D1 = ComputeChi2(resultD1);
-
- cout << "D0 offset="<< resultD0[0]<<" zDUT="<<resultD0[1]<<" theta="<<resultD0[2]*180./TMath::Pi()<<" chi2="<<chi2D0<<endl;
-  cout << "D1 offset="<< resultD1[0]<<" zDUT="<<resultD1[1]<<" theta="<<resultD1[2]*180./TMath::Pi()<<" chi2="<<chi2D1<<endl;
-
-
   for (unsigned int i=0; i<selectedTk_d1_1Hit.size(); i++){
     double xDUT_d1 =   d1_DutXpos.at(i);
-    double xTkAtDUT_d1 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d1_1Hit.at(i), al.FEI4z(), resultD1[0], resultD1[1], resultD1[2]);
+    double xTkAtDUT_d1 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d1_1Hit.at(i), refPlaneZ, resultD1[0], resultD1[1], resultD1[2]);
     double resDUT_d1 = xDUT_d1 - xTkAtDUT_d1;
-    hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX_aligned", resDUT_d1);
+    hist_->fillHist1D(dnametop,"d1_1tk1Hit_diffX_aligned", resDUT_d1);
   }
+
+ cout << "D0 offset="<< resultD0[0]<<" zDUT="<<resultD0[1]<<" theta="<<resultD0[2]*180./TMath::Pi()<<" chi2="<<chi2D0<<endl;
+ cout << "D1 offset="<< resultD1[0]<<" zDUT="<<resultD1[1]<<" theta="<<resultD1[2]*180./TMath::Pi()<<" chi2="<<chi2D1<<endl;
 
 
   doConstrainDeltaOffset = false;
   doD0 = true;
   doD1 = true;
   minimizerBothPlanes->Clear();
-#if defined(MAY_16) || defined(OCT_16)
-  minimizerBothPlanes->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -6., 6.);
-  minimizerBothPlanes->SetLimitedVariable(1, "zDUT_d0", 435., 0.01, 200., 800.);
-  minimizerBothPlanes->SetLimitedVariable(2, "offset_d1", offset_init_d1, 0.0001, -6., 6.);
-  minimizerBothPlanes->SetLimitedVariable(3, "zDUT_d1", 435., 0.01, 200., 800.);
-#elif NOV_15
-  minimizerBothPlanes->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -100., 100.);
-  minimizerBothPlanes->SetLimitedVariable(1, "zDUT_d0", 1400., 0.01, 1200., 1600.);
-  minimizerBothPlanes->SetLimitedVariable(2, "offset_d1", offset_init_d1, 0.0001, -100., 100.);
-  minimizerBothPlanes->SetLimitedVariable(3, "zDUT_d1", 1400., 0.01, 1200., 1600.);
-#endif
+//#if defined(MAY_16) || defined(OCT_16)
+//  minimizerBothPlanes->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -6., 6.);
+//  minimizerBothPlanes->SetLimitedVariable(1, "zDUT_d0", 435., 0.01, 200., 800.);
+//  minimizerBothPlanes->SetLimitedVariable(2, "offset_d1", offset_init_d1, 0.0001, -6., 6.);
+//  minimizerBothPlanes->SetLimitedVariable(3, "zDUT_d1", 435., 0.01, 200., 800.);
+//#elif NOV_15
+//  minimizerBothPlanes->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -100., 100.);
+//  minimizerBothPlanes->SetLimitedVariable(1, "zDUT_d0", 1400., 0.01, 1200., 1600.);
+//  minimizerBothPlanes->SetLimitedVariable(2, "offset_d1", offset_init_d1, 0.0001, -100., 100.);
+//  minimizerBothPlanes->SetLimitedVariable(3, "zDUT_d1", 1400., 0.01, 1200., 1600.);
+//#endif
+
+  minimizerBothPlanes->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -30., 0.);
+  minimizerBothPlanes->SetLimitedVariable(1, "zDUT_d0", DUT_z, 1., telPlaneprev_.z, telPlanenext_.z);
+  minimizerBothPlanes->SetLimitedVariable(2, "offset_d1", offset_init_d1, 0.0001, -30., 0.);
+  minimizerBothPlanes->SetLimitedVariable(3, "zDUT_d1", DUT_z, 1., telPlaneprev_.z, telPlanenext_.z);
   minimizerBothPlanes->SetLimitedVariable(4, "theta", 0., 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
 
   cout << "DUT both planes: Start chi2 minimization"<<endl;
@@ -458,32 +488,27 @@ void AlignmentMultiDimAnalysis::eventLoop()
 
   for (unsigned int i=0; i<selectedTk_bothPlanes_1Cls.size(); i++){
     double xDUT_d0 =   bothPlanes_DutXposD0.at(i);
-    double xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), resultBothPlanes[0], resultBothPlanes[1], resultBothPlanes[4]);
+    double xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, resultBothPlanes[0], resultBothPlanes[1], resultBothPlanes[4]);
     double resDUT_d0 = xDUT_d0 - xTkAtDUT_d0;
-    hist_->fillHist1D("TrackFit","d0_1tk1ClusterBothPlanes_diffX_aligned", resDUT_d0);
+    hist_->fillHist1D(dnamebottom,"d0_1tk1ClusterBothPlanes_diffX_aligned", resDUT_d0);
 
     double xDUT_d1 =   bothPlanes_DutXposD1.at(i);
-    double xTkAtDUT_d1 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), resultBothPlanes[2], resultBothPlanes[3], resultBothPlanes[4]);
+    double xTkAtDUT_d1 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, resultBothPlanes[2], resultBothPlanes[3], resultBothPlanes[4]);
     double resDUT_d1 = xDUT_d1 - xTkAtDUT_d1;
-    hist_->fillHist1D("TrackFit","d1_1tk1ClusterBothPlanes_diffX_aligned", resDUT_d1);
+    hist_->fillHist1D(dnametop,"d1_1tk1ClusterBothPlanes_diffX_aligned", resDUT_d1);
   }
 
 
   doConstrainDeltaOffset = true;
+  doAllowOffsetPlanes = false;
   doD0 = true;
   doD1 = true;
   minimizerBothPlanesConstraint->Clear();
 
-#if defined(MAY_16) || defined(OCT_16)
-  minimizerBothPlanesConstraint->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -6., 6.);
-  minimizerBothPlanesConstraint->SetLimitedVariable(1, "zDUT_d0", resultBothPlanes[1], 0.01, 200., 800.);
-
-#elif NOV_15
-  minimizerBothPlanesConstraint->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -100., 100.);
-  minimizerBothPlanesConstraint->SetLimitedVariable(1, "zDUT_d0", 1400., 0.01, 1200., 1600.);
-#endif
-  minimizerBothPlanesConstraint->SetLimitedVariable(2, "deltaZ", 2.65, 0.01, 0., 8.);
-  minimizerBothPlanesConstraint->SetLimitedVariable(3, "theta", TMath::ATan((offset_init_d1-offset_init_d0)/2.6), 0.01, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
+  minimizerBothPlanesConstraint->SetLimitedVariable(0, "offset_d0", offset_init_d0, 0.0001, -30., 0.);
+  minimizerBothPlanesConstraint->SetLimitedVariable(1, "zDUT_d0", DUT_z, 10., telPlaneprev_.z, telPlanenext_.z);
+  minimizerBothPlanesConstraint->SetLimitedVariable(2, "deltaZ", 1800., 1., 0., 8000.);
+  minimizerBothPlanesConstraint->SetLimitedVariable(3, "theta", TMath::ATan((offset_init_d1-offset_init_d0)/2.), 0.001, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
 
   cout << "DUT both planes with deltaOffset constraint: Start chi2 minimization"<<endl;
   minimizerBothPlanesConstraint->Minimize();
@@ -499,19 +524,114 @@ void AlignmentMultiDimAnalysis::eventLoop()
   for (unsigned int i=0; i<selectedTk_bothPlanes_1Cls.size(); i++){
     double xDUT_d0 =   bothPlanes_DutXposD0.at(i);
     double xDUT_d1 =   bothPlanes_DutXposD1.at(i);
-    std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), resultBothPlanesConstraint[0], resultBothPlanesConstraint[1], resultBothPlanesConstraint[2], resultBothPlanesConstraint[3]);
+    std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, resultBothPlanesConstraint[0], resultBothPlanesConstraint[1], resultBothPlanesConstraint[2], resultBothPlanesConstraint[3]);
     double xTkAtDUT_d0 = xTkAtDUT.first;
     double xTkAtDUT_d1 = xTkAtDUT.second;
     double resDUT_d0 = xDUT_d0 - xTkAtDUT_d0;
     double resDUT_d1 = xDUT_d1 - xTkAtDUT_d1;
-    hist_->fillHist1D("TrackFit","d0_1tk1ClusterBothPlanesConstraint_diffX_aligned", resDUT_d0);
-    hist_->fillHist1D("TrackFit","d1_1tk1ClusterBothPlanesConstraint_diffX_aligned", resDUT_d1);
+    hist_->fillHist1D(dnamebottom,"d0_1tk1ClusterBothPlanesConstraint_diffX_aligned", resDUT_d0);
+    hist_->fillHist1D(dnametop,"d1_1tk1ClusterBothPlanesConstraint_diffX_aligned", resDUT_d1);
+  }
+*/
+/*
+  doConstrainDeltaOffset = true;
+  doAllowOffsetPlanes = true;
+  doD0 = true;
+  doD1 = true;
+  minimizerBothPlanesConstraintShift->Clear();
+
+  minimizerBothPlanesConstraintShift->SetLimitedVariable(0, "offset_d0", offset_init_ClsD0*1000, 0.1, -30000., 30000.);
+  //minimizerBothPlanesConstraintShift->SetLimitedVariable(1, "zDUT_d0", DUT_z, 10., telPlaneprev_.z, telPlanenext_.z);
+  //minimizerBothPlanesConstraintShift->SetLimitedVariable(1, "zDUT_d0",refPlaneZ+DUT_z, 10., -1000000., 0.);
+  minimizerBothPlanesConstraintShift->SetLimitedVariable(1, "zDUT_d0",-556212., 10., -1000000., 0.);
+  //minimizerBothPlanesConstraintShift->SetLimitedVariable(1, "zDUT_d0",DUT_z-refPlaneZ, 10., -1000000., 1000000.);
+  //minimizerBothPlanesConstraintShift->SetLimitedVariable(1, "zDUT_d0",DUT_z-refPlaneZ, 10., -1000000., 500000.);
+  //minimizerBothPlanesConstraintShift->SetLimitedVariable(2, "deltaZ", 1800., 1., 0., 8000.);
+  minimizerBothPlanesConstraintShift->SetLimitedVariable(2, "deltaZ", 1800., 1., -3000., 3000.);
+  minimizerBothPlanesConstraintShift->SetLimitedVariable(3, "theta", TMath::ATan((offset_init_ClsD1-offset_init_ClsD0)*1000/1800.), 0.001, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
+  //minimizerBothPlanesConstraintShift->SetLimitedVariable(3, "theta", TMath::ATan((offset_init_ClsD1-offset_init_ClsD0)*1000/1800), 0.001, (-20.+180)*TMath::Pi()/180., (20.+180)*TMath::Pi()/180.);
+  minimizerBothPlanesConstraintShift->SetLimitedVariable(4, "offsetPlanes", 30., 1., -300., 300.);
+
+  cout << "DUT both planes with deltaOffset constraint and shift between Planes: Start chi2 minimization"<<endl;
+  minimizerBothPlanesConstraintShift->Minimize();
+  const double *resultMinimizerBothPlanesConstraintShift = minimizerBothPlanesConstraintShift->X();
+  double* resultBothPlanesConstraintShift = new double[5];
+  resultBothPlanesConstraintShift[0] = resultMinimizerBothPlanesConstraintShift[0];
+  resultBothPlanesConstraintShift[1] = resultMinimizerBothPlanesConstraintShift[1];
+  resultBothPlanesConstraintShift[2] = resultMinimizerBothPlanesConstraintShift[2];
+  resultBothPlanesConstraintShift[3] = resultMinimizerBothPlanesConstraintShift[3];
+  resultBothPlanesConstraintShift[4] = resultMinimizerBothPlanesConstraintShift[4];
+  double chi2BothPlanesConstraintShift = ComputeChi2BothPlanes(resultBothPlanesConstraintShift);
+  cout << "BothPlanesConstraintShift offset_d0="<< resultBothPlanesConstraintShift[0]<<" zDUT_d0="<<resultBothPlanesConstraintShift[1]<<" deltaZ="<< resultBothPlanesConstraintShift[2]<<" theta="<<resultBothPlanesConstraintShift[3]*180./TMath::Pi()<< " shiftPlanes="<<resultBothPlanesConstraintShift[4] << " chi2="<<chi2BothPlanesConstraintShift<<endl;
+
+  for (unsigned int i=0; i<selectedTk_bothPlanes_1Cls.size(); i++){
+    double xDUT_d0 =   bothPlanes_DutXposD0.at(i);
+    double xDUT_d1 =   bothPlanes_DutXposD1.at(i);
+    std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, resultBothPlanesConstraintShift[0], resultBothPlanesConstraintShift[1], resultBothPlanesConstraintShift[2], resultBothPlanesConstraintShift[3], resultBothPlanesConstraintShift[4]);
+    double xTkAtDUT_d0 = xTkAtDUT.first;
+    double xTkAtDUT_d1 = xTkAtDUT.second;
+    double resDUT_d0 = xDUT_d0 - xTkAtDUT_d0/1000.;
+    double resDUT_d1 = xDUT_d1 - xTkAtDUT_d1/1000.;
+    hist_->fillHist1D(dnamebottom,"d0_1tk1ClusterBothPlanesConstraintShift_diffX_aligned", resDUT_d0);
+    hist_->fillHist1D(dnametop,"d1_1tk1ClusterBothPlanesConstraintShift_diffX_aligned", resDUT_d1);
+  }
+  */
+
+  doConstrainDeltaOffset = true;
+  doAllowOffsetPlanes = true;
+  doAllowPhiBothPlanes = true;
+  doD0 = true;
+  doD1 = true;
+  minimizerBothPlanesConstraintShiftPhi->Clear();
+
+  minimizerBothPlanesConstraintShiftPhi->SetLimitedVariable(0, "offset_d0", offset_init_ClsD0*1000, 0.1, -30000., 30000.);
+  minimizerBothPlanesConstraintShiftPhi->SetLimitedVariable(1, "zDUT_d0",-556212., 10., -1000000., 0.);
+  minimizerBothPlanesConstraintShiftPhi->SetLimitedVariable(2, "deltaZ", 1800., 1., -3000., 3000.);
+  minimizerBothPlanesConstraintShiftPhi->SetLimitedVariable(3, "theta", TMath::ATan((offset_init_ClsD1-offset_init_ClsD0)*1000/1800.), 0.001, -20.*TMath::Pi()/180., 20.*TMath::Pi()/180.);
+  minimizerBothPlanesConstraintShiftPhi->SetLimitedVariable(4, "offsetPlanes", 30., 1., -300., 300.);
+  minimizerBothPlanesConstraintShiftPhi->SetLimitedVariable(5, "phi_d0", 0., 0.001, -5.*TMath::Pi()/180., 5.*TMath::Pi()/180.);
+  minimizerBothPlanesConstraintShiftPhi->SetLimitedVariable(6, "phi_d1", 0., 0.001, -5.*TMath::Pi()/180., 5.*TMath::Pi()/180.);
+
+  cout << "DUT both planes with deltaOffset constraint and shift between Planes: Start chi2 minimization"<<endl;
+  minimizerBothPlanesConstraintShiftPhi->Minimize();
+  const double *resultMinimizerBothPlanesConstraintShiftPhi = minimizerBothPlanesConstraintShiftPhi->X();
+  double* resultBothPlanesConstraintShiftPhi = new double[5];
+  resultBothPlanesConstraintShiftPhi[0] = resultMinimizerBothPlanesConstraintShiftPhi[0];
+  resultBothPlanesConstraintShiftPhi[1] = resultMinimizerBothPlanesConstraintShiftPhi[1];
+  resultBothPlanesConstraintShiftPhi[2] = resultMinimizerBothPlanesConstraintShiftPhi[2];
+  resultBothPlanesConstraintShiftPhi[3] = resultMinimizerBothPlanesConstraintShiftPhi[3];
+  resultBothPlanesConstraintShiftPhi[4] = resultMinimizerBothPlanesConstraintShiftPhi[4];
+  resultBothPlanesConstraintShiftPhi[5] = resultMinimizerBothPlanesConstraintShiftPhi[5];
+  resultBothPlanesConstraintShiftPhi[6] = resultMinimizerBothPlanesConstraintShiftPhi[6];
+
+  double chi2BothPlanesConstraintShiftPhi = ComputeChi2BothPlanes(resultBothPlanesConstraintShiftPhi);
+  cout << "BothPlanesConstraintShiftPhi offset_d0="<< resultBothPlanesConstraintShiftPhi[0]<<" zDUT_d0="<<resultBothPlanesConstraintShiftPhi[1]<<" deltaZ="<< resultBothPlanesConstraintShiftPhi[2]<<" theta="<<resultBothPlanesConstraintShiftPhi[3]*180./TMath::Pi()<< " shiftPlanes="<<resultBothPlanesConstraintShiftPhi[4] << " phi_d0="<<resultBothPlanesConstraintShiftPhi[5]<<" phi_d1="<<resultBothPlanesConstraintShiftPhi[6] << " chi2="<<chi2BothPlanesConstraintShiftPhi<<endl;
+
+  for (unsigned int i=0; i<selectedTk_bothPlanes_1Cls.size(); i++){
+    double xDUT_d0 =   bothPlanes_DutXposD0.at(i);
+    double xDUT_d1 =   bothPlanes_DutXposD1.at(i);
+    std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, resultBothPlanesConstraintShiftPhi[0], resultBothPlanesConstraintShiftPhi[1], resultBothPlanesConstraintShiftPhi[2], resultBothPlanesConstraintShiftPhi[3], resultBothPlanesConstraintShiftPhi[4], resultBothPlanesConstraintShiftPhi[5], resultBothPlanesConstraintShiftPhi[6]);
+    double xTkAtDUT_d0 = xTkAtDUT.first;
+    double xTkAtDUT_d1 = xTkAtDUT.second;
+    double resDUT_d0 = xDUT_d0 - xTkAtDUT_d0/1000.;
+    double resDUT_d1 = xDUT_d1 - xTkAtDUT_d1/1000.;
+    hist_->fillHist1D(dnamebottom,"d0_1tk1ClusterBothPlanesConstraintShiftPhi_diffX_aligned", resDUT_d0);
+    hist_->fillHist1D(dnametop,"d1_1tk1ClusterBothPlanesConstraintShiftPhi_diffX_aligned", resDUT_d1);
   }
 
-  //Fit Residuals Gaussian convulated with Step Function
+
+
+
   TF1* fGausResiduals = new TF1("fGausResiduals", "gaus", -100, 100);
-  TH1* htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d0_1tk1Hit_diffX_aligned"));
-  float center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
+  TF1* fStepGaus = new TF1("FuncStepGaus", Utility::FuncStepGausShift, -0.1, 0.1, 5);
+  TH1* htmp;
+  float center;
+  float rms;
+/*
+  //Fit Residuals Gaussian convulated with Step Function
+  //TF1* fGausResiduals = new TF1("fGausResiduals", "gaus", -100, 100);
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom,"d0_1tk1Hit_diffX_aligned"));
+  center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
   fGausResiduals->SetRange(center-0.3, center+0.3);
   fGausResiduals->SetParameter(1, center);
@@ -519,10 +639,10 @@ void AlignmentMultiDimAnalysis::eventLoop()
   htmp->Fit("fGausResiduals");
 
   center = fGausResiduals->GetParameter(1);
-  float rms = 5*fGausResiduals->GetParameter(2);
+  rms = 5*fGausResiduals->GetParameter(2);
   htmp->SetAxisRange(center-rms, center+rms, "X");
 
-  TF1* fStepGaus = new TF1("FuncStepGaus", FuncStepGaus, -0.1, 0.1, 4);
+  //TF1* fStepGaus = new TF1("FuncStepGaus", FuncStepGaus, -0.1, 0.1, 4);
   fStepGaus->SetLineWidth(2);
   fStepGaus->SetLineColor(kRed);
   fStepGaus->SetParLimits(0, 0., 0.1);
@@ -535,7 +655,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
 
   htmp->Fit(fStepGaus);
 
-  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d1_1tk1Hit_diffX_aligned"));
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop,"d1_1tk1Hit_diffX_aligned"));
   center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
   fGausResiduals->SetRange(center-0.3, center+0.3);
@@ -554,7 +674,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
   htmp->Fit(fStepGaus);
 
 
-  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d0_1tk1ClusterBothPlanes_diffX_aligned"));
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom,"d0_1tk1ClusterBothPlanes_diffX_aligned"));
   center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
   fGausResiduals->SetRange(center-0.3, center+0.3);
@@ -572,7 +692,7 @@ void AlignmentMultiDimAnalysis::eventLoop()
 
   htmp->Fit(fStepGaus);
 
-  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d1_1tk1ClusterBothPlanes_diffX_aligned"));
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop,"d1_1tk1ClusterBothPlanes_diffX_aligned"));
   center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
   fGausResiduals->SetRange(center-0.3, center+0.3);
@@ -590,7 +710,8 @@ void AlignmentMultiDimAnalysis::eventLoop()
 
   htmp->Fit(fStepGaus);
 
-  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d0_1tk1ClusterBothPlanesConstraint_diffX_aligned"));
+
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom,"d0_1tk1ClusterBothPlanesConstraint_diffX_aligned"));
   center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
   fGausResiduals->SetRange(center-0.3, center+0.3);
@@ -608,7 +729,81 @@ void AlignmentMultiDimAnalysis::eventLoop()
 
   htmp->Fit(fStepGaus);
 
-  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit","d1_1tk1ClusterBothPlanesConstraint_diffX_aligned"));
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop,"d1_1tk1ClusterBothPlanesConstraint_diffX_aligned"));
+  center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
+  htmp->SetAxisRange(center-0.3, center+0.3, "X");
+  fGausResiduals->SetRange(center-0.3, center+0.3);
+  fGausResiduals->SetParameter(1, center);
+  fGausResiduals->SetParameter(2, 0.026);
+  htmp->Fit("fGausResiduals");
+
+  center = fGausResiduals->GetParameter(1);
+  rms = 5*fGausResiduals->GetParameter(2);
+  htmp->SetAxisRange(center-rms, center+rms, "X");
+  fStepGaus->SetParameter(0, 0.09);
+  fStepGaus->SetParameter(1, 0.01);
+  fStepGaus->SetParameter(2, htmp->GetMaximum());
+  fStepGaus->SetParameter(3, 0);
+
+  htmp->Fit(fStepGaus);
+*/
+/*
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom,"d0_1tk1ClusterBothPlanesConstraintShift_diffX_aligned"));
+  center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
+  htmp->SetAxisRange(center-0.3, center+0.3, "X");
+  fGausResiduals->SetRange(center-0.3, center+0.3);
+  fGausResiduals->SetParameter(1, center);
+  fGausResiduals->SetParameter(2, 0.026);
+  htmp->Fit("fGausResiduals");
+
+  center = fGausResiduals->GetParameter(1);
+  rms = 5*fGausResiduals->GetParameter(2);
+  htmp->SetAxisRange(center-rms, center+rms, "X");
+  fStepGaus->SetParameter(0, 0.09);
+  fStepGaus->SetParameter(1, 0.01);
+  fStepGaus->SetParameter(2, htmp->GetMaximum());
+  fStepGaus->SetParameter(3, 0);
+
+  htmp->Fit(fStepGaus);
+
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop,"d1_1tk1ClusterBothPlanesConstraintShift_diffX_aligned"));
+  center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
+  htmp->SetAxisRange(center-0.3, center+0.3, "X");
+  fGausResiduals->SetRange(center-0.3, center+0.3);
+  fGausResiduals->SetParameter(1, center);
+  fGausResiduals->SetParameter(2, 0.026);
+  htmp->Fit("fGausResiduals");
+
+  center = fGausResiduals->GetParameter(1);
+  rms = 5*fGausResiduals->GetParameter(2);
+  htmp->SetAxisRange(center-rms, center+rms, "X");
+  fStepGaus->SetParameter(0, 0.09);
+  fStepGaus->SetParameter(1, 0.01);
+  fStepGaus->SetParameter(2, htmp->GetMaximum());
+  fStepGaus->SetParameter(3, 0);
+
+  htmp->Fit(fStepGaus);
+*/
+
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom,"d0_1tk1ClusterBothPlanesConstraintShiftPhi_diffX_aligned"));
+  center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
+  htmp->SetAxisRange(center-0.3, center+0.3, "X");
+  fGausResiduals->SetRange(center-0.3, center+0.3);
+  fGausResiduals->SetParameter(1, center);
+  fGausResiduals->SetParameter(2, 0.026);
+  htmp->Fit("fGausResiduals");
+
+  center = fGausResiduals->GetParameter(1);
+  rms = 5*fGausResiduals->GetParameter(2);
+  htmp->SetAxisRange(center-rms, center+rms, "X");
+  fStepGaus->SetParameter(0, 0.09);
+  fStepGaus->SetParameter(1, 0.01);
+  fStepGaus->SetParameter(2, htmp->GetMaximum());
+  fStepGaus->SetParameter(3, 0);
+
+  htmp->Fit(fStepGaus);
+
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop,"d1_1tk1ClusterBothPlanesConstraintShiftPhi_diffX_aligned"));
   center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-0.3, center+0.3, "X");
   fGausResiduals->SetRange(center-0.3, center+0.3);
@@ -628,47 +823,71 @@ void AlignmentMultiDimAnalysis::eventLoop()
 
   bool doMinimizerChecks = true;
   if (doMinimizerChecks){
-
+/*
     doConstrainDeltaOffset = false;
     doD0 = true;
     doD1 = true;
-    TH1* hChi2vsTheta = dynamic_cast<TH1F*>(hist_->GetHistoByName("TrackFit","bothPlanes_chi2VsTheta"));
+    TH1* hChi2vsTheta = dynamic_cast<TH1F*>(hist_->GetHistoByName(dnamebottom,"bothPlanes_chi2VsTheta"));
     for (int i=0; i<=40; i+=1){
       double theta_i = ((double)(i)-20.) * TMath::Pi()/180.;
       resultBothPlanes[4] = theta_i;
       double chi2_i = ComputeChi2BothPlanes(resultBothPlanes);
       cout << "theta_i="<<theta_i*180./TMath::Pi()<<" chi2_i="<<chi2_i <<endl;
-      hChi2vsTheta->Fill(theta_i*180./TMath::Pi(), chi2_i);
+      hChi2vsTheta->Fill((double)(i)-20., chi2_i);
     }
-
+*/
     doConstrainDeltaOffset = true;
+    doAllowOffsetPlanes = true;
+    doAllowPhiBothPlanes = true;
     doD0 = true;
     doD1 = true;
-    double theta_save = resultBothPlanesConstraint[3];
-    hChi2vsTheta = dynamic_cast<TH1F*>(hist_->GetHistoByName("TrackFit","bothPlanesConstraint_chi2VsTheta"));
+    double theta_save = resultBothPlanesConstraintShiftPhi[3];
+    TH1* hChi2vsTheta = dynamic_cast<TH1F*>(hist_->GetHistoByName(dnamebottom,"bothPlanesConstraintShiftPhi_chi2VsTheta"));
     for (int i=0; i<=40; i+=1){
       double theta_i = ((double)(i)-20.) * TMath::Pi()/180.;
-      resultBothPlanesConstraint[3] = theta_i;
-      double chi2_i = ComputeChi2BothPlanes(resultBothPlanesConstraint);
+      resultBothPlanesConstraintShiftPhi[3] = theta_i;
+      double chi2_i = ComputeChi2BothPlanes(resultBothPlanesConstraintShiftPhi);
       cout << "theta_i="<<theta_i*180./TMath::Pi()<<" chi2_i="<<chi2_i <<endl;
-      hChi2vsTheta->Fill(theta_i*180./TMath::Pi(), chi2_i);
+      hChi2vsTheta->Fill((double)(i)-20., chi2_i);
     }
-    resultBothPlanesConstraint[3] = theta_save;
+    resultBothPlanesConstraintShiftPhi[3] = theta_save;
 
-    double deltaZ_save = resultBothPlanesConstraint[2];
-    TH1* hChi2vsDeltaZ = dynamic_cast<TH1F*>(hist_->GetHistoByName("TrackFit","bothPlanesConstraint_chi2VsDeltaZ"));
+    double deltaZ_save = resultBothPlanesConstraintShiftPhi[2];
+    TH1* hChi2vsDeltaZ = dynamic_cast<TH1F*>(hist_->GetHistoByName(dnamebottom,"bothPlanesConstraintShiftPhi_chi2VsDeltaZ"));
     for (int i=0; i<=40; i+=1){
-      double deltaZ_i = ((double)(i))/4.;
-      resultBothPlanesConstraint[2] = deltaZ_i;
-      double chi2_i = ComputeChi2BothPlanes(resultBothPlanesConstraint);
+      double deltaZ_i = ((double)(i))*250.;
+      resultBothPlanesConstraintShiftPhi[2] = deltaZ_i;
+      double chi2_i = ComputeChi2BothPlanes(resultBothPlanesConstraintShiftPhi);
       cout << "deltaZ_i="<<deltaZ_i<<" chi2_i="<<chi2_i <<endl;
       hChi2vsDeltaZ->Fill(deltaZ_i, chi2_i);
     }
-    resultBothPlanesConstraint[2] = deltaZ_save;
+    resultBothPlanesConstraintShiftPhi[2] = deltaZ_save;
+
+   double zDUT0_save = resultBothPlanesConstraintShiftPhi[1];
+   TH1* hChi2vsZdut0 = dynamic_cast<TH1F*>(hist_->GetHistoByName(dnamebottom,"bothPlanesConstraintShiftPhi_chi2VsZdut0"));
+   for (int i=0; i<=40; i+=1){
+     double zDUT0_i = ((double)(i))*10000.-200000.;
+     resultBothPlanesConstraintShiftPhi[1] = zDUT0_i;
+     double chi2_i = ComputeChi2BothPlanes(resultBothPlanesConstraintShiftPhi);
+     cout << "zDUT0_i="<<zDUT0_i<<" chi2_i="<<chi2_i <<endl;
+     hChi2vsZdut0->Fill(zDUT0_i, chi2_i);
+   }
+   resultBothPlanesConstraintShiftPhi[1] = zDUT0_save;
+
+   double shiftPlanes_save = resultBothPlanesConstraintShiftPhi[4];
+   TH1* hChi2vsShiftPlanes = dynamic_cast<TH1F*>(hist_->GetHistoByName(dnamebottom,"bothPlanesConstraintShiftPhi_chi2VsShiftPlanes"));
+   for (int i=0; i<=40; i+=1){
+     double shiftPlanes_i = ((double)(i))*2.5 -50.;  
+     resultBothPlanesConstraintShiftPhi[4] = shiftPlanes_i;
+     double chi2_i = ComputeChi2BothPlanes(resultBothPlanesConstraintShiftPhi);
+     cout << "shiftPlanes_i="<<shiftPlanes_i<<" chi2_i="<<chi2_i <<endl;
+     hChi2vsShiftPlanes->Fill(shiftPlanes_i, chi2_i);
+   }
+   resultBothPlanesConstraintShiftPhi[4] = shiftPlanes_save;
 
   }
-  //END MAY16 code
-  */
+  //END NOV17 code
+  
   /*NOT required
   cout << "------------------"<<endl;
   cout << "Telescope Fei4 matching summary" << endl;
@@ -678,12 +897,19 @@ void AlignmentMultiDimAnalysis::eventLoop()
   std::cout << "residualSigmaFEI4Y=" << al.residualSigmaFEI4y() << endl;
   cout << "------------------"<<endl;
   */
-  /*
+  
   cout << "Alignment summary: "<<endl;
-  cout << "D0 offset="<< resultD0[0]<<" zDUT="<<resultD0[1]<<" theta="<<resultD0[2]*180./TMath::Pi()<<" chi2="<<chi2D0<<endl;
-  cout << "D1 offset="<< resultD1[0]<<" zDUT="<<resultD1[1]<<" theta="<<resultD1[2]*180./TMath::Pi()<<" chi2="<<chi2D1<<endl;
-  cout << "BothPlanes offset_d0="<< resultBothPlanes[0]<<" zDUT_d0="<<resultBothPlanes[1]<<" offset_d1="<< resultBothPlanes[2]<<" zDUT_d1="<<resultBothPlanes[3] << " theta="<<resultBothPlanes[4]*180./TMath::Pi()<< " chi2="<<chi2BothPlanes<<endl;
-  cout << "BothPlanesConstraint offset_d0="<< resultBothPlanesConstraint[0]<<" zDUT_d0="<<resultBothPlanesConstraint[1]<<" deltaZ="<< resultBothPlanesConstraint[2]<<" theta="<<resultBothPlanesConstraint[3]*180./TMath::Pi()<< " chi2="<<chi2BothPlanesConstraint<<endl;
+  //cout << "D0 offset="<< resultD0[0]<<" zDUT="<<resultD0[1]<<" theta="<<resultD0[2]*180./TMath::Pi()<<" chi2="<<chi2D0<<endl;
+  //cout << "D1 offset="<< resultD1[0]<<" zDUT="<<resultD1[1]<<" theta="<<resultD1[2]*180./TMath::Pi()<<" chi2="<<chi2D1<<endl;
+  //cout << "BothPlanes offset_d0="<< resultBothPlanes[0]<<" zDUT_d0="<<resultBothPlanes[1]<<" offset_d1="<< resultBothPlanes[2]<<" zDUT_d1="<<resultBothPlanes[3] << " theta="<<resultBothPlanes[4]*180./TMath::Pi()<< " chi2="<<chi2BothPlanes<<endl;
+  //cout << "BothPlanesConstraint offset_d0="<< resultBothPlanesConstraint[0]<<" zDUT_d0="<<resultBothPlanesConstraint[1]<<" deltaZ="<< resultBothPlanesConstraint[2]<<" theta="<<resultBothPlanesConstraint[3]*180./TMath::Pi()<< " chi2="<<chi2BothPlanesConstraint<<endl;
+  //cout << "BothPlanesConstraintShift offset_d0="<< resultBothPlanesConstraintShift[0]<<" zDUT_d0="<<resultBothPlanesConstraintShift[1]<<" deltaZ="<< resultBothPlanesConstraintShift[2]<<" theta="<<resultBothPlanesConstraintShift[3]*180./TMath::Pi()<< " shiftPlanes="<<resultBothPlanesConstraintShift[4] << " chi2="<<chi2BothPlanesConstraintShift<<endl;
+  cout << "BothPlanesConstraintShiftPhi offset_d0="<< resultBothPlanesConstraintShiftPhi[0]<<" zDUT_d0="<<resultBothPlanesConstraintShiftPhi[1]<<" deltaZ="<< resultBothPlanesConstraintShiftPhi[2]<<" theta="<<resultBothPlanesConstraintShiftPhi[3]*180./TMath::Pi()<< " shiftPlanes="<<resultBothPlanesConstraintShiftPhi[4] << " phi_d0="<<resultBothPlanesConstraintShiftPhi[5]*180./TMath::Pi()<<" phi_d1="<<resultBothPlanesConstraintShiftPhi[6]*180./TMath::Pi() << " chi2="<<chi2BothPlanesConstraintShiftPhi<<endl;
+  std::cout << "Dumping alignment in Data directory!!" << std::endl;
+  dumpAlignment(resultBothPlanesConstraintShiftPhi);
+
+
+/*
   //Dump Alignment output to alignment text file
   std::ofstream fileAlignment;
   if(isProduction_) {
@@ -704,16 +930,221 @@ void AlignmentMultiDimAnalysis::eventLoop()
     fileAlignment.close();
   } else std::cout << "Dump File could not be opened!!" << std::endl;
   */
+
+
+  //GET FINAL RESIDUALS AFTER ALIGNMENT AND FIT WITH STEP+GAUS
+  for (Long64_t jentry=0; jentry<nEntries_ && jentry<maxEvent_;jentry++) {
+    clearEvent();
+    Long64_t ientry = analysisTree()->GetEntry(jentry);
+    if (ientry < 0) break;
+    if (jentry%1000 == 0) {
+       cout << " Events processed. " << std::setw(8) << jentry
+            << endl;
+    }
+
+    setDetChannelVectors();
+    const auto& d0c0 = (*modVec())[0].bottomHits;
+    const auto& d1c0 = (*modVec())[0].topHits;
+    const auto& d0Cls = (*modVec())[0].bottomOfflineCls;
+    const auto& d1Cls = (*modVec())[0].topOfflineCls;
+
+    std::vector<tbeam::OfflineTrack>  selectedTk = event()->tracks;
+    if (selectedTk.size()!=1) continue;
+    if (selectedTk[0].chi2()>5.) continue;
+ 
+    std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk[0], refPlaneZ, resultBothPlanesConstraintShiftPhi[0], resultBothPlanesConstraintShiftPhi[1], resultBothPlanesConstraintShiftPhi[2], resultBothPlanesConstraintShiftPhi[3], resultBothPlanesConstraintShiftPhi[4], resultBothPlanesConstraintShiftPhi[5], resultBothPlanesConstraintShiftPhi[6]);
+
+    double D0xDUT;
+    double D1xDUT;
+
+    if (d0Cls.size()==1){
+      for(auto& cl : d0Cls ) {
+        D0xDUT = (cl.center()-nStrips/2)*dutpitch();
+        D0xDUT = -D0xDUT;
+        if (cl.size()==1) hist_->fillHist1D(dnamebottom,"d0_1tk1Cls_1Hit_diffX_afterAlignment", D0xDUT-xTkAtDUT.first/1000.);
+	if (cl.size()==2) hist_->fillHist1D(dnamebottom,"d0_1tk1Cls_2Hit_diffX_afterAlignment", D0xDUT-xTkAtDUT.first/1000.);
+        if (cl.size()>2) hist_->fillHist1D(dnamebottom,"d0_1tk1Cls_gt2Hit_diffX_afterAlignment", D0xDUT-xTkAtDUT.first/1000.);
+        hist_->fillHist1D(dnamebottom,"d0_1tk1Cls_allHit_diffX_afterAlignment", D0xDUT-xTkAtDUT.first/1000.);
+      }
+    }
+    if (d1Cls.size()==1){
+      for(auto& cl : d1Cls ) {
+        D1xDUT = (cl.center()-nStrips/2)*dutpitch();
+        D1xDUT = -D1xDUT;
+        if (cl.size()==1) hist_->fillHist1D(dnametop,"d1_1tk1Cls_1Hit_diffX_afterAlignment", D1xDUT-xTkAtDUT.second/1000.);
+        if (cl.size()==2) hist_->fillHist1D(dnametop,"d1_1tk1Cls_2Hit_diffX_afterAlignment", D1xDUT-xTkAtDUT.second/1000.);
+        if (cl.size()>2) hist_->fillHist1D(dnametop,"d1_1tk1Cls_gt2Hit_diffX_afterAlignment", D1xDUT-xTkAtDUT.second/1000.);
+        hist_->fillHist1D(dnametop,"d1_1tk1Cls_allHit_diffX_afterAlignment", D1xDUT-xTkAtDUT.second/1000.);
+      }
+    }
+
+
+  }
+
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom,"d0_1tk1Cls_1Hit_diffX_afterAlignment"));
+  center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
+  htmp->SetAxisRange(center-0.3, center+0.3, "X");
+  fGausResiduals->SetRange(center-0.3, center+0.3);
+  fGausResiduals->SetParameter(1, center);
+  fGausResiduals->SetParameter(2, 0.026);
+  htmp->Fit("fGausResiduals");
+
+  center = fGausResiduals->GetParameter(1);
+  rms = 5*fGausResiduals->GetParameter(2);
+  htmp->SetAxisRange(center-rms, center+rms, "X");
+  fStepGaus->SetParameter(0, 0.09);
+  fStepGaus->SetParameter(1, 0.01);
+  fStepGaus->SetParameter(2, htmp->GetMaximum());
+  fStepGaus->SetParameter(3, 0);
+
+  htmp->Fit(fStepGaus);
+
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop,"d1_1tk1Cls_1Hit_diffX_afterAlignment"));
+  center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
+  htmp->SetAxisRange(center-0.3, center+0.3, "X");
+  fGausResiduals->SetRange(center-0.3, center+0.3);
+  fGausResiduals->SetParameter(1, center);
+  fGausResiduals->SetParameter(2, 0.026);
+  htmp->Fit("fGausResiduals");
+
+  center = fGausResiduals->GetParameter(1);
+  rms = 5*fGausResiduals->GetParameter(2);
+  htmp->SetAxisRange(center-rms, center+rms, "X");
+  fStepGaus->SetParameter(0, 0.09);
+  fStepGaus->SetParameter(1, 0.01);
+  fStepGaus->SetParameter(2, htmp->GetMaximum());
+  fStepGaus->SetParameter(3, 0);
+
+  htmp->Fit(fStepGaus);
+
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom,"d0_1tk1Cls_allHit_diffX_afterAlignment"));
+  center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
+  htmp->SetAxisRange(center-0.3, center+0.3, "X");
+  fGausResiduals->SetRange(center-0.3, center+0.3);
+  fGausResiduals->SetParameter(1, center);
+  fGausResiduals->SetParameter(2, 0.026);
+  htmp->Fit("fGausResiduals");
+
+  center = fGausResiduals->GetParameter(1);
+  rms = 5*fGausResiduals->GetParameter(2);
+  htmp->SetAxisRange(center-rms, center+rms, "X");
+  fStepGaus->SetParameter(0, 0.09);
+  fStepGaus->SetParameter(1, 0.01);
+  fStepGaus->SetParameter(2, htmp->GetMaximum());
+  fStepGaus->SetParameter(3, 0);
+
+  htmp->Fit(fStepGaus);
+
+  htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop,"d1_1tk1Cls_allHit_diffX_afterAlignment"));
+  center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
+  htmp->SetAxisRange(center-0.3, center+0.3, "X");
+  fGausResiduals->SetRange(center-0.3, center+0.3);
+  fGausResiduals->SetParameter(1, center);
+  fGausResiduals->SetParameter(2, 0.026);
+  htmp->Fit("fGausResiduals");
+
+  center = fGausResiduals->GetParameter(1);
+  rms = 5*fGausResiduals->GetParameter(2);
+  htmp->SetAxisRange(center-rms, center+rms, "X");
+  fStepGaus->SetParameter(0, 0.09);
+  fStepGaus->SetParameter(1, 0.01);
+  fStepGaus->SetParameter(2, htmp->GetMaximum());
+  fStepGaus->SetParameter(3, 0);
+
+  htmp->Fit(fStepGaus);
+
+}
+
+//Each of the following histogramns will be booked for each sensor
+void AlignmentMultiDimAnalysis::bookTrackFitHistograms(TString& detId, float zMin, float zStep, int zNsteps){
+  int nStrips = 254;
+  TString dname = detId + "/TrackFit";
+  //std::cout << "Entering bookTrackMatchHistograms with dnmae=" << dname << std::endl;
+  hist_->hfile()->cd();
+  hist_->hfile()->mkdir(dname);
+  hist_->hfile()->cd(dname);
+  //these will be added back once the zposition of the reference plane is known
+  //new TH1D("tkposx_ref","Xpos of etrapolated track from reference plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  //new TH1D("tkposy_ref","Ypos of etrapolated track from reference plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  //new TH1D("hitresidualX_ref","Residual of extrapolated track(ref plane) with respect to hit; residual [mm]; Events [a.u]",40/(50e-3),-20.,20.);
+  //new TH1D("clusresidualX_ref","Residual of extrapolated track(ref plane) with respect to cluster; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+
+  new TH1D("tkposx_prev","Xpos of etrapolated track from previous plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  new TH1D("tkposy_prev","Ypos of etrapolated track from previous plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  new TH1D("hitresidualX_prev","Residual of extrapolated track(prev plane) with respect to hit; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+  new TH1D("clusresidualX_prev","Residual of extrapolated track(prev plane) with respect to cluster; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+
+  new TH1D("tkposx_next","Xpos of etrapolated track from next plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  new TH1D("tkposy_next","Ypos of etrapolated track from next plane; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
+  new TH1D("hitresidualX_next","Residual of extrapolated track(next plane) with respect to hit; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+  new TH1D("clusresidualX_next","Residual of extrapolated track(next plane) with respect to cluster; residualX [mm]; Events [a.u]",80/(50e-3),-40.,40.);
+
+  //check with Nicolas about the following histograms
+  
+  new TH1I("d0_1tk1Hit_diffX_tmp","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1Hit_diffX_tmp","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
+
+  new TH1I("d0_1tk1Hit_diffX_start","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1Hit_diffX_start","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
+
+  new TH1I("d0_1tk1Cls_diffX_start","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1Cls_diffX_start","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
+
+  new TH1I("d0_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1Hit_diffX_aligned","X_{TkAtDUT}-X_{DUT}, d1",100000,-100,100);
+
+  new TH1I("d0_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1ClusterBothPlanes_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",100000,-100,100);
+
+  new TH1I("d0_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1ClusterBothPlanesConstraint_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",100000,-100,100);
+
+  new TH1I("d0_1tk1ClusterBothPlanesConstraintShift_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1ClusterBothPlanesConstraintShift_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",100000,-100,100);
+
+  new TH1I("d0_1tk1ClusterBothPlanesConstraintShiftPhi_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1ClusterBothPlanesConstraintShiftPhi_diffX_aligned","X_{TkAtDUT}-X_{Cls,DUT}, d1",100000,-100,100);
+
+  new TH1F("bothPlanes_chi2VsTheta","chi2 vs injected #theta", 41, -20.-0.5, 21.-0.5);
+  new TH1F("bothPlanesConstraintShiftPhi_chi2VsTheta","chi2 vs injected #theta", 41, -20.-0.5, 21.-0.5);
+  new TH1F("bothPlanesConstraintShiftPhi_chi2VsDeltaZ","chi2 vs injected #deltaZ", 41, 0.-125, 10250-125);
+  new TH1F("bothPlanesConstraintShiftPhi_chi2VsZdut0", "chi2 vs injected #z_{DUT0}", 41, -200000, 200000);  
+  new TH1F("bothPlanesConstraintShiftPhi_chi2VsShiftPlanes","chi2 vs injected shift between planes",41,-50,50);
+
+  new TH1I("d0_1tk1Cls_1Hit_diffX_afterAlignment","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d0_1tk1Cls_2Hit_diffX_afterAlignment","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d0_1tk1Cls_gt2Hit_diffX_afterAlignment","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d0_1tk1Cls_allHit_diffX_afterAlignment","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+
+  new TH1I("d1_1tk1Cls_1Hit_diffX_afterAlignment","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1Cls_2Hit_diffX_afterAlignment","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1Cls_gt2Hit_diffX_afterAlignment","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+  new TH1I("d1_1tk1Cls_allHit_diffX_afterAlignment","X_{TkAtDUT}-X_{DUT}, d0",100000,-100,100);
+
+
+
+}
+
+void AlignmentMultiDimAnalysis::FillAlignmentOffsetVsZ(const char* det, const char* histo, int iz, float z, float x, float x_err){
+
+hist_->hfile()->cd("TrackFit");
+char histname[50];
+strcpy( histname, det );
+strcat( histname, histo );
+TH1* h = (TH1*) gDirectory->Get(histname);
+h->Fill(z, x);
+h->SetBinError(iz+1, x_err);
 }
 
 double AlignmentMultiDimAnalysis::ComputeChi2(const double* x) const{
-  /*
+  
   double chi2 = 0;
   double offset = x[0];
   double zDUT = x[1];
   double theta = x[2];
 
-  double resTelescope = sqrt(0.090*0.090/12. + 0.0035*0.0035);
+  //double resTelescope = sqrt(0.090*0.090/12. + 0.0035*0.0035);
+  double resTelescope = sqrt(0.090*0.090/12. + 0.010*0.010);
 
   unsigned int nEv = 0;
   if (doD0) nEv = selectedTk_d0_1Hit.size();
@@ -723,24 +1154,29 @@ double AlignmentMultiDimAnalysis::ComputeChi2(const double* x) const{
   double xDUT = 0;
   double resDUT = 0;
 
+  //std::string dnamebottom = (*modVec())[0].hdirbottom_ + "/TrackFit";
+  //std::string dnametop = (*modVec())[0].hdirtop_ + "/TrackFit";
+
   TH1* htmp;
-  if (doD0) htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d0_1tk1Hit_diffX"));
-  if (doD1) htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d1_1tk1Hit_diffX"));
+  if (doD0) htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom, "d0_1tk1Hit_diffX_tmp"));
+  if (doD1) htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop, "d1_1tk1Hit_diffX_tmp"));
   htmp->Reset();
+
+  //double refPlaneZ = telPlaneprev_.z;
 
   for (unsigned int i=0; i<nEv; i++){
     if (doD0){
       xDUT = d0_DutXpos.at(i);
-      xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d0_1Hit.at(i), al.FEI4z(), offset, zDUT, theta);
+      xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d0_1Hit.at(i), refPlaneZ, offset, zDUT, theta);
     }
     if (doD1){
       xDUT = d1_DutXpos.at(i);
-      xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d1_1Hit.at(i), al.FEI4z(), offset, zDUT, theta);
+      xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d1_1Hit.at(i), refPlaneZ, offset, zDUT, theta);
     }
 
     resDUT = xDUT - xTkAtDUT;
-    if (doD0) hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX", resDUT);
-    if (doD1) hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX", resDUT);
+    if (doD0) hist_->fillHist1D(dnamebottom,"d0_1tk1Hit_diffX_tmp", resDUT);
+    if (doD1) hist_->fillHist1D(dnametop,"d1_1tk1Hit_diffX_tmp", resDUT);
 
     chi2 += (resDUT/resTelescope)*(resDUT/resTelescope);
   }
@@ -750,8 +1186,8 @@ double AlignmentMultiDimAnalysis::ComputeChi2(const double* x) const{
 
   TF1* fGausExtractedX = new TF1("fGausExtractedX", Utility::FuncPol1Gaus, -10, 10, 5);
 
-  if (doD0) htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d0_1tk1Hit_diffX"));
-  if (doD1) htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d1_1tk1Hit_diffX"));
+  if (doD0) htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom, "d0_1tk1Hit_diffX_tmp"));
+  if (doD1) htmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop, "d1_1tk1Hit_diffX_tmp"));
   double center = ((float)htmp->GetMaximumBin())*(htmp->GetXaxis()->GetXmax()-htmp->GetXaxis()->GetXmin())/((float)htmp->GetNbinsX()) + htmp->GetXaxis()->GetXmin();//htmp->GetMean();
   htmp->SetAxisRange(center-2., center+2., "X");
   double cte = (htmp->GetBinContent(htmp->FindBin(center-2.))+htmp->GetBinContent(htmp->FindBin(center+2.)))/2.;
@@ -786,14 +1222,15 @@ double AlignmentMultiDimAnalysis::ComputeChi2(const double* x) const{
   for (unsigned int i=0; i<nEv; i++){
     if (doD0){
       xDUT = d0_DutXpos.at(i);
-      xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d0_1Hit.at(i), al.FEI4z(), offset, zDUT, theta);
+      xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d0_1Hit.at(i), refPlaneZ, offset, zDUT, theta);
     }
     if (doD1){
       xDUT = d1_DutXpos.at(i);
-      xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d1_1Hit.at(i), al.FEI4z(), offset, zDUT, theta);
+      xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_d1_1Hit.at(i), refPlaneZ, offset, zDUT, theta);
     }
 
     resDUT = xDUT - xTkAtDUT;
+    //if (fabs(resDUT-center)<10.*rms) {
     if (fabs(resDUT-center)<3.*rms) {
       chi2 += (resDUT/resTelescope)*(resDUT/resTelescope);
       nEvWindow++;
@@ -808,11 +1245,11 @@ double AlignmentMultiDimAnalysis::ComputeChi2(const double* x) const{
 
 
   return chi2;
-  */
+  
 }
 
 double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
-/*
+
   double chi2 = 0;
   double offset_d0 = 0;
   double zDUT_d0 = 0;
@@ -820,6 +1257,9 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
   double zDUT_d1 = 0;
   double theta = 0;
   double deltaZ = 0;
+  double offsetPlanes = 0;
+  double phi_d0 = 0;
+  double phi_d1 = 0;
 
   if (!doConstrainDeltaOffset){
     offset_d0 = x[0];
@@ -828,15 +1268,26 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
     zDUT_d1 = x[3];
     theta = x[4];
   }
-  if (doConstrainDeltaOffset){
+  if (doConstrainDeltaOffset && !doAllowOffsetPlanes){
     offset_d0 = x[0];
     zDUT_d0 = x[1];
     deltaZ = x[2];
     theta = x[3];
     zDUT_d1 = zDUT_d0 + deltaZ;
   }
+  if (doConstrainDeltaOffset && doAllowOffsetPlanes){
+    offset_d0 = x[0];
+    zDUT_d0 = x[1];
+    deltaZ = x[2];
+    theta = x[3];
+    offsetPlanes = x[4];
+    if (doAllowPhiBothPlanes){
+      phi_d0 = x[5];
+      phi_d1 = x[6];
+    }
+  }
 
-  double resTelescope = sqrt(0.090*0.090/12. + 0.0035*0.0035);
+  double resTelescope = sqrt(0.090*0.090/12. + 0.010*0.010);
 
   unsigned int nEv = selectedTk_bothPlanes_1Cls.size();
 
@@ -849,31 +1300,45 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
 
   TH1* htmp0;
   TH1* htmp1;
-  if (doD0) htmp0 = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d0_1tk1Hit_diffX"));
-  if (doD1) htmp1 = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d1_1tk1Hit_diffX"));
+  if (doD0) htmp0 = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom, "d0_1tk1Hit_diffX_tmp"));
+  if (doD1) htmp1 = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop, "d1_1tk1Hit_diffX_tmp"));
   htmp0->Reset("ICESM");
   htmp1->Reset("ICESM");
+
+  //double refPlaneZ = telPlaneprev_.z;
 
   for (unsigned int i=0; i<nEv; i++){
     if (doD0 && doD1){
       xDUT_d0 = bothPlanes_DutXposD0.at(i);
       xDUT_d1 = bothPlanes_DutXposD1.at(i);
       if (!doConstrainDeltaOffset){
-        xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), offset_d0, zDUT_d0, theta);
-        xTkAtDUT_d1 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), offset_d1, zDUT_d1, theta);
+        xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, offset_d0, zDUT_d0, theta);
+        xTkAtDUT_d1 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, offset_d1, zDUT_d1, theta);
       }
-      if (doConstrainDeltaOffset){
-	std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), offset_d0, zDUT_d0, deltaZ, theta);
+      if (doConstrainDeltaOffset && !doAllowOffsetPlanes){
+	std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, offset_d0, zDUT_d0, deltaZ, theta);
         xTkAtDUT_d0 = xTkAtDUT.first;
         xTkAtDUT_d1 = xTkAtDUT.second;
       }
-      resDUT_d0 = xDUT_d0 - xTkAtDUT_d0;
-      resDUT_d1 = xDUT_d1 - xTkAtDUT_d1;
+      if (doConstrainDeltaOffset && doAllowOffsetPlanes && !doAllowPhiBothPlanes){
+        std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, offset_d0, zDUT_d0, deltaZ, theta, offsetPlanes);
+	xTkAtDUT_d0 = xTkAtDUT.first;
+        xTkAtDUT_d1 = xTkAtDUT.second;
+      }
+      if (doConstrainDeltaOffset && doAllowOffsetPlanes && doAllowPhiBothPlanes){
+        std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, offset_d0, zDUT_d0, deltaZ, theta, offsetPlanes, phi_d0, phi_d1);
+        xTkAtDUT_d0 = xTkAtDUT.first;
+        xTkAtDUT_d1 = xTkAtDUT.second;
+      }
 
-      hist_->fillHist1D("TrackFit","d0_1tk1Hit_diffX", resDUT_d0);
-      hist_->fillHist1D("TrackFit","d1_1tk1Hit_diffX", resDUT_d1);
+      resDUT_d0 = xDUT_d0 - xTkAtDUT_d0/1000.;
+      resDUT_d1 = xDUT_d1 - xTkAtDUT_d1/1000.;
 
-     chi2 += ( (resDUT_d0/resTelescope)*(resDUT_d0/resTelescope) + (resDUT_d1/resTelescope)*(resDUT_d1/resTelescope) );
+      hist_->fillHist1D(dnamebottom,"d0_1tk1Hit_diffX_tmp", resDUT_d0);
+      hist_->fillHist1D(dnametop,"d1_1tk1Hit_diffX_tmp", resDUT_d1);
+
+     //chi2 += ( (resDUT_d0/resTelescope)*(resDUT_d0/resTelescope) + (resDUT_d1/resTelescope)*(resDUT_d1/resTelescope) );
+     chi2 += fabs(resDUT_d0/resTelescope) + fabs(resDUT_d1/resTelescope);
     }
   }
 
@@ -884,7 +1349,7 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
 
   double xwindow = 2.;
 
-  if (doD0) htmp0 = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d0_1tk1Hit_diffX"));
+  if (doD0) htmp0 = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom, "d0_1tk1Hit_diffX_tmp"));
   htmp0->GetXaxis()->UnZoom();
   double center_d0 = ((float)htmp0->GetMaximumBin())*(htmp0->GetXaxis()->GetXmax()-htmp0->GetXaxis()->GetXmin())/((float)htmp0->GetNbinsX()) + htmp0->GetXaxis()->GetXmin();//htmp0->GetMean();
   htmp0->SetAxisRange(center_d0-xwindow, center_d0+xwindow, "X");
@@ -917,7 +1382,7 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
 
   //htmp0->SetAxisRange(center_d0-5*rms_d0, center_d0+5*rms_d0, "X");
 
-  if (doD1) htmp1 = dynamic_cast<TH1I*>(hist_->GetHistoByName("TrackFit", "d1_1tk1Hit_diffX"));
+  if (doD1) htmp1 = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnametop, "d1_1tk1Hit_diffX_tmp"));
   htmp1->GetXaxis()->UnZoom();
   double center_d1 = ((float)htmp1->GetMaximumBin())*(htmp1->GetXaxis()->GetXmax()-htmp1->GetXaxis()->GetXmin())/((float)htmp1->GetNbinsX()) + htmp1->GetXaxis()->GetXmin();//htmp1->GetMean();
   htmp1->SetAxisRange(center_d1-xwindow, center_d1+xwindow, "X");
@@ -957,21 +1422,33 @@ double AlignmentMultiDimAnalysis::ComputeChi2BothPlanes(const double* x) const{
       xDUT_d0 = bothPlanes_DutXposD0.at(i);
       xDUT_d1 = bothPlanes_DutXposD1.at(i);
       if (!doConstrainDeltaOffset){
-        xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), offset_d0, zDUT_d0, theta);
-        xTkAtDUT_d1 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), offset_d1,
-zDUT_d1, theta);
+        xTkAtDUT_d0 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, offset_d0, zDUT_d0, theta);
+        xTkAtDUT_d1 = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, offset_d1, zDUT_d1, theta);
       }
-      if (doConstrainDeltaOffset){
-        std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), al.FEI4z(), offset_d0, zDUT_d0, deltaZ, theta);
+      if (doConstrainDeltaOffset && !doAllowOffsetPlanes){
+        std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, offset_d0, zDUT_d0, deltaZ, theta);
         xTkAtDUT_d0 = xTkAtDUT.first;
         xTkAtDUT_d1 = xTkAtDUT.second;
       }
-      resDUT_d0 = xDUT_d0 - xTkAtDUT_d0;
-      resDUT_d1 = xDUT_d1 - xTkAtDUT_d1;
+      if (doConstrainDeltaOffset && doAllowOffsetPlanes && !doAllowPhiBothPlanes){
+        std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, offset_d0, zDUT_d0, deltaZ, theta, offsetPlanes);
+        xTkAtDUT_d0 = xTkAtDUT.first;
+        xTkAtDUT_d1 = xTkAtDUT.second;
+      }
+      if (doConstrainDeltaOffset && doAllowOffsetPlanes && doAllowPhiBothPlanes){
+        std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(selectedTk_bothPlanes_1Cls.at(i), refPlaneZ, offset_d0, zDUT_d0, deltaZ, theta, offsetPlanes, phi_d0, phi_d1);
+        xTkAtDUT_d0 = xTkAtDUT.first;
+        xTkAtDUT_d1 = xTkAtDUT.second;
+      }
+
+      resDUT_d0 = xDUT_d0 - xTkAtDUT_d0/1000.;
+      resDUT_d1 = xDUT_d1 - xTkAtDUT_d1/1000.;
     }
 
+  //if (fabs(resDUT_d0-center_d0)<10.*rms_d0 && fabs(resDUT_d1-center_d1)<10.*rms_d1) {
     if (fabs(resDUT_d0-center_d0)<3.*rms_d0 && fabs(resDUT_d1-center_d1)<3.*rms_d1) {
-      chi2 += ( (resDUT_d0/resTelescope)*(resDUT_d0/resTelescope) + (resDUT_d1/resTelescope)*(resDUT_d1/resTelescope) );
+      //chi2 += ( (resDUT_d0/resTelescope)*(resDUT_d0/resTelescope) + (resDUT_d1/resTelescope)*(resDUT_d1/resTelescope) );
+      chi2 += fabs(resDUT_d0/resTelescope) + fabs(resDUT_d1/resTelescope);
       nEvWindow++;
     }
   }
@@ -981,10 +1458,12 @@ zDUT_d1, theta);
   else chi2 = 99999.;
 
   if (!doConstrainDeltaOffset) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" offset_d1=" << offset_d1<< " zDUT_d1="<< zDUT_d1<<" theta="<<theta*180./TMath::Pi()<<" chi2="<<chi2<<endl;
-  if (doConstrainDeltaOffset) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" deltaZ="<<deltaZ<<" theta="<<theta*180./TMath::Pi()<<" chi2="<<chi2<<endl;
+  if (doConstrainDeltaOffset && !doAllowOffsetPlanes) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" deltaZ="<<deltaZ<<" theta="<<theta*180./TMath::Pi()<<" chi2="<<chi2<<endl;
+  if (doConstrainDeltaOffset && doAllowOffsetPlanes && !doAllowPhiBothPlanes) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" deltaZ="<<deltaZ<<" theta="<<theta*180./TMath::Pi()<< " offsetPlanes="<<offsetPlanes <<" chi2="<<chi2<<endl;
+  if (doConstrainDeltaOffset && doAllowOffsetPlanes && doAllowPhiBothPlanes) cout << "offset_d0="<< offset_d0<<" zDUT_d0="<<zDUT_d0<<" deltaZ="<<deltaZ<<" theta="<<theta*180./TMath::Pi()<< " offsetPlanes="<<offsetPlanes << " phi_d0="<<phi_d0*180./TMath::Pi()<<" phi_d1="<<phi_d1*180./TMath::Pi()<<" chi2="<<chi2<<endl;
 
   return chi2;
-  */
+  
 }
 
 void AlignmentMultiDimAnalysis::clearEvent() {
@@ -992,11 +1471,6 @@ void AlignmentMultiDimAnalysis::clearEvent() {
 }
 void AlignmentMultiDimAnalysis::endJob() {
   BeamAnaBase::endJob();
-  std::cout << std::setw(4) << alignmentDump_ << std::endl;
-  //Dump Alignment output to alignment text file
-  std::ofstream fileAlignment(alignparFile_.c_str(), ios::out);
-  fileAlignment << std::setw(4) << alignmentDump_ << std::endl;
-  fileAlignment.close();
   hist_->closeFile();
 }
 
