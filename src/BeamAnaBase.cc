@@ -405,7 +405,8 @@ void BeamAnaBase::readChannelMaskData(const std::string cmaskF) {
 
 
   // nStubsrecoSword_ = 0;
-  // nStubscbcSword_ = 0;
+  // nStubscbcSword_ = 0;\
+
 void BeamAnaBase::readAlignmentConstant(const std::string& aFname) {
   std::string alignparFile_ = workDir_ + "/data/" + aFname;
   std::cout << "Alignment parameters will be read from file:" << alignparFile_ << std::endl;
@@ -417,7 +418,8 @@ void BeamAnaBase::readAlignmentConstant(const std::string& aFname) {
     alPars_["deltaZ"]      =    0.;
     alPars_["theta"]       =    0.;
     alPars_["shiftPlanes"] =    0.;
-    alPars_["chi2"]        =    0.;
+    alPars_["phi_d0"]      =    0.;
+    alPars_["phi_d1"]      =    0.;
     return;
   }
   json alignment;
@@ -427,7 +429,8 @@ void BeamAnaBase::readAlignmentConstant(const std::string& aFname) {
   alPars_["deltaZ"]      =    alignment["deltaZ"];
   alPars_["theta"]       =    alignment["theta"];
   alPars_["shiftPlanes"] =    alignment["shiftPlanes"];
-  alPars_["chi2"]        =    alignment["chi2"];
+  alPars_["phi_d0"] =    alignment["phi_d0"];
+  alPars_["phi_d1"] =    alignment["phi_d1"];
   fin.close();
   std::cout << "Alignment parameters read from file:" << alignparFile_ << std::endl;
   for(auto& ap : alPars_)

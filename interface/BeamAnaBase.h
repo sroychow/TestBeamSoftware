@@ -66,11 +66,13 @@ class BeamAnaBase {
     double dutpitch() const { return pitchDUT_; }
 
     std::map<std::string, double> alignmentPars() const { return alPars_; }
-    double offsetbottom() const { return alPars_.at("offset_d0") ; }
-    double zDUTbottom() const { return alPars_.at("zDUT_d0")  ; }
-    double shiftPlanes() const { return alPars_.at("shiftPlanes"); }
-    double dutangle() const { return alPars_.at("theta") ; }
-    double sensordeltaZ() const { return alPars_.at("deltaZ"); }
+    double offsetbottom()    const { return alPars_.at("offset_d0") ; }
+    double zDUTbottom()      const { return alPars_.at("zDUT_d0")  ; }
+    double shiftPlanes()     const { return alPars_.at("shiftPlanes"); }
+    double dutangle()        const { return alPars_.at("theta") ; }
+    double sensordeltaZ()    const { return alPars_.at("deltaZ"); }
+    double bottomsensorPhi() const { return alPars_.at("phi_d0"); }
+    double topsensorPhi()    const { return alPars_.at("phi_d1"); }
 
     virtual void beginJob();
     virtual void endJob();
