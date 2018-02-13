@@ -456,13 +456,13 @@ void Histogrammer::bookTrackMatchHistograms(TString& detId)
   new TH1D("tkposx","Xpos of etrapolated track; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
   new TH1D("tkposy","Ypos of etrapolated track; x [mm]; Events [a.u]",60/(250e-3),-30.,30.);
   //new TH1D("hitresidualX","Residual of extrapolated track(prev plane) with respect to hit(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-20.,20.);
-  new TH1D("clusresidualX","Residual of extrapolated track(prev plane) with respect to cluster(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-20.,20.);
-  new TH1D("stubresidualX","Residual of extrapolated track(prev plane) with respect to stub(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-20.,20.);
+  new TH1D("clusresidualX","Residual of extrapolated track(prev plane) with respect to cluster(offset corrected); corrected residual [mm]; Events [a.u]",100000,-100,100);
+  new TH1D("stubresidualX","Residual of extrapolated track(prev plane) with respect to stub(offset corrected); corrected residual [mm]; Events [a.u]",100000,-100,100);
 
   new TH2D("moduleSize_Cluster",";cluster position [strip]; yTrack at DUT{Track} [mm]", 1016, -0.5, 1015.5, 100, 1., 100. );
 
-  new TH1F("trackpos_strip","Extrapolated Track position on sensor;#tracks; track position", 1016, -0.5, 1015.5);
-  new TH1F("matchedclusterpos_strip","Mateched cluster position on sensor;#clusters; cluster position", 1016, -0.5, 1015.5);
+  new TH1F("trackpos_strip","Extrapolated Track position on sensor; track position[strips]; #tracks ", 1016, -0.5, 1015.5);
+  new TH1F("matchedclusterpos_strip","Mateched cluster position on sensor; cluster position; ;#clusters ", 1016, -0.5, 1015.5);
   //Consult with other analysers about which ones to keep --- REMOVE Duplicates
 
 /*
