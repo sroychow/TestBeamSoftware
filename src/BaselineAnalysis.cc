@@ -113,15 +113,21 @@ void BaselineAnalysis::eventLoop()
     //xTkAtDUT is a pair of the extrapolated position of the tk in the two planes of the module
     //xTkAtDUT.first will give the position of the track on  bottom sensor
     //xTkAtDUT.second will give the position of the track on top sensor
-    std::pair<double, double> xTkAtDUT = Utility::extrapolateTrackAtDUTwithAngles(tk, m.z, offsetbottom(), zDUTbottom(), sensordeltaZ(), dutangle(), shiftPlanes());
+    std::pair<double, double> xTkAtDUT_micron = Utility::extrapolateTrackAtDUTwithAngles(tk, telPlaneprev_.z, offsetbottom(), zDUTbottom(), 
+                                                                                  sensordeltaZ(), dutangle(), shiftPlanes(), 
+                                                                                  bottomsensorPhi(), topsensorPhi());
+    
+    std::pair<double, double> xTkAtDUT;
+    xTkAtDUT.first  = xTkAtDUT_micron.first/1000.;
+    xTkAtDUT.second = xTkAtDUT_micron.second/1000.;
     //extrapolate along y direction
-    float yTkAtDUT_bottom = tk.yPos(); + (zDUTbottom() - m.z)*tk.dydz();
-    float yTkAtDUT_top    = tk.yPos(); + (zDUTbottom() + sensordeltaZ() - m.z)*tk.dydz();
+    float yTkAtDUT_bottom = ( tk.yPosPrevHit() + (zDUTbottom() - m.z)*tk.dydz() )/1000.;
+    float yTkAtDUT_top    = ( tk.yPosPrevHit() + (zDUTbottom() + sensordeltaZ() - m.z)*tk.dydz() )/1000.;
     hist_->fillHist1D(dnamebottom, "tkposx", xTkAtDUT.first);
     hist_->fillHist1D(dnametop,    "tkposx", xTkAtDUT.second); 
     //convert tk xpos to strip number
-    int xTkAtDUT_strip_bottom = xTkAtDUT.first/m.pitch_  + m.nstrips_/2.;
-    int xTkAtDUT_strip_top    = xTkAtDUT.second/m.pitch_ + m.nstrips_/2.;
+    int xTkAtDUT_strip_bottom = -1.*xTkAtDUT.first/m.pitch_  + m.nstrips_/2.;
+    int xTkAtDUT_strip_top    = -1.*xTkAtDUT.second/m.pitch_ + m.nstrips_/2.;
 
     hist_->fillHist1D(dnamebottom, "trackpos_strip", xTkAtDUT_strip_bottom);
     hist_->fillHist1D(dnametop,    "trackpos_strip", xTkAtDUT_strip_top); 
@@ -133,9 +139,9 @@ void BaselineAnalysis::eventLoop()
     for(auto& c: m.bottomOfflineCls) {
       float cx = -1.*(c.center() - m.nstrips_/2.)*m.pitch_;
       hist_->fillHist1D(dnamebottom, "clusresidualX", cx - xTkAtDUT.first);//xTkAtDUT.first since bottom sensor
-      if(std::abs(cx - xTkAtDUT.first) < 100.)    {
+      if(std::abs(cx - xTkAtDUT.first) < 0.1)    {
         mCls_bottom = true;
-        hist_->fillHist2D(dnamebottom, "moduleSize_Cluster", c.center(), yTkAtDUT_bottom/1000.);
+        hist_->fillHist2D(dnamebottom, "moduleSize_Cluster", c.center(), yTkAtDUT_bottom);
         hist_->fillHist1D(dnamebottom, "matchedclusterpos_strip", c.center()); 
       }
     }
@@ -143,9 +149,9 @@ void BaselineAnalysis::eventLoop()
     for(auto& c: m.topOfflineCls) {
       float cx = -1.*(c.center() - m.nstrips_/2.)*m.pitch_;
       hist_->fillHist1D(dnamebottom, "clusresidualX", cx - xTkAtDUT.second);//xTkAtDUT.second since top sensor
-      if(std::abs(cx - xTkAtDUT.first) < 100.)  {
+      if(std::abs(cx - xTkAtDUT.first) < 0.1)  {
         mCls_top = true;
-        hist_->fillHist2D(dnametop, "moduleSize_Cluster", c.center(), yTkAtDUT_top/1000.);
+        hist_->fillHist2D(dnametop, "moduleSize_Cluster", c.center(), yTkAtDUT_top);
         hist_->fillHist1D(dnametop, "matchedclusterpos_strip", c.center());
       }
     }
@@ -153,7 +159,7 @@ void BaselineAnalysis::eventLoop()
     for(auto& s: m.offlineStubs) {
       float sx = -1.*(s.positionX() - m.nstrips_/2.)*m.pitch_;
       hist_->fillHist1D(dnamebottom, "stubresidualX", sx - xTkAtDUT.first);//xTkAtDUT.first since bottom sensor
-      if(std::abs(sx - xTkAtDUT.first) < 100.)    mOfflinestub = true;
+      if(std::abs(sx - xTkAtDUT.first) < 0.1)    mOfflinestub = true;
     }
     
     //Increment counters if matching is found
