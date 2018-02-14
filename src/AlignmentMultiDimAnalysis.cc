@@ -99,16 +99,31 @@ void AlignmentMultiDimAnalysis::dumpAlignment(const double* a) {
   o.emplace("offset_d0", a[0]);
   o.emplace("zDUT_d0"  , a[1]);
   o.emplace("deltaZ"   , a[2]);
-  o.emplace("theta"    , a[3]*180./TMath::Pi());
+  //o.emplace("theta"    , a[3]*180./TMath::Pi());
+  o.emplace("theta"    , a[3]);
   o.emplace("shiftPlanes", a[4]);
-  o.emplace("phi_d0"   , a[5]*180./TMath::Pi());
-  o.emplace("phi_d1"   , a[6]*180./TMath::Pi());
+  //o.emplace("phi_d0"   , a[5]*180./TMath::Pi());
+  //o.emplace("phi_d1"   , a[6]*180./TMath::Pi());
+  o.emplace("phi_d0"   , a[5]);
+  o.emplace("phi_d1"   , a[6]);
+
 
   std::cout << "Alignment File=" << alignparFile_ << std::endl;
   std::cout << std::setw(4) << o << std::endl;
   std::ofstream fileAlignment(alignparFile_.c_str());
   fileAlignment << std::setw(4) << o << std::endl;
   fileAlignment.close();
+
+/*
+offset_d0=resultBothPlanesConstraintShiftPhi[0]
+zDUT_d0= resultBothPlanesConstraintShiftPhi[1]
+deltaZ= resultBothPlanesConstraintShiftPhi[2]
+theta =resultBothPlanesConstraintShiftPhi[3]*180./TMath::Pi()
+shiftPlanes=resultBothPlanesConstraintShiftPhi[4]
+phi_d0  = resultBothPlanesConstraintShiftPhi[5]*180./TMath::Pi()
+phi_d1= resultBothPlanesConstraintShiftPhi[6]*180./TMath::Pi() 
+*/
+
 }
 
 void AlignmentMultiDimAnalysis::eventLoop()
