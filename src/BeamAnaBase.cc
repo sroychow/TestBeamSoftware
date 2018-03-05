@@ -249,11 +249,11 @@ void BeamAnaBase::fillCommonHistograms() {
       hist_->fillHist1D(sdname,"offlinestubPosmap", os.positionX());
       //std::cout << "Offline stub pos =" << os.positionX() << " in mm=" << (os.positionX() - 127.)*0.09<< "\n";
       for(auto& cs : m.cbcStubs) {
-        hist_->fillHist2D(sdname,"stubCorrelation", os.positionX(), cs.positionX());
+        hist_->fillHist2D(sdname,"stubCorrelation", os.positionX(), cs.positionX()/2);
       }
     }
     for(auto& cs : m.cbcStubs) {
-      hist_->fillHist1D(sdname,"cbcstubPosmap", cs.positionX());
+      hist_->fillHist1D(sdname,"cbcstubPosmap", cs.positionX()/2);
     }
   }
   //Fill common track histograms

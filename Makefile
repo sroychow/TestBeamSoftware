@@ -23,7 +23,7 @@ CXX       = g++
 
 HDRS_DICT = interface/Hit.h interface/Cluster.h interface/Cbc.h interface/Stub.h interface/Track.h interface/Event.h interface/LinkDef.h
 
-bin: baselineReco alignmentReco 
+bin: baselineReco alignmentReco stubReco
 #deltaClusAnalysis
 
 all: 
@@ -45,12 +45,20 @@ BaselineAnalysis.o : src/BaselineAnalysis.cc
 	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
 
+StubAnalysis.o : src/StubAnalysis.cc
+	$(CXX)  $(CXXFLAGS) `root-config --cflags` -o $@ -c $<
+	mv $@ ../src/
+
+
 AlignmentMultiDimAnalysis.o : src/AlignmentMultiDimAnalysis.cc
 	$(CXX)  $(CXXFLAGS) -Wdeprecated-declarations `root-config --cflags` -o $@ -c $<
 	mv $@ ../src/
 
 
 baselineReco:   src/baselineReco.cc $(OBJS) src/BaselineAnalysis.o src/Dict.o
+	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
+
+stubReco:   src/stubReco.cc $(OBJS) src/StubAnalysis.o src/Dict.o
 	$(CXX) $(CXXFLAGS) `root-config --cflags` $(LDFLAGS) $^ -o $@ $(LIBS) `root-config --libs`
 
 alignmentReco:   src/alignmentReco.cc $(OBJS) src/AlignmentMultiDimAnalysis.o src/Dict.o
