@@ -37,6 +37,7 @@ class Histogrammer {
     void FillAlignmentOffsetVsZ(const char*, const char*, int, float, float, float);
 
     //Hisograms used by analysis with stub match
+    void bookStubsEfficiencyHistograms();
     void bookTrackMatchHistograms(TString& detId);
     void bookTrackMatchHistograms(std::string& d) {
       TString td(d);

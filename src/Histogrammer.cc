@@ -441,6 +441,32 @@ void Histogrammer::bookTrackCommonHistograms() {
   h1f->SetLineColor(kBlue);
  */
 
+void Histogrammer::bookStubsEfficiencyHistograms()
+{
+  int nStrips = 254;
+  TString dname = "StubEfficiency";
+  //std::cout << "Entering bookTrackMatchHistograms with dnmae=" << dname << std::endl;                                                     
+  fout_->cd();
+  fout_->mkdir(dname);
+  fout_->cd(dname);
+  new TH1I("stubeffglobal","",8,-0.5,7.5);
+  TH1I* h = dynamic_cast<TH1I*>(Utility::getHist1D("stubeffglobal"));
+  h->GetXaxis()->SetBinLabel(1,"1TkEvents");
+  h->GetXaxis()->SetBinLabel(2,"OfflineStubs");
+  h->GetXaxis()->SetBinLabel(3,"CbcStubs");
+  h->GetXaxis()->SetBinLabel(4,"CbcStubsBendCut");
+  h->GetXaxis()->SetBinLabel(5,"1TkEvents on CBC0");
+  h->GetXaxis()->SetBinLabel(6,"1TkEvents on CBC1");
+  h->GetXaxis()->SetBinLabel(7,"Cbc0StubsBendCut");
+  h->GetXaxis()->SetBinLabel(8,"Cbc1StubsBendCut");
+
+  new TH1F("matchedOfflinestubspos_strip","Matched Offline stubs position on sensor;#stubs; Stub position", nStrips, -0.5, nStrips-0.5);
+  new TH1F("matchedCBCstubspos_strip","Matched CBC stubs position on sensor;#stubs; Stub position", nStrips, -0.5, nStrips-0.5);
+  new TH1F("matchedCBCstubsBendpos_strip","Matched CBC stubs (Bend Cut) position on sensor;#stubs; Stub position", nStrips, -0.5, nStrips-0.5);
+  new TH1F("ClosestClusPos_strip","Closest Cluster to Track;#cls; Cluster position", nStrips, -0.5, nStrips-0.5);
+  new TH1F("Trackpos_strip","Tracks position on sensor;#tracks; Track position", nStrips, -0.5, nStrips-0.5);
+
+}
 
 
 void Histogrammer::bookTrackMatchHistograms(TString& detId)
@@ -458,6 +484,7 @@ void Histogrammer::bookTrackMatchHistograms(TString& detId)
   //new TH1D("hitresidualX","Residual of extrapolated track(prev plane) with respect to hit(offset corrected); corrected residual [mm]; Events [a.u]",80/(50e-3),-20.,20.);
   new TH1D("clusresidualX","Residual of extrapolated track(prev plane) with respect to cluster(offset corrected); corrected residual [mm]; Events [a.u]",100000,-100,100);
   new TH1D("stubresidualX","Residual of extrapolated track(prev plane) with respect to stub(offset corrected); corrected residual [mm]; Events [a.u]",100000,-100,100);
+  new TH1D("CBCstubresidualX","Residual of extrapolated track(prev plane) with respect to stub(offset corrected); corrected residual [mm]; Events [a.u]",100000,-100,100);
 
   new TH2D("moduleSize_Cluster",";cluster position [strip]; yTrack at DUT{Track} [mm]", 1016, -0.5, 1015.5, 100, 1., 100. );
 

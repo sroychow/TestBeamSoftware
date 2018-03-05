@@ -299,4 +299,25 @@ namespace Utility {
 
   }
 
+  std::vector<tbeam::stub> offlineStub(std::vector<tbeam::cluster>  topCls,std::vector<tbeam::cluster>  bottomCls, int cw) {
+
+    std::vector<tbeam::stub> stubs;
+    for(auto& seed: topCls){
+      //      cout<<"Seed Size : "<<seed.size()<<endl;
+      if(seed.size()>4) continue;
+      for(auto& corr: bottomCls){
+	//	cout<<"Corr Size : "<<seed.size()<<endl;
+	if(corr.size()>4) continue;
+	if(std::abs(seed.center()-corr.center())<=cw){
+	  //	  cout<<"Bend : "<<seed.center()-corr.center()<<endl;
+	  stubs.emplace_back( tbeam::stub(uint32_t(seed.center()*2), seed.column(), seed.center() - corr.center()) );
+	}
+      }
+    }
+
+    return stubs;
+
+  }
+
+
 }
