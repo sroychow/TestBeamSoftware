@@ -151,7 +151,7 @@ double cte;
   fStepGaus->SetParameter(1, 0.01);
   fStepGaus->SetParameter(2, htmp->GetMaximum());
   fStepGaus->SetParameter(3, 0);
-  fStepGaus->SetParameter(4, 100);
+  //fStepGaus->SetParameter(4, 100);
   return fStepGaus ; 
 
 }
