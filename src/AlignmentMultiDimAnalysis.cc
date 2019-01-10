@@ -723,8 +723,8 @@ TH1* hTmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom, "d0_1tk1Hit_d
   fGausExtractedX->SetParameter(0, htmp0->GetMaximum());
   fGausExtractedX->SetParLimits(1, center_d0-xwindow, center_d0+xwindow);
   fGausExtractedX->SetParameter(1, center_d0);
-  fGausExtractedX->SetParLimits(2, 0, 0.3);
-  fGausExtractedX->SetParameter(2, 0.03);
+  fGausExtractedX->SetParLimits(2, 0, 0.35);
+  fGausExtractedX->SetParameter(2, 0.031);
   fGausExtractedX->SetParLimits(3, 0, 1000.);
   fGausExtractedX->SetParameter(3, cte_d0);
   //fGausExtractedX->SetParLimits(4, 0., 0.);
@@ -752,12 +752,12 @@ TH1* hTmp = dynamic_cast<TH1I*>(hist_->GetHistoByName(dnamebottom, "d0_1tk1Hit_d
   double center_d1 = ((float)htmp1->GetMaximumBin())*(htmp1->GetXaxis()->GetXmax()-htmp1->GetXaxis()->GetXmin())/((float)htmp1->GetNbinsX()) + htmp1->GetXaxis()->GetXmin();//htmp1->GetMean();
   htmp1->SetAxisRange(center_d1-xwindow, center_d1+xwindow, "X");
   double cte_d1 = (htmp1->GetBinContent(htmp1->FindBin(center_d1-xwindow))+htmp1->GetBinContent(htmp1->FindBin(center_d1+xwindow)))/2.;
-  fGausExtractedX->SetParLimits(0, 0, 2*htmp1->GetMaximum());
+  fGausExtractedX->SetParLimits(0, 0, 3*htmp1->GetMaximum());
   fGausExtractedX->SetParameter(0, htmp1->GetMaximum());
   fGausExtractedX->SetParLimits(1, center_d1-xwindow, center_d1+xwindow);
   fGausExtractedX->SetParameter(1, center_d1);
-  fGausExtractedX->SetParLimits(2, 0, 0.3);
-  fGausExtractedX->SetParameter(2, 0.03);
+  fGausExtractedX->SetParLimits(2, 0, 0.35);
+  fGausExtractedX->SetParameter(2, 0.031);
   fGausExtractedX->SetParLimits(3, 0, 1000.);
   fGausExtractedX->SetParameter(3, cte_d1);
   //fGausExtractedX->SetParLimits(4, 0., 0.);
@@ -842,4 +842,5 @@ void AlignmentMultiDimAnalysis::endJob() {
 AlignmentMultiDimAnalysis::~AlignmentMultiDimAnalysis(){
   delete hist_;
 }
+
 
