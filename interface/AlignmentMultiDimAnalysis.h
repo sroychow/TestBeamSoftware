@@ -20,6 +20,8 @@ class AlignmentMultiDimAnalysis : public BeamAnaBase {
   ~AlignmentMultiDimAnalysis();
   void beginJob();
   void eventLoop();
+  //TF1* functions_1st(TH1* hTmp ); 
+  TF1* functions(TH1* htmp); 
   void bookHistograms();
   void clearEvent();
   void endJob();
